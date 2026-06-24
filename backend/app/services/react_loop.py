@@ -44,6 +44,17 @@ from app.models import BookingSession# ─────────────�
 # AGENT BUILDER
 # ─────────────────────────────────────────────
 
+from langchain_core.messages import SystemMessage
+
+def _trim_messages(state):
+    """
+    Keep only the system prompt and the last 6 messages to prevent
+    exceeding token limits on the free Groq tier.
+    """
+    messages = state.get("messages", [])
+    trimmed = messages[-6:] if len(messages) > 6 else messages
+    return [SystemMessage(content=REACT_SYSTEM_PROMPT)] + trimmed
+
 def _get_agent(checkpointer):
     """
     Build the LangGraph ReAct agent.
@@ -67,7 +78,7 @@ def _get_agent(checkpointer):
         model=llm,
         tools=BOOKING_TOOLS,
         checkpointer=checkpointer,
-        prompt=REACT_SYSTEM_PROMPT,
+        prompt=_trim_messages,
     )
 
 # ─────────────────────────────────────────────
