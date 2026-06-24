@@ -1,0 +1,21 @@
+# FastAPI Framework & Pydantic
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Environment & Config
+python-dotenv>=1.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# LangChain & LangGraph (ReAct Agent)
+langchain>=0.2.0
+langchain-groq>=0.1.0
+langgraph>=0.1.0
+langgraph-checkpoint-sqlite>=1.0.0
+
+# HTTP Client (for Tools & End-to-End Tests)
+httpx>=0.27.0

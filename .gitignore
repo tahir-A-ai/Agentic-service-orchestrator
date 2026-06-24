@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────
+# Git Ignore — Service Orchestrator
+# ─────────────────────────────────────────────
+
+# Environment & secrets
+.env
+.venv/
+
+# Database (recreated by the app on startup)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+trace_logs.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
