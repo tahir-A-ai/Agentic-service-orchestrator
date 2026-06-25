@@ -24,6 +24,7 @@ from app.core.logger import write_audit_log
 from app.services.database import (
     get_cached_location,
     query_active_providers,
+    query_all_active_providers,
     save_location_cache,
 )
 
@@ -226,7 +227,60 @@ def ask_clarification(question: str) -> dict:
 
 
 # ─────────────────────────────────────────────
+# TOOL 4: SEARCH NEARBY PROVIDERS (city-wide fallback)
+# ─────────────────────────────────────────────
+
+@tool
+def search_nearby_providers(service_type: str) -> dict:
+    """
+    Search for ALL available providers of the given service type across the entire
+    city of Islamabad, regardless of sector. Use this as a FALLBACK when
+    query_providers() returns zero results for the user's requested sector.
+
+    This lets you show the user what IS available even if nothing is in their
+    specific sector.
+
+    Args:
+        service_type: Must be exactly one of: "AC Technician", "Electrician", "Plumber".
+
+    Returns:
+        {"providers": [...], "count": int} — all active providers of that type, sorted by rating.
+    """
+    session_id = _current_session_id
+
+    valid_types = {"AC Technician", "Electrician", "Plumber"}
+    if service_type not in valid_types:
+        return {
+            "providers": [],
+            "count": 0,
+            "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(valid_types))}",
+        }
+
+    write_audit_log(
+        session_id,
+        "[TOOL USAGE]",
+        f"TOOL CALLED -> search_nearby_providers('{service_type}'). "
+        "Searching ALL sectors in Islamabad for available providers.",
+    )
+
+    providers = query_all_active_providers(service_type)
+
+    provider_names = [f"{p['name']} ({p['location']})" for p in providers]
+    write_audit_log(
+        session_id,
+        "[TOOL USAGE]",
+        f"City-wide search returned {len(providers)} active '{service_type}' provider(s). "
+        f"Results: {provider_names}.",
+    )
+
+    return {
+        "providers": providers,
+        "count": len(providers),
+    }
+
+
+# ─────────────────────────────────────────────
 # TOOL REGISTRY (used by the LangGraph agent)
 # ─────────────────────────────────────────────
 
-BOOKING_TOOLS = [geocode_location, query_providers, ask_clarification]
+BOOKING_TOOLS = [geocode_location, query_providers, search_nearby_providers, ask_clarification]
