@@ -1,0 +1,90 @@
+/* StepIndicator.module.css */
+
+.wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+  position: relative;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  position: relative;
+}
+
+.nodeWrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 2px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: all 300ms ease;
+  z-index: 2;
+  margin: 0 auto;
+}
+
+.active {
+  background: var(--accent-green);
+  color: #fff;
+  border-color: var(--accent-green);
+  box-shadow: var(--shadow-green);
+}
+
+.completed {
+  background: var(--bg-tertiary);
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+/* ── Connector Line ──────────────────── */
+
+.line {
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 16px);
+  right: calc(-50% + 16px);
+  height: 2px;
+  background: var(--border-default);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.lineCompleted {
+  background: var(--accent-green);
+}
+
+/* ── Labels ──────────────────────────── */
+
+.label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 300ms ease;
+}
+
+.labelActive {
+  color: var(--text-primary);
+}
