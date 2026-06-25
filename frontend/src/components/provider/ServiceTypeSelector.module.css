@@ -1,0 +1,62 @@
+/* ServiceTypeSelector.module.css */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-2);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.card:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text-muted);
+}
+
+.selected {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 1px var(--accent-green), var(--shadow-green);
+}
+
+.selected:hover {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: var(--accent-green);
+}
+
+.icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: var(--space-4);
+  }
+}
