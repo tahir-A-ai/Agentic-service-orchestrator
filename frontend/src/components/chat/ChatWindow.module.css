@@ -1,0 +1,133 @@
+/* ChatWindow.module.css */
+
+.window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+/* ── Header ──────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  background: rgba(22, 27, 34, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.agentAvatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agentAvatar::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  background: var(--accent-green);
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+
+.agentStatus {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+  z-index: 1;
+  animation: pulseGlow 2s infinite;
+}
+
+.agentName {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.agentSub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.infoBtn {
+  font-size: var(--text-xl);
+  opacity: 0.7;
+  transition: opacity 200ms;
+}
+
+.infoBtn:hover {
+  opacity: 1;
+}
+
+/* ── Messages Area ───────────────────── */
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  scroll-behavior: smooth;
+}
+
+.empty {
+  margin: auto;
+  text-align: center;
+  color: var(--text-secondary);
+  animation: fadeInUp 400ms ease;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.emptyHint {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+}
+
+/* Clarification highlight */
+.clarification {
+  border-left: 3px solid var(--accent-orange);
+  padding-left: var(--space-3);
+  margin-left: calc(-1 * var(--space-3));
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: var(--space-3) var(--space-4);
+  }
+  .messages {
+    padding: var(--space-4);
+  }
+}
