@@ -1,0 +1,60 @@
+/* MessageBubble.module.css */
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  animation: messageAppear 300ms ease forwards;
+}
+
+.user {
+  justify-content: flex-end;
+}
+
+.agent {
+  justify-content: flex-start;
+}
+
+/* ── Avatar ──────────────────────────── */
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+}
+
+.avatarMark {
+  width: 14px;
+  height: 14px;
+  background: var(--accent-green);
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+
+/* ── Bubbles ─────────────────────────── */
+
+.bubble {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.userBubble {
+  background: #2D4A2D;
+  color: var(--text-primary);
+  border-radius: 18px 18px 4px 18px;
+  max-width: 70%;
+}
+
+.agentBubble {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 18px 18px 18px 4px;
+  max-width: 80%;
+}
