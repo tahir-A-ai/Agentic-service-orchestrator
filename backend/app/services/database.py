@@ -119,6 +119,40 @@ def query_active_providers(
     return results
 
 
+def query_all_active_providers(service_type: str) -> list[dict]:
+    """
+    Return ALL active providers matching service_type across the entire city,
+    sorted by rating (highest first). No location filtering.
+
+    Used as a fallback when no providers are found in the user's requested sector.
+    """
+    with get_db_session() as session:
+        providers = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type)
+            .filter(Provider.status == "Active")
+            .all()
+        )
+
+        results = []
+        for p in providers:
+            results.append({
+                "id":           p.id,
+                "name":         p.name,
+                "service_type": p.service_type,
+                "location":     p.location,
+                "latitude":     p.latitude,
+                "longitude":    p.longitude,
+                "rating":       p.rating,
+                "status":       p.status,
+            })
+
+        # Sort: highest rated first
+        results.sort(key=lambda x: -x["rating"])
+
+    return results
+
+
 # ─────────────────────────────────────────────
 # WRITE — COMMIT BOOKING
 # ─────────────────────────────────────────────
