@@ -1,0 +1,60 @@
+/* ConfirmButton.module.css */
+
+.wrapper {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-4) 0;
+  margin-top: var(--space-4);
+  background: linear-gradient(to top, var(--bg-primary) 50%, transparent);
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+  animation: fadeInUp 300ms ease;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 400px;
+  height: 48px;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-green);
+  transition: all 200ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-green-dim);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
