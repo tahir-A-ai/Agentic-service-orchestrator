@@ -1,0 +1,78 @@
+/* InputBar.module.css */
+
+.wrapper {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-default);
+  z-index: 10;
+}
+
+.inner {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.inner:focus-within {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px var(--accent-green-glow);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  font-size: var(--text-base);
+  resize: none;
+  padding: var(--space-2) 0;
+  max-height: 120px;
+  min-height: 24px;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  color: #fff;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+
+.sendBtn:hover:not(:disabled) {
+  background: var(--accent-green-dim);
+  transform: scale(1.05);
+}
+
+.sendBtn:disabled {
+  background: var(--border-default);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: var(--space-3) var(--space-4);
+  }
+}
