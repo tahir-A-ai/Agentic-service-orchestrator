@@ -1,0 +1,104 @@
+/* Input.module.css */
+
+.wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+}
+
+.prefix {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 var(--space-3);
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border: 1px solid var(--border-default);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.fieldWrap {
+  position: relative;
+  flex: 1;
+}
+
+.field {
+  width: 100%;
+  height: 48px;
+  padding: var(--space-4) var(--space-4) var(--space-1);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.prefix + .fieldWrap .field {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.field:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px var(--accent-green-glow);
+}
+
+.textarea {
+  height: auto;
+  min-height: 80px;
+  max-height: 160px;
+  resize: vertical;
+  padding-top: var(--space-5);
+  line-height: 1.5;
+}
+
+/* ── Floating label ─────────────────── */
+
+.label {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: all 200ms ease;
+  transform-origin: left center;
+}
+
+.textarea ~ .label,
+.field:focus ~ .label,
+.field:not(:placeholder-shown) ~ .label,
+.floating {
+  top: 6px;
+  transform: translateY(0) scale(0.75);
+  color: var(--text-secondary);
+}
+
+/* ── Error state ────────────────────── */
+
+.hasError .field {
+  border-color: var(--accent-red);
+}
+
+.hasError .field:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.error {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--accent-red);
+  padding-left: var(--space-4);
+}
+
+/* Make error appear below the full wrapper */
+.wrapper {
+  flex-wrap: wrap;
+}
