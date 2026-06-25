@@ -1,0 +1,79 @@
+/* StatsRow.module.css */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ── Colors ──────────────────────────── */
+
+.greenIcon {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+}
+.greenText {
+  color: var(--accent-green);
+}
+
+.blueIcon {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+.blueText {
+  color: var(--accent-blue);
+}
+
+.goldIcon {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--accent-gold);
+}
+.goldText {
+  color: var(--accent-gold);
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
