@@ -153,6 +153,43 @@ def query_all_active_providers(service_type: str) -> list[dict]:
     return results
 
 
+def query_busy_providers(
+    service_type: str,
+    user_lat: float,
+    user_lon: float,
+) -> list[dict]:
+    """
+    Return Busy providers matching service_type near the user location.
+    Used so the agent can distinguish "no active providers" from "providers exist but are busy".
+    """
+    with get_db_session() as session:
+        providers = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type)
+            .filter(Provider.status == "Busy")
+            .all()
+        )
+
+        results = []
+        for p in providers:
+            dist = _haversine(user_lat, user_lon, float(p.latitude), float(p.longitude))
+            results.append({
+                "id":           p.id,
+                "name":         p.name,
+                "service_type": p.service_type,
+                "location":     p.location,
+                "latitude":     p.latitude,
+                "longitude":    p.longitude,
+                "rating":       p.rating,
+                "status":       p.status,
+                "distance_km":  round(dist, 2),
+            })
+
+        results.sort(key=lambda x: (x["distance_km"], -x["rating"]))
+
+    return results
+
+
 # ─────────────────────────────────────────────
 # WRITE — COMMIT BOOKING
 # ─────────────────────────────────────────────
