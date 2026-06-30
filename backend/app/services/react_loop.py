@@ -24,9 +24,9 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+from langchain.agents import create_agent
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.config import (
@@ -44,16 +44,15 @@ from app.models import BookingSession# ─────────────�
 # AGENT BUILDER
 # ─────────────────────────────────────────────
 
-from langchain_core.messages import SystemMessage
-
 def _trim_messages(state):
     """
-    Keep only the system prompt and the last 6 messages to avoid feeding
-    all previous chat history and prevent exceeding token limits.
+    Keep the system prompt plus the last 6 messages so the agent can
+    answer follow-up questions using recent conversation context.
     """
     messages = state.get("messages", [])
     trimmed = messages[-6:] if len(messages) > 6 else messages
     return [SystemMessage(content=REACT_SYSTEM_PROMPT)] + trimmed
+
 
 def _get_agent(checkpointer):
     """
@@ -74,11 +73,11 @@ def _get_agent(checkpointer):
         temperature=0,
     )
 
-    return create_react_agent(
+    return create_agent(
         model=llm,
         tools=BOOKING_TOOLS,
         checkpointer=checkpointer,
-        prompt=_trim_messages,
+        system_prompt=REACT_SYSTEM_PROMPT,
     )
 
 # ─────────────────────────────────────────────
