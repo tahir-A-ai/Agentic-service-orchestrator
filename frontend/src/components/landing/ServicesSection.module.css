@@ -1,0 +1,302 @@
+/* ServicesSection.module.css */
+
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
+
+.section {
+  position: relative;
+  background: #0D1117;
+  padding: 88px 24px;
+  scroll-margin-top: 80px;
+}
+
+.glowOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(34, 197, 94, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Section header ──────────────────────────────────────────────────────── */
+
+.header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 9999px;
+  padding: 5px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #22C55E;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.heading {
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 800;
+  color: #F0F6FC;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.subtext {
+  font-size: 15px;
+  color: #8B949E;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Cards grid ──────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ── Card shell ──────────────────────────────────────────────────────────── */
+
+.card {
+  background: #161B22;
+  border: 1px solid #21262D;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  background: var(--svc-dim);
+  border-color: var(--svc-border);
+  transform: translateY(-5px);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 28px var(--svc-glow);
+}
+
+/* ── Top accent strip ────────────────────────────────────────────────────── */
+
+.accentStrip {
+  height: 4px;
+  background: linear-gradient(90deg, var(--svc-color), transparent);
+  flex-shrink: 0;
+}
+
+/* ── Card body ───────────────────────────────────────────────────────────── */
+
+.cardBody {
+  padding: 26px 24px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Row 1 — icon + title + rating */
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.cardTopLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.iconBox {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--svc-dim), transparent);
+  border: 1px solid var(--svc-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emoji {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.cardTitle {
+  font-weight: 800;
+  font-size: 18px;
+  color: #F0F6FC;
+  line-height: 1.2;
+}
+
+.cardUrdu {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+
+/* Rating pill */
+
+.ratingPill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-radius: 9999px;
+  padding: 4px 9px;
+  flex-shrink: 0;
+}
+
+.ratingValue {
+  font-size: 12px;
+  font-weight: 700;
+  color: #EAB308;
+}
+
+/* Description */
+
+.cardDesc {
+  color: #8B949E;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
+
+/* Task chips */
+
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.chip {
+  background: #0D1117;
+  border: 1px solid #30363D;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #8B949E;
+  font-weight: 500;
+}
+
+/* Meta info strip */
+
+.metaStrip {
+  display: flex;
+  background: #0D1117;
+  border: 1px solid #21262D;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.metaCol {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.metaColBorder {
+  border-left: 1px solid #21262D;
+  border-right: 1px solid #21262D;
+}
+
+.metaEmoji {
+  font-size: 14px;
+  margin-bottom: 3px;
+  display: block;
+}
+
+.metaLabel {
+  font-size: 10px;
+  color: #484F58;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.metaValue {
+  font-size: 11px;
+  color: #F0F6FC;
+  font-weight: 700;
+  display: block;
+}
+
+/* ── Card footer ─────────────────────────────────────────────────────────── */
+
+.cardFooter {
+  padding: 0 24px 24px;
+}
+
+.ctaBtn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--svc-border);
+  color: var(--svc-color);
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card:hover .ctaBtn {
+  background: var(--svc-color);
+  color: #0D1117;
+  border-color: var(--svc-color);
+}
+
+.ctaBtn:active {
+  transform: scale(0.97);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .section {
+    padding: 64px 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
