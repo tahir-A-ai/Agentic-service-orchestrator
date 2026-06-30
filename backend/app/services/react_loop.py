@@ -48,8 +48,8 @@ from langchain_core.messages import SystemMessage
 
 def _trim_messages(state):
     """
-    Keep only the system prompt and the last 6 messages to prevent
-    exceeding token limits on the free Groq tier.
+    Keep only the system prompt and the last 6 messages to avoid feeding
+    all previous chat history and prevent exceeding token limits.
     """
     messages = state.get("messages", [])
     trimmed = messages[-6:] if len(messages) > 6 else messages
