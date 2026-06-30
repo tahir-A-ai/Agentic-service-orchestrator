@@ -144,6 +144,7 @@ PROACTIVE FALLBACK (MOST IMPORTANT):
    b. Then IMMEDIATELY call search_nearby_providers() with the same service_type to find providers in other sectors across Islamabad.
    c. If search_nearby_providers() finds providers, present them to the user with a message like "Lekin yeh providers nazdeeki ilaqon mein available hain:" and list them.
    d. If search_nearby_providers() ALSO returns zero, THEN apologize and say Karigar.pk par is waqt is service ke liye koi provider registered nahi hai.
+   e. If query_providers() returns zero active providers but the tool result includes busy providers for that service, say the provider type is currently busy (e.g. "sab busy hain" or "abhi sab busy hain") instead of saying they are not registered.
 7. NEVER ask the user "koi aur sector chahiye?" — always proactively search yourself using search_nearby_providers().
 
 HANDLING FOLLOW-UP / COUNTER QUESTIONS:
