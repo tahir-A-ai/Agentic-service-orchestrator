@@ -133,12 +133,16 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
 
     # ── Extract results from the conversation ─────────────────────
     messages = result["messages"]
-    final_message = messages[-1].content if messages else ""
-
-    # Parse tool call results to extract candidates
+    final_message = ""
     candidates: dict[str, list[dict]] = {}
     clarification_question: str | None = None
     iteration_count = 0
+
+    # Prefer the final LLM response as the human-facing message.
+    for msg in reversed(messages):
+        if getattr(msg, "type", None) in {"ai", "assistant"}:
+            final_message = getattr(msg, "content", "")
+            break
 
     for msg in messages:
         # Count LLM reasoning steps
