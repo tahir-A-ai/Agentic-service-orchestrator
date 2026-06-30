@@ -32,8 +32,34 @@ export default function Navbar() {
         {/* Desktop nav links */}
         <div className={[styles.navLinks, menuOpen ? styles.open : ''].filter(Boolean).join(' ')}>
           <Link to="/" className={styles.link}>Home</Link>
-          <a href="#services" className={styles.link}>Services</a>
-          <a href="#how-it-works" className={styles.link}>How It Works</a>
+          <a
+            href="#services"
+            className={styles.link}
+            onClick={(e) => {
+              e.preventDefault();
+              if (location.pathname !== '/') {
+                window.location.href = '/#services';
+                return;
+              }
+              document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Services
+          </a>
+          <a
+            href="#how-it-works"
+            className={styles.link}
+            onClick={(e) => {
+              e.preventDefault();
+              if (location.pathname !== '/') {
+                window.location.href = '/#how-it-works';
+                return;
+              }
+              document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            How It Works
+          </a>
           <Link to="/provider/register" className={styles.link}>For Providers</Link>
 
           <div className={styles.navActions}>
