@@ -25,8 +25,11 @@ from app.services.database import (
     get_cached_location,
     query_active_providers,
     query_all_active_providers,
+    query_busy_providers,
     save_location_cache,
+    get_db_session,
 )
+from app.models import Provider
 
 
 # ─────────────────────────────────────────────
@@ -150,7 +153,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         lon: User's longitude from geocode_location.
 
     Returns:
-        {"providers": [list of provider dicts with id, name, rating, distance_km, location, service_type], "count": int}
+        {"providers": [list of provider dicts with id, name, rating, distance_km, location, service_type], "count": int, "busy_count": int, "total_count": int}
     """
     session_id = _current_session_id
 
@@ -179,19 +182,39 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
 
     providers = query_active_providers(service_type, lat, lon)
 
+    with get_db_session() as session:
+        total_count = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type)
+            .count()
+        )
+        busy_count = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type, Provider.status == "Busy")
+            .count()
+        )
+
+    busy_providers = []
+    if len(providers) == 0 and busy_count > 0:
+        busy_providers = query_busy_providers(service_type, lat, lon)
+
     provider_names = [f"{p['name']} ({p['distance_km']}km)" for p in providers]
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
         (
             f"SQLite returned {len(providers)} active '{service_type}' provider(s). "
-            f"Results: {provider_names}."
+            f"Total {total_count}, busy {busy_count}. Results: {provider_names}."
         ),
     )
 
     return {
+        "service_type": service_type,
         "providers": providers,
         "count": len(providers),
+        "busy_count": busy_count,
+        "total_count": total_count,
+        "busy_providers": busy_providers,
     }
 
 
@@ -244,7 +267,7 @@ def search_nearby_providers(service_type: str) -> dict:
         service_type: Must be exactly one of: "AC Technician", "Electrician", "Plumber".
 
     Returns:
-        {"providers": [...], "count": int} — all active providers of that type, sorted by rating.
+        {"providers": [...], "count": int, "busy_count": int, "total_count": int} — all active providers of that type, sorted by rating.
     """
     session_id = _current_session_id
 
@@ -265,17 +288,32 @@ def search_nearby_providers(service_type: str) -> dict:
 
     providers = query_all_active_providers(service_type)
 
+    with get_db_session() as session:
+        total_count = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type)
+            .count()
+        )
+        busy_count = (
+            session.query(Provider)
+            .filter(Provider.service_type == service_type, Provider.status == "Busy")
+            .count()
+        )
+
     provider_names = [f"{p['name']} ({p['location']})" for p in providers]
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
         f"City-wide search returned {len(providers)} active '{service_type}' provider(s). "
-        f"Results: {provider_names}.",
+        f"Total {total_count}, busy {busy_count}. Results: {provider_names}.",
     )
 
     return {
+        "service_type": service_type,
         "providers": providers,
         "count": len(providers),
+        "busy_count": busy_count,
+        "total_count": total_count,
     }
 
 
