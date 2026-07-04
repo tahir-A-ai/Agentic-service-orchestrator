@@ -17,7 +17,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.config import DATABASE_URL
+from app.config import DATABASE_URL, PROVIDER_SEARCH_RADIUS_KM
 from app.models import Base, LocationCache, Provider
 
 # ─────────────────────────────────────────────
@@ -83,13 +83,19 @@ def query_active_providers(
     service_type: str,
     user_lat: float,
     user_lon: float,
+    radius_km: float | None = None,
 ) -> list[dict]:
     """
-    Return all Active providers matching service_type, sorted by
-    distance (nearest first), then by rating (highest first).
+    Return Active providers matching service_type within `radius_km` of
+    the user's coordinates, sorted by distance (nearest first), then
+    by rating (highest first).
 
-    Each returned dict includes a 'distance_km' field.
+    If radius_km is None, the default from config (PROVIDER_SEARCH_RADIUS_KM)
+    is used.  Each returned dict includes a 'distance_km' field.
     """
+    if radius_km is None:
+        radius_km = PROVIDER_SEARCH_RADIUS_KM
+
     with get_db_session() as session:
         providers = (
             session.query(Provider)
@@ -101,6 +107,8 @@ def query_active_providers(
         results = []
         for p in providers:
             dist = _haversine(user_lat, user_lon, float(p.latitude), float(p.longitude))  # type: ignore[arg-type]
+            if dist > radius_km:
+                continue  # outside the search radius
             results.append({
                 "id":           p.id,
                 "name":         p.name,
@@ -119,10 +127,18 @@ def query_active_providers(
     return results
 
 
-def query_all_active_providers(service_type: str) -> list[dict]:
+def query_all_active_providers(
+    service_type: str,
+    user_lat: float | None = None,
+    user_lon: float | None = None,
+) -> list[dict]:
     """
-    Return ALL active providers matching service_type across the entire city,
-    sorted by rating (highest first). No location filtering.
+    Return ALL active providers matching service_type across the entire city.
+    No radius filtering — every active provider is included.
+
+    If user_lat/user_lon are provided, each result includes a 'distance_km'
+    field and results are sorted by distance first, then rating.
+    Otherwise results are sorted by rating only.
 
     Used as a fallback when no providers are found in the user's requested sector.
     """
@@ -136,7 +152,7 @@ def query_all_active_providers(service_type: str) -> list[dict]:
 
         results = []
         for p in providers:
-            results.append({
+            entry = {
                 "id":           p.id,
                 "name":         p.name,
                 "service_type": p.service_type,
@@ -145,10 +161,17 @@ def query_all_active_providers(service_type: str) -> list[dict]:
                 "longitude":    p.longitude,
                 "rating":       p.rating,
                 "status":       p.status,
-            })
+            }
+            if user_lat is not None and user_lon is not None:
+                dist = _haversine(user_lat, user_lon, float(p.latitude), float(p.longitude))
+                entry["distance_km"] = round(dist, 2)
+            results.append(entry)
 
-        # Sort: highest rated first
-        results.sort(key=lambda x: -x["rating"])
+        # Sort: distance first (if available), then highest rated
+        if user_lat is not None and user_lon is not None:
+            results.sort(key=lambda x: (x["distance_km"], -x["rating"]))
+        else:
+            results.sort(key=lambda x: -x["rating"])
 
     return results
 
