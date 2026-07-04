@@ -254,20 +254,22 @@ def ask_clarification(question: str) -> dict:
 # ─────────────────────────────────────────────
 
 @tool
-def search_nearby_providers(service_type: str) -> dict:
+def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     """
     Search for ALL available providers of the given service type across the entire
     city of Islamabad, regardless of sector. Use this as a FALLBACK when
     query_providers() returns zero results for the user's requested sector.
 
     This lets you show the user what IS available even if nothing is in their
-    specific sector.
+    specific sector. Results include distance_km from the user's location.
 
     Args:
         service_type: Must be exactly one of: "AC Technician", "Electrician", "Plumber".
+        lat: User's latitude from geocode_location (same value you used for query_providers).
+        lon: User's longitude from geocode_location (same value you used for query_providers).
 
     Returns:
-        {"providers": [...], "count": int, "busy_count": int, "total_count": int} — all active providers of that type, sorted by rating.
+        {"providers": [...], "count": int, "busy_count": int, "total_count": int} — all active providers of that type, sorted by distance then rating.
     """
     session_id = _current_session_id
 
@@ -282,11 +284,12 @@ def search_nearby_providers(service_type: str) -> dict:
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
-        f"TOOL CALLED -> search_nearby_providers('{service_type}'). "
+        f"TOOL CALLED -> search_nearby_providers('{service_type}', "
+        f"lat={lat}, lon={lon}). "
         "Searching ALL sectors in Islamabad for available providers.",
     )
 
-    providers = query_all_active_providers(service_type)
+    providers = query_all_active_providers(service_type, lat, lon)
 
     with get_db_session() as session:
         total_count = (
@@ -300,7 +303,7 @@ def search_nearby_providers(service_type: str) -> dict:
             .count()
         )
 
-    provider_names = [f"{p['name']} ({p['location']})" for p in providers]
+    provider_names = [f"{p['name']} ({p['location']}, {p.get('distance_km', '?')}km)" for p in providers]
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
