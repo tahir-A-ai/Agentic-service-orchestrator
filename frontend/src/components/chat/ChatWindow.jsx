@@ -47,7 +47,7 @@ export default function ChatWindow({ onConfirm }) {
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>👋</span>
             <p>Aapko kaunsi service chahiye?</p>
-            <span className={styles.emptyHint}>Example: G-13 mein bijli wala bhejo</span>
+            <span className={styles.emptyHint}>Example: G-13 mein bijli wala chahiye</span>
           </div>
         ) : (
           messages.map((msg) => (
