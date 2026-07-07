@@ -1,4 +1,6 @@
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getActiveServices } from '../../api/client';
 import styles from './ServicesSection.module.css';
 
 // ── Per-service data ─────────────────────────────────────────────────────────
@@ -7,78 +9,50 @@ const SERVICES = [
   {
     key: 'electrician',
     label: 'Electrician',
-    urdu: 'Bijli Wala',
+    urdu: 'BIJLI WALA',
     emoji: '⚡',
     color: '#3B82F6',
     colorDim: 'rgba(59,130,246,0.12)',
     colorBorder: 'rgba(59,130,246,0.25)',
     colorGlow: 'rgba(59,130,246,0.18)',
-    rating: '4.8',
-    description:
-      'Ghar ki wiring, MCB, fans, switches — har bijli ki masla hal karein.',
-    tasks: [
-      'Wiring & Rewiring',
-      'MCB / Fuse Repair',
-      'Fan Installation',
-      'Light Fitting',
-      'Inverter Setup',
-      'Earthing & Safety Check',
-    ],
-    avgTime: '45–90 min',
-    price: 'Rs. 800–2,500',
-    bookings: '820+',
+    description: 'Ghar ki wiring, MCB, fans, switches — har bijli ki masla hal karein.',
   },
   {
     key: 'plumber',
     label: 'Plumber',
-    urdu: 'Nalqe Wala',
+    urdu: 'NALQE WALA',
     emoji: '🔧',
     color: '#22C55E',
     colorDim: 'rgba(34,197,94,0.10)',
     colorBorder: 'rgba(34,197,94,0.25)',
     colorGlow: 'rgba(34,197,94,0.18)',
-    rating: '4.7',
-    description:
-      'Leakage, blockage, geyser, ya naye pipe — sab kuch thik kar dein.',
-    tasks: [
-      'Pipe Leakage Fix',
-      'Drain Blockage',
-      'Geyser Repair',
-      'Tap Replacement',
-      'Water Pump',
-      'Bathroom Fitting',
-    ],
-    avgTime: '30–120 min',
-    price: 'Rs. 600–3,000',
-    bookings: '650+',
+    description: 'Leakage, blockage, geyser, ya naye pipe — sab kuch thik kar dein.',
   },
   {
-    key: 'ac',
+    key: 'ac technician',
     label: 'AC Technician',
-    urdu: 'AC Wala',
+    urdu: 'AC WALA',
     emoji: '❄️',
     color: '#06B6D4',
     colorDim: 'rgba(6,182,212,0.10)',
     colorBorder: 'rgba(6,182,212,0.25)',
     colorGlow: 'rgba(6,182,212,0.18)',
-    rating: '4.9',
-    description:
-      'AC service, gas filling, installation ya repair — expert se karwao.',
-    tasks: [
-      'AC Service / Cleaning',
-      'Gas Refilling',
-      'New Installation',
-      'Compressor Repair',
-      'Remote / PCB Fix',
-      'Split AC Install',
-    ],
-    avgTime: '60–180 min',
-    price: 'Rs. 1,200–5,000',
-    bookings: '530+',
+    description: 'AC service, gas filling, installation ya repair — expert se karwao.',
+  },
+  {
+    key: 'painter',
+    label: 'Painter',
+    urdu: 'PAINTER',
+    emoji: '🖌️',
+    color: '#A855F7', // Purple
+    colorDim: 'rgba(168,85,247,0.10)',
+    colorBorder: 'rgba(168,85,247,0.25)',
+    colorGlow: 'rgba(168,85,247,0.18)',
+    description: 'Ghar ke andar ya bahar — painting, touch-up, waterproofing sab.',
   },
 ];
 
-// ── Icons (inline SVG to avoid external deps) ────────────────────────────────
+// ── Icons (inline SVG) ────────────────────────────────────────────────────────
 
 function WrenchIcon() {
   return (
@@ -88,19 +62,22 @@ function WrenchIcon() {
   );
 }
 
-function StarIcon() {
+function ArrowRightIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="#EAB308" stroke="#EAB308" strokeWidth="1">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
     </svg>
   );
 }
 
-function ArrowRightIcon() {
+function ChevronIcon({ direction = 'right' }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      {direction === 'left'
+        ? <polyline points="15 18 9 12 15 6" />
+        : <polyline points="9 18 15 12 9 6" />
+      }
     </svg>
   );
 }
@@ -116,83 +93,117 @@ function ServiceCard({ svc, navigate }) {
   };
 
   return (
-    <div className={styles.card} style={cardStyle}>
+    <div className={styles.card} style={cardStyle} onClick={() => navigate('/chat')}>
       {/* Top accent strip */}
       <div className={styles.accentStrip} />
 
       {/* Card Body */}
       <div className={styles.cardBody}>
-        {/* Row 1: icon + title + rating */}
-        <div className={styles.cardTop}>
-          <div className={styles.cardTopLeft}>
-            <div className={styles.iconBox}>
-              <span className={styles.emoji}>{svc.emoji}</span>
-            </div>
-            <div>
-              <div className={styles.cardTitle}>{svc.label}</div>
-              <div className={styles.cardUrdu} style={{ color: svc.color }}>{svc.urdu}</div>
-            </div>
-          </div>
-          <div className={styles.ratingPill}>
-            <StarIcon />
-            <span className={styles.ratingValue}>{svc.rating}</span>
-          </div>
+        <div className={styles.iconBox}>
+          <span className={styles.emoji}>{svc.emoji}</span>
         </div>
 
-        {/* Description */}
+        <h3 className={styles.cardTitle}>{svc.label}</h3>
+        <p className={styles.cardUrdu} style={{ color: svc.color }}>{svc.urdu}</p>
+
         <p className={styles.cardDesc}>{svc.description}</p>
 
-        {/* Task chips */}
-        <div className={styles.chipsRow}>
-          {svc.tasks.map((t) => (
-            <span key={t} className={styles.chip}>{t}</span>
-          ))}
+        <div className={styles.cardFooter}>
+          <button
+            className={styles.roundBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/chat');
+            }}
+            aria-label={`Book ${svc.label}`}
+          >
+            <ArrowRightIcon />
+          </button>
         </div>
-
-        {/* Meta strip */}
-        <div className={styles.metaStrip}>
-          <div className={styles.metaCol}>
-            <span className={styles.metaEmoji}>⏱</span>
-            <span className={styles.metaLabel}>Avg Time</span>
-            <span className={styles.metaValue}>{svc.avgTime}</span>
-          </div>
-          <div className={`${styles.metaCol} ${styles.metaColBorder}`}>
-            <span className={styles.metaEmoji}>💰</span>
-            <span className={styles.metaLabel}>Price Range</span>
-            <span className={styles.metaValue}>{svc.price}</span>
-          </div>
-          <div className={styles.metaCol}>
-            <span className={styles.metaEmoji}>📋</span>
-            <span className={styles.metaLabel}>Bookings</span>
-            <span className={styles.metaValue}>{svc.bookings}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Card Footer */}
-      <div className={styles.cardFooter}>
-        <button
-          className={styles.ctaBtn}
-          onClick={() => navigate('/chat')}
-          aria-label={`Book ${svc.label}`}
-        >
-          {svc.label} Book Karein
-          <ArrowRightIcon />
-        </button>
       </div>
     </div>
   );
 }
 
-// ── Main Export ──────────────────────────────────────────────────────────────
+// ── Main Export with Carousel ────────────────────────────────────────────────
 
 export default function ServicesSection() {
   const navigate = useNavigate();
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // State for dynamic active services from DB
+  const [activeServiceKeys, setActiveServiceKeys] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getActiveServices()
+      .then((data) => {
+        if (mounted && data?.active_services) {
+          // Normalize to lowercase for robust matching
+          setActiveServiceKeys(data.active_services.map(k => k.toLowerCase()));
+        }
+      })
+      .catch((err) => console.error('Failed to fetch active services:', err));
+
+    return () => { mounted = false; };
+  }, []);
+
+  // Filter the hardcoded list based on DB availability.
+  // If activeServiceKeys is null (loading) or empty (error or no active providers), 
+  // we could optionally fallback to all, but let's filter if it's an array.
+  const displayedServices = useMemo(() => {
+    if (activeServiceKeys === null) return SERVICES; // show all while loading
+    // Filter to only those whose key is in the active list
+    const filtered = SERVICES.filter(svc => activeServiceKeys.includes(svc.key.toLowerCase()));
+    // Fallback to all if somehow the DB returned none or no matches, to avoid empty section
+    return filtered.length > 0 ? filtered : SERVICES;
+  }, [activeServiceKeys]);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+
+    // Calculate active dot
+    const cardWidth = el.querySelector(`.${styles.card}`)?.offsetWidth || 320;
+    const gap = 20;
+    const newIndex = Math.round(el.scrollLeft / (cardWidth + gap));
+    setActiveIndex(newIndex);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    checkScroll();
+    return () => el.removeEventListener('scroll', checkScroll);
+  }, []);
+
+  const scroll = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = el.querySelector(`.${styles.card}`)?.offsetWidth || 320;
+    el.scrollBy({ left: dir === 'left' ? -cardWidth - 20 : cardWidth + 20, behavior: 'smooth' });
+  };
+
+  const scrollToDot = (index) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = el.querySelector(`.${styles.card}`)?.offsetWidth || 320;
+    const gap = 20;
+    el.scrollTo({ left: index * (cardWidth + gap), behavior: 'smooth' });
+  };
 
   return (
     <section className={styles.section} id="services">
-      {/* Radial glow overlay */}
-      <div className={styles.glowOverlay} aria-hidden="true" />
+      {/* Glow orbs */}
+      <div className={styles.glowOrb1} aria-hidden="true" />
+      <div className={styles.glowOrb2} aria-hidden="true" />
 
       <div className={styles.inner}>
         {/* Header */}
@@ -208,10 +219,43 @@ export default function ServicesSection() {
           </p>
         </div>
 
-        {/* Cards */}
-        <div className={styles.grid}>
-          {SERVICES.map((svc) => (
-            <ServiceCard key={svc.key} svc={svc} navigate={navigate} />
+        {/* Carousel wrapper */}
+        <div className={styles.carouselWrap}>
+          {/* Left arrow */}
+          {canScrollLeft && (
+            <button className={`${styles.arrowBtn} ${styles.arrowLeft}`} onClick={() => scroll('left')} aria-label="Scroll left">
+              <ChevronIcon direction="left" />
+            </button>
+          )}
+
+          {/* Scroll track */}
+          <div className={styles.scrollTrack} ref={scrollRef}>
+            {displayedServices.map((svc) => (
+              <ServiceCard key={svc.key} svc={svc} navigate={navigate} />
+            ))}
+          </div>
+
+          {/* Right arrow */}
+          {canScrollRight && (
+            <button className={`${styles.arrowBtn} ${styles.arrowRight}`} onClick={() => scroll('right')} aria-label="Scroll right">
+              <ChevronIcon direction="right" />
+            </button>
+          )}
+
+          {/* Fade edges */}
+          <div className={styles.fadeLeft} aria-hidden="true" />
+          <div className={styles.fadeRight} aria-hidden="true" />
+        </div>
+
+        {/* Carousel Dots */}
+        <div className={styles.dotsWrap}>
+          {displayedServices.map((_, idx) => (
+            <button
+              key={idx}
+              className={`${styles.dot} ${idx === activeIndex ? styles.dotActive : ''}`}
+              onClick={() => scrollToDot(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
           ))}
         </div>
       </div>
