@@ -24,9 +24,11 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+from typing import TypedDict, NotRequired
 from langchain.agents import create_agent
+from langchain.agents.middleware.types import AgentState
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, RemoveMessage, ToolMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.config import (
@@ -41,8 +43,14 @@ from app.core.logger import write_audit_log
 from app.services.tools import BOOKING_TOOLS, set_session_id
 from app.services.database import commit_booking, get_db_session
 from app.models import BookingSession# ─────────────────────────────────────────────
-# AGENT BUILDER
+# AGENT STATE & BUILDER
 # ─────────────────────────────────────────────
+
+class CustomAgentState(AgentState):
+    current_service: NotRequired[str | None]
+    current_location: NotRequired[str | None]
+    current_coords: NotRequired[dict | None]
+
 
 def _trim_messages(state):
     """
@@ -78,7 +86,140 @@ def _get_agent(checkpointer):
         tools=BOOKING_TOOLS,
         checkpointer=checkpointer,
         system_prompt=REACT_SYSTEM_PROMPT,
+        state_schema=CustomAgentState,
     )
+
+# ─────────────────────────────────────────────
+# MEMORY AND INTENT HELPERS
+# ─────────────────────────────────────────────
+
+def _truncate_old_tool_messages(messages: list, keep_recent_count: int = 2) -> list:
+    """
+    Truncate heavy provider JSON lists in older ToolMessages to save context window.
+    Only keeps full detail for the last `keep_recent_count` tool messages.
+    """
+    tool_indices = [i for i, msg in enumerate(messages) if getattr(msg, "type", None) == "tool"]
+    
+    if len(tool_indices) > keep_recent_count:
+        truncate_indices = tool_indices[:-keep_recent_count]
+        for idx in truncate_indices:
+            msg = messages[idx]
+            try:
+                content = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
+                if isinstance(content, dict) and "providers" in content:
+                    providers = content.get("providers", [])
+                    service_type = content.get("service_type", "Unknown")
+                    count = len(providers)
+                    # Replace with a compact summary, preserving ID for replacement
+                    summary = {
+                        "message": f"Found {count} active {service_type} providers in this search.",
+                        "count": count,
+                        "service_type": service_type,
+                        # Keep only a minimal skeleton list
+                        "providers": [{"id": p["id"], "name": p["name"], "rating": p["rating"]} for p in providers[:1]]
+                    }
+                    messages[idx] = ToolMessage(
+                        id=msg.id,
+                        content=json.dumps(summary),
+                        tool_call_id=msg.tool_call_id,
+                        status=msg.status
+                    )
+            except Exception:
+                pass
+    return messages
+
+def _pair_safe_trim(messages: list) -> list:
+    """
+    Trim conversation to keep the last 12 messages.
+    Ensures we don't sever the link between AIMessage and ToolMessage.
+    """
+    # 1. Truncate heavy JSON in older tool messages
+    messages = _truncate_old_tool_messages(list(messages), keep_recent_count=2)
+    
+    if len(messages) <= 12:
+        return messages
+        
+    cut_idx = len(messages) - 12
+    trimmed = list(messages[cut_idx:])
+    
+    # Boundary check: If trimmed[0] is a ToolMessage, we must include its parent AIMessage
+    while len(trimmed) > 0 and getattr(trimmed[0], "type", None) == "tool":
+        cut_idx -= 1
+        if cut_idx >= 0:
+            trimmed.insert(0, messages[cut_idx])
+        else:
+            break
+            
+    return trimmed
+
+def _get_locked_context_message(state_values: dict) -> SystemMessage | None:
+    """
+    Construct a SystemMessage with the locked intent coordinates and service type.
+    """
+    svc = state_values.get("current_service")
+    loc = state_values.get("current_location")
+    coords = state_values.get("current_coords")
+    
+    locked_context = []
+    if svc:
+        locked_context.append(f"current_service: {svc}")
+    if loc:
+        locked_context.append(f"current_location: {loc}")
+    if coords:
+        locked_context.append(f"current_coords: {coords}")
+        
+    if locked_context:
+        content = (
+            "[LOCKED CONTEXT]\n"
+            "The following parameters are locked for the current request. "
+            "Prioritize these parameters for all provider queries and reasoning. "
+            "Do not change or lose these unless the user explicitly requests a different service or location:\n"
+            + "\n".join(locked_context)
+        )
+        return SystemMessage(content=content, id="locked_context")
+    return None
+
+async def _update_intent_state(agent, config, messages):
+    """
+    Scan conversation messages for successful tool runs and update intent slots in state.
+    """
+    state = await agent.aget_state(config)
+    current_service = state.values.get("current_service")
+    current_location = state.values.get("current_location")
+    current_coords = state.values.get("current_coords")
+    
+    # Map tool_call_id to content
+    tool_responses = {}
+    for msg in messages:
+        if getattr(msg, "type", None) == "tool":
+            try:
+                content = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
+                tool_responses[msg.tool_call_id] = content
+            except Exception:
+                pass
+                
+    for msg in messages:
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            for tc in msg.tool_calls:
+                name = tc.get("name")
+                args = tc.get("args") or {}
+                tc_id = tc.get("id")
+                
+                # Check response
+                response = tool_responses.get(tc_id)
+                if response and "error" not in response:
+                    if name == "geocode_location":
+                        current_location = args.get("location_text")
+                        current_coords = {"lat": response.get("lat"), "lon": response.get("lon")}
+                    elif name == "query_providers" or name == "search_nearby_providers":
+                        current_service = args.get("service_type")
+                        
+    # Update the state back to SQLite
+    await agent.aupdate_state(config, {
+        "current_service": current_service,
+        "current_location": current_location,
+        "current_coords": current_coords
+    })
 
 # ─────────────────────────────────────────────
 # PHASE 1 — FIND PROVIDERS
@@ -125,10 +266,35 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
     async with AsyncSqliteSaver.from_conn_string(str(DB_PATH)) as checkpointer:
         agent = _get_agent(checkpointer)
 
+        # ── Apply Pair-Safe Trimmer and Locked Context System Message ──
+        state = await agent.aget_state(config)
+        messages = state.values.get("messages", [])
+        
+        # Filter out previous locked_context message from history
+        history_msgs = [m for m in messages if getattr(m, "id", None) != "locked_context"]
+        
+        # Trim history to keep last 12 messages safely
+        trimmed_msgs = _pair_safe_trim(history_msgs)
+        
+        # Generate new locked context system message based on current state slots
+        locked_msg = _get_locked_context_message(state.values)
+        if locked_msg:
+            trimmed_msgs.insert(0, locked_msg)
+            
+        # Clean up database checkpoint by sending RemoveMessages for trimmed/truncated logs
+        trimmed_ids = {m.id for m in trimmed_msgs if getattr(m, "id", None)}
+        removals = [RemoveMessage(id=m.id) for m in messages if getattr(m, "id", None) and m.id not in trimmed_ids]
+        
+        if removals or trimmed_msgs:
+            await agent.aupdate_state(config, {"messages": removals + trimmed_msgs}, as_node="model")
+
         result = await agent.ainvoke(
             {"messages": [HumanMessage(content=user_prompt)]},
             config=config,
         )
+
+        # ── Update intent slots based on current turn tool results ──
+        await _update_intent_state(agent, config, result["messages"])
 
     # ── Extract results from the conversation ─────────────────────
     messages = result["messages"]
@@ -373,6 +539,9 @@ async def run_confirm_booking(session_id: str, approved_provider_ids: list[int])
         )
         if booking_session:
             booking_session.status = "confirmed"
+            if booked:
+                booking_session.confirmed_provider_id = booked[0]["id"]
+            booking_session.confirmed_at = datetime.now(tz=timezone.utc)
             session.commit()
 
     # ── Build confirmation message ────────────────────────────────
