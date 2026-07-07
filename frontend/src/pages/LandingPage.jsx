@@ -1,9 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import ServicesSection from '../components/landing/ServicesSection';
+import { getPublicStats } from '../api/client';
 import styles from './LandingPage.module.css';
 
 export default function LandingPage() {
+  const [stats, setStats] = useState({
+    providers_registered: 0,
+    bookings_completed: 0,
+    average_rating: 0,
+  });
+
+  useEffect(() => {
+    getPublicStats()
+      .then((data) => setStats(data))
+      .catch((err) => console.error("Failed to fetch public stats:", err));
+  }, []);
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -74,17 +88,17 @@ export default function LandingPage() {
         {/* Stats Row */}
         <div className={styles.statsRow}>
           <div className={styles.stat}>
-            <span className={styles.statNum}>500+</span>
+            <span className={styles.statNum}>{stats.providers_registered}+</span>
             <span className={styles.statLabel}>Providers Registered</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
-            <span className={styles.statNum}>2,000+</span>
+            <span className={styles.statNum}>{stats.bookings_completed}+</span>
             <span className={styles.statLabel}>Bookings Completed</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.stat}>
-            <span className={styles.statNum}>4.8★</span>
+            <span className={styles.statNum}>{stats.average_rating}★</span>
             <span className={styles.statLabel}>Average Rating</span>
           </div>
         </div>
