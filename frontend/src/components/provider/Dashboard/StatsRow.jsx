@@ -26,34 +26,25 @@ export default function StatsRow() {
 
   return (
     <div className={styles.grid}>
-      <div className={styles.card}>
-        <div className={[styles.icon, styles.greenIcon].join(' ')}>🔨</div>
-        <div className={styles.info}>
-          <span className={styles.label}>Active Jobs</span>
-          <span className={[styles.value, styles.greenText].join(' ')}>
-            {loading ? '—' : displayStats.activeJobs}
-          </span>
-        </div>
+      <div className={[styles.card, styles.greenCard].join(' ')}>
+        <span className={[styles.value, styles.greenText].join(' ')}>
+          {loading ? '—' : displayStats.activeJobs}
+        </span>
+        <span className={styles.label}>Active Jobs</span>
       </div>
 
-      <div className={styles.card}>
-        <div className={[styles.icon, styles.blueIcon].join(' ')}>✅</div>
-        <div className={styles.info}>
-          <span className={styles.label}>Completed</span>
-          <span className={[styles.value, styles.blueText].join(' ')}>
-            {loading ? '—' : displayStats.completedJobs}
-          </span>
-        </div>
+      <div className={[styles.card, styles.blueCard].join(' ')}>
+        <span className={[styles.value, styles.blueText].join(' ')}>
+          {loading ? '—' : displayStats.completedJobs}
+        </span>
+        <span className={styles.label}>Completed</span>
       </div>
 
-      <div className={styles.card}>
-        <div className={[styles.icon, styles.goldIcon].join(' ')}>⭐</div>
-        <div className={styles.info}>
-          <span className={styles.label}>Rating</span>
-          <span className={[styles.value, styles.goldText].join(' ')}>
-            {loading ? '—' : displayStats.rating}
-          </span>
-        </div>
+      <div className={[styles.card, styles.goldCard].join(' ')}>
+        <span className={[styles.value, styles.goldText].join(' ')}>
+          {loading ? '—' : displayStats.rating} <span className={styles.starIcon}>⭐</span>
+        </span>
+        <span className={styles.label}>Rating</span>
       </div>
     </div>
   );
