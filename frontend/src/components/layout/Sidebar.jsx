@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { mockChatHistory } from '../../data/mockData';
 import styles from './Sidebar.module.css';
@@ -8,6 +8,10 @@ import styles from './Sidebar.module.css';
  */
 export default function Sidebar({ isOpen, onClose }) {
   const { reset } = useChat();
+  const { user } = useAuth();
+  
+  const userName = user?.username || 'Guest User';
+  const initial = userName.substring(0, 2).toUpperCase();
 
   return (
     <>
@@ -20,7 +24,6 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <aside className={[styles.sidebar, isOpen ? styles.sidebarOpen : ''].filter(Boolean).join(' ')}>
         <div className={styles.header}>
-          <Link to="/" className={styles.backLink}>← Back</Link>
           <button className={styles.newBtn} onClick={() => { reset(); onClose?.(); }}>
             + New Chat
           </button>
@@ -45,8 +48,8 @@ export default function Sidebar({ isOpen, onClose }) {
 
         <div className={styles.footer}>
           <div className={styles.user}>
-            <div className={styles.avatar}>GU</div>
-            <span className={styles.userName}>Guest User</span>
+            <div className={styles.avatar}>{initial}</div>
+            <span className={styles.userName}>{userName}</span>
           </div>
           <button className={styles.settingsBtn} aria-label="Settings">⚙️</button>
         </div>
