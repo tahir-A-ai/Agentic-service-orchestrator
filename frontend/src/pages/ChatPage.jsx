@@ -8,7 +8,7 @@ import { useChat } from '../context/ChatContext';
 import styles from './ChatPage.module.css';
 
 export default function ChatPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const { findProviders, confirm } = useBooking();
   const { isThinking } = useChat();
   const navigate = useNavigate();
@@ -22,18 +22,14 @@ export default function ChatPage() {
 
   return (
     <div className={styles.layout}>
-      {/* Mobile Header (Hamburger) */}
-      <div className={styles.mobileHeader}>
-        <button className={styles.menuBtn} onClick={() => setSidebarOpen(true)}>
-          ☰
-        </button>
-        <span className={styles.logoText}>Karigar.pk</span>
-      </div>
-
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className={styles.main}>
-        <ChatWindow onConfirm={handleConfirm} />
+        <ChatWindow 
+          onConfirm={handleConfirm} 
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+          onSend={findProviders}
+        />
         <InputBar onSend={findProviders} disabled={isThinking} />
       </main>
     </div>
