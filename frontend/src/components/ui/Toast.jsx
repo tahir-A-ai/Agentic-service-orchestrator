@@ -25,6 +25,16 @@ export default function Toast({
     return () => clearTimeout(timer);
   }, [duration]);
 
+  useEffect(() => {
+    let unmountTimer;
+    if (exiting) {
+      unmountTimer = setTimeout(() => {
+        onDismiss?.();
+      }, 300); // 250ms animation + 50ms buffer
+    }
+    return () => clearTimeout(unmountTimer);
+  }, [exiting, onDismiss]);
+
   const handleAnimationEnd = () => {
     if (exiting) onDismiss?.();
   };
