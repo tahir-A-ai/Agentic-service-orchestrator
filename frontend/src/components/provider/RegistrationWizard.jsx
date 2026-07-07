@@ -13,13 +13,14 @@ const STEPS = ['Personal Info', 'Service Details', 'Review'];
 
 export default function RegistrationWizard() {
   const { step, next, back } = useMultiStep(STEPS.length);
-  const { loginAsProvider } = useAuth();
+  const { signup, login } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    password: '',
     cnic: '',
     serviceType: '',
     sector: '',
@@ -41,6 +42,7 @@ export default function RegistrationWizard() {
     const errs = {};
     if (!formData.name) errs.name = 'Naam likhna zaroori hai';
     if (!formData.email) errs.email = 'Email zaroori hai';
+    if (!formData.password || formData.password.length < 6) errs.password = 'Password kam az kam 6 characters';
     if (!formData.phone || formData.phone.length !== 10) errs.phone = '10 digits ka number likhein';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -59,20 +61,30 @@ export default function RegistrationWizard() {
     if (step === 1 && validateStep2()) next();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.terms) {
       setErrors({ terms: 'Terms se agree karna zaroori hai' });
       return;
     }
     
-    // Mock successful registration & login
-    loginAsProvider({
-      name: formData.name,
-      service: formData.serviceType,
-      sector: formData.sector,
-    });
-    navigate('/provider/dashboard');
+    try {
+      await signup({
+        username: formData.email,
+        email: formData.email,
+        password: formData.password,
+        role: 'provider',
+        name: formData.name,
+        service_type: formData.serviceType,
+        location: formData.sector,
+        latitude: 33.6844, // Mock coordinate for demo
+        longitude: 73.0479, // Mock coordinate for demo
+      });
+      await login(formData.email, formData.password);
+      navigate('/provider/dashboard');
+    } catch (err) {
+      setErrors({ form: err?.body?.detail?.message || err.message || 'Registration failed.' });
+    }
   };
 
   return (
@@ -80,6 +92,8 @@ export default function RegistrationWizard() {
       <StepIndicator currentStep={step} steps={STEPS} />
 
       <form onSubmit={handleSubmit}>
+        {errors.form && <div className={styles.formError}>{errors.form}</div>}
+        
         {/* STEP 1 */}
         {step === 0 && (
           <div className={styles.stepContent}>
@@ -96,6 +110,13 @@ export default function RegistrationWizard() {
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
               error={errors.email}
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              error={errors.password}
             />
             <Input
               label="Phone Number"
