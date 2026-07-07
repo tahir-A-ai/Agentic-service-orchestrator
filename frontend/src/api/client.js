@@ -28,41 +28,26 @@ async function withTimeout(promise, ms) {
 }
 
 async function request(method, path, body) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
+  const token = localStorage.getItem('karigar_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
 
   const res = await withTimeout(fetch(`${API_BASE}${path}`, opts), TIMEOUT_MS);
-
   const json = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    throw new ApiError(res.status, json);
-  }
-
+  if (!res.ok) throw new ApiError(res.status, json);
   return json;
 }
 
 /* ── Public API ───────────────────────────────── */
 
-/**
- * Phase 1 — Ask the ReAct agent to find providers.
- * @param {string} userPrompt
- * @param {string|null} sessionId — pass existing ID for follow-up messages
- */
 export async function bookService(userPrompt, sessionId = null) {
   const payload = { user_prompt: userPrompt };
   if (sessionId) payload.session_id = sessionId;
   return request('POST', '/api/v1/book-service', payload);
 }
 
-/**
- * Phase 2 — Confirm booking with approved provider IDs.
- * @param {string} sessionId
- * @param {number[]} approvedProviderIds
- */
 export async function confirmBooking(sessionId, approvedProviderIds) {
   return request('POST', '/api/v1/confirm-booking', {
     session_id: sessionId,
@@ -70,11 +55,28 @@ export async function confirmBooking(sessionId, approvedProviderIds) {
   });
 }
 
-/**
- * Health check.
- */
 export async function checkHealth() {
   return request('GET', '/health');
+}
+
+export async function loginApi(username, password) {
+  return request('POST', '/api/v1/auth/login', { username, password });
+}
+
+export async function signupApi(payload) {
+  return request('POST', '/api/v1/auth/signup', payload);
+}
+
+export async function getPublicStats() {
+  return request('GET', '/api/v1/stats/public');
+}
+
+export async function getProviderStats(providerId) {
+  return request('GET', `/api/v1/stats/provider/${providerId}`);
+}
+
+export async function getActiveServices() {
+  return request('GET', '/api/v1/stats/services');
 }
 
 /**
@@ -104,5 +106,5 @@ export function getErrorMessage(err) {
     return 'Internet connection check karein.';
   }
 
-  return 'Kuch galat ho gaya. Dobara try karein.';
+  return 'System mein masla hain. Dobara try karein.';
 }
