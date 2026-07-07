@@ -122,3 +122,54 @@ class ConfirmBookingResponse(BaseModel):
         ),
     )
     audit_log_path: str | None = None
+
+
+# ─────────────────────────────────────────────
+# AUTH SCHEMAS
+# ─────────────────────────────────────────────
+
+class SignupRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(..., min_length=5, max_length=100)
+    password: str = Field(..., min_length=4, max_length=50)
+    role: Literal["customer", "provider"]
+    
+    # Provider-specific fields (optional for signup request, required if role is provider)
+    name: str | None = None
+    service_type: str | None = None
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: str
+    username: str
+    provider_id: int | None = None
+
+
+# ─────────────────────────────────────────────
+# STATS SCHEMAS
+# ─────────────────────────────────────────────
+
+class PublicStatsResponse(BaseModel):
+    providers_registered: int
+    bookings_completed: int
+    average_rating: float
+
+
+class ProviderStatsResponse(BaseModel):
+    active_jobs: int
+    completed_jobs: int
+    rating: float
+
+
+class ActiveServicesResponse(BaseModel):
+    active_services: list[str]
