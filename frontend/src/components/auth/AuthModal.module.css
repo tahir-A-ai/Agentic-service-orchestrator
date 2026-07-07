@@ -1,0 +1,545 @@
+/* AuthModal.module.css — global design system tokens */
+
+/* ── Backdrop ───────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: backdropIn 250ms ease forwards;
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Panel ──────────────────────────── */
+.panel {
+  position: relative;
+  background: #161B22;
+  border: 1px solid #30363D;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(48, 54, 61, 0.5);
+  animation: panelIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Close button ───────────────────── */
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.closeBtn:hover {
+  background: #1C2128;
+}
+
+/* ── View fade animation ────────────── */
+.viewFade {
+  animation: fadeSlidIn 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeSlidIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Header variants ────────────────── */
+.headerCenter {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.iconBoxGreen {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  background: #22C55E;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #F0F6FC;
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
+}
+
+.titleSm {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F0F6FC;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #8B949E;
+  margin: 0;
+}
+
+.subtitleSm {
+  font-size: 13px;
+  color: #8B949E;
+  margin: 4px 0 20px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #8B949E;
+  margin-bottom: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 200ms ease;
+}
+
+.backLink:hover {
+  color: #F0F6FC;
+}
+
+/* ── Role Cards ─────────────────────── */
+.roleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.roleCardGreen,
+.roleCardBlue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: center;
+  background: none;
+}
+
+.roleCardGreen {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.roleCardGreen:hover {
+  border-color: #22C55E;
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.12);
+}
+
+.roleCardBlue {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.roleCardBlue:hover {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.12);
+}
+
+.roleIconGreen,
+.roleIconBlue {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.roleIconGreen {
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.roleIconBlue {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.roleTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #F0F6FC;
+}
+
+.roleDesc {
+  font-size: 11px;
+  color: #8B949E;
+  line-height: 1.4;
+}
+
+/* ── Floating Input ─────────────────── */
+.fieldWrap {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.inputContainer {
+  position: relative;
+  background: #1C2128;
+  border: 1px solid #30363D;
+  border-radius: 8px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.inputContainer.inputFocused {
+  border-color: #22C55E;
+}
+
+.inputContainer.inputError {
+  border-color: #F97316;
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 16px 14px;
+  font-size: 14px;
+  color: #F0F6FC;
+  background: transparent;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: normal;
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.inputLifted {
+  padding: 22px 14px 4px;
+}
+
+.floatLabel {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #8B949E;
+  pointer-events: none;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floatLabelLifted {
+  top: 6px;
+  transform: translateY(0);
+  font-size: 11px;
+  font-weight: 500;
+  color: #8B949E;
+}
+
+/* When the input is focused, the lifted label becomes green */
+.inputContainer.inputFocused .floatLabelLifted {
+  color: #22C55E;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+}
+
+.eyeBtn:hover {
+  opacity: 1;
+}
+
+.errorText {
+  display: block;
+  font-size: 11px;
+  color: #F97316;
+  margin: 4px 0 0 2px;
+  padding-left: 2px;
+}
+
+.formError {
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #F97316;
+  margin-bottom: 16px;
+}
+
+/* ── Form ───────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Buttons ────────────────────────── */
+.btnGreen,
+.btnBlue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0D1117;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.btnGreen {
+  background: #22C55E;
+}
+
+.btnGreen:hover:not(:disabled) {
+  background: #16A34A;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+}
+
+.btnBlue {
+  background: #3B82F6;
+}
+
+.btnBlue:hover:not(:disabled) {
+  background: #2563EB;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+}
+
+.btnGreen:disabled,
+.btnBlue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 0;
+}
+
+.forgotBtn {
+  font-size: 11px;
+  color: #484F58;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 200ms ease;
+}
+
+.forgotBtn:hover {
+  color: #8B949E;
+}
+
+/* ── Tab Switcher ───────────────────── */
+.tabWrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #1C2128;
+  padding: 5px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #8B949E;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.tabActiveGreen {
+  background: #22C55E;
+  color: #0D1117;
+  font-weight: 600;
+}
+
+.tabActiveBlue {
+  background: #3B82F6;
+  color: #0D1117;
+  font-weight: 600;
+}
+
+/* ── Login context hints ────────────── */
+.hintGreen,
+.hintBlue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  margin-bottom: 16px;
+}
+
+.hintGreen {
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+}
+
+.hintBlue {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+}
+
+/* ── Footer ─────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #21262D;
+}
+
+.footerMuted {
+  font-size: 12px;
+  color: #484F58;
+}
+
+.footerLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22C55E;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 200ms ease;
+}
+
+.footerLink:hover {
+  color: #16A34A;
+}
+
+/* ── Success view ───────────────────── */
+.successCenter {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.checkSvg {
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.checkCircle {
+  animation: drawCircle 600ms 200ms ease forwards;
+  stroke-dashoffset: 176;
+}
+
+@keyframes drawCircle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.checkMark {
+  animation: drawCheck 400ms 700ms ease forwards;
+  stroke-dashoffset: 200;
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Mobile responsive ──────────────── */
+@media (max-width: 500px) {
+  .panel {
+    max-width: 95%;
+    padding: 24px 20px 20px;
+  }
+
+  .roleGrid {
+    grid-template-columns: 1fr;
+  }
+}
