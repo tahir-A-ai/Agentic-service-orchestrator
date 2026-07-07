@@ -18,8 +18,9 @@ belong here. If you are adding any of that here you are in the wrong file.
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from app.config import (
     API_DESCRIPTION,
@@ -34,9 +35,17 @@ from app.schemas import (
     FindProvidersResponse,
     ProviderDetail,
     ServiceRequest,
+    SignupRequest,
+    LoginRequest,
+    AuthResponse,
+    PublicStatsResponse,
+    ProviderStatsResponse,
+    ActiveServicesResponse,
 )
-from app.services.database import init_db
+from app.services.database import init_db, get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
+from app.services.auth import signup_user, login_user, get_current_user_from_credentials
+from app.services.stats import get_public_stats, get_provider_stats, get_active_services
 
 
 # ─────────────────────────────────────────────
@@ -78,6 +87,85 @@ app.add_middleware(
 # ─────────────────────────────────────────────
 
 @app.post(
+    "/api/v1/auth/signup",
+    status_code=201,
+    summary="Register a new user (customer or provider)",
+    tags=["Auth"],
+)
+async def signup(request: SignupRequest):
+    """
+    Sign up a user. If role is provider, creates a linked provider entry.
+    """
+    with get_db_session() as db:
+        user = signup_user(db, request.model_dump())
+        return {"message": "User successfully registered.", "username": user.username}
+
+
+@app.post(
+    "/api/v1/auth/login",
+    response_model=AuthResponse,
+    summary="Login and get JWT token",
+    tags=["Auth"],
+)
+async def login(request: LoginRequest) -> AuthResponse:
+    """
+    Login using username/password. Returns access token, role, and provider_id (if provider).
+    """
+    with get_db_session() as db:
+        res = login_user(db, request.model_dump())
+        return AuthResponse(**res)
+
+
+# ─────────────────────────────────────────────
+# STATS ROUTES
+# ─────────────────────────────────────────────
+
+@app.get(
+    "/api/v1/stats/public",
+    response_model=PublicStatsResponse,
+    summary="Get landing page public statistics",
+    tags=["Stats"],
+)
+async def public_stats() -> PublicStatsResponse:
+    """
+    Get live aggregates of registered providers, completed bookings, and average rating.
+    """
+    with get_db_session() as db:
+        res = get_public_stats(db)
+        return PublicStatsResponse(**res)
+
+
+@app.get(
+    "/api/v1/stats/provider/{provider_id}",
+    response_model=ProviderStatsResponse,
+    summary="Get live metrics for a specific provider dashboard",
+    tags=["Stats"],
+)
+async def provider_stats(provider_id: int) -> ProviderStatsResponse:
+    """
+    Get live stats for a specific provider (active/completed jobs, rating).
+    """
+    with get_db_session() as db:
+        res = get_provider_stats(db, provider_id)
+        return ProviderStatsResponse(**res)
+
+
+@app.get(
+    "/api/v1/stats/services",
+    response_model=ActiveServicesResponse,
+    summary="Get a list of active service types",
+    tags=["Stats"],
+)
+async def active_services() -> ActiveServicesResponse:
+    """
+    Get a list of all service types that currently have active providers.
+    """
+    with get_db_session() as db:
+        services = get_active_services(db)
+        return ActiveServicesResponse(active_services=services)
+
+
+@app.post(
     "/api/v1/book-service",
     response_model=FindProvidersResponse,
     summary="Find available service providers (Phase 1)",
@@ -88,7 +176,7 @@ app.add_middleware(
     ),
     tags=["Booking"],
 )
-async def book_service(request: ServiceRequest) -> FindProvidersResponse:
+async def book_service(request: ServiceRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> FindProvidersResponse:
     """
     Phase 1 — Agent discovers providers, returns candidates for approval.
     """
@@ -121,7 +209,7 @@ async def book_service(request: ServiceRequest) -> FindProvidersResponse:
     ),
     tags=["Booking"],
 )
-async def confirm_booking_route(request: ConfirmBookingRequest) -> ConfirmBookingResponse:
+async def confirm_booking_route(request: ConfirmBookingRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> ConfirmBookingResponse:
     """
     Phase 2 — Commits bookings for user-approved providers.
     """
