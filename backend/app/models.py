@@ -41,6 +41,31 @@ class Provider(Base):
         return f"<Provider(id={self.id}, name='{self.name}', service_type='{self.service_type}')>"
 
 
+class User(Base):
+    """
+    A registered user — either a customer or a provider.
+
+    Providers link to the providers table via provider_id.
+    Customers have provider_id = NULL.
+
+    Passwords are stored as plain text for MVP simplicity.
+    Authentication is handled via JWT tokens.
+    """
+
+    __tablename__ = "users"
+
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    username    = Column(String(100), nullable=False, unique=True, index=True)
+    email       = Column(String(200), nullable=False, unique=True, index=True)
+    password    = Column(String(255), nullable=False)
+    role        = Column(String(20), nullable=False, index=True)  # "customer" | "provider"
+    provider_id = Column(Integer, nullable=True)  # links to providers.id for role="provider"
+    created_at  = Column(DateTime, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, username='{self.username}', role='{self.role}')>"
+
+
 class LocationCache(Base):
     """
     Cache of geocoded locations to avoid redundant Nominatim API calls.
@@ -81,10 +106,13 @@ class BookingSession(Base):
 
     __tablename__ = "booking_sessions"
 
-    id         = Column(String(36), primary_key=True)     # UUID4 = session_id
-    candidates = Column(Text, nullable=False)              # JSON blob of ranked candidates
-    created_at = Column(DateTime, nullable=False)
-    status     = Column(String(20), nullable=False, default="pending")
+    id                    = Column(String(36), primary_key=True)  # UUID4 = session_id
+    candidates            = Column(Text, nullable=False)           # JSON blob of ranked candidates
+    created_at            = Column(DateTime, nullable=False)
+    status                = Column(String(20), nullable=False, default="pending", index=True)
+    confirmed_provider_id = Column(Integer, nullable=True)         # which provider was booked
+    confirmed_at          = Column(DateTime, nullable=True)        # when Phase 2 completed
 
     def __repr__(self) -> str:
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"
+
