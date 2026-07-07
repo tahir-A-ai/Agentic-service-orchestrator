@@ -9,6 +9,7 @@ import ConfirmedPage from './pages/ConfirmedPage';
 import ProviderRegisterPage from './pages/ProviderRegisterPage';
 import DashboardLayout from './components/provider/Dashboard/DashboardLayout';
 import { OverviewTab, ActiveJobsTab, CompletedJobsTab, ProfileTab } from './pages/ProviderDashboardPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -22,11 +23,23 @@ function App() {
               <Route path="/provider/register" element={<ProviderRegisterPage />} />
               
               {/* Chat Flow */}
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/confirmed" element={<ConfirmedPage />} />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/confirmed" element={
+                <ProtectedRoute>
+                  <ConfirmedPage />
+                </ProtectedRoute>
+              } />
 
               {/* Protected Dashboard Routes */}
-              <Route path="/provider/dashboard" element={<DashboardLayout />}>
+              <Route path="/provider/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
                 <Route index element={<OverviewTab />} />
                 <Route path="active" element={<ActiveJobsTab />} />
                 <Route path="completed" element={<CompletedJobsTab />} />
