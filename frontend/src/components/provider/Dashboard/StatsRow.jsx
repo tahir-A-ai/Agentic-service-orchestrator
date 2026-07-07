@@ -1,8 +1,28 @@
-import { mockProviderStats } from '../../../data/mockData';
+import { useState, useEffect } from 'react';
+import { getProviderStats } from '../../../api/client';
+import { useAuth } from '../../../context/AuthContext';
 import styles from './StatsRow.module.css';
 
 export default function StatsRow() {
-  const { activeJobs, completedJobs, rating } = mockProviderStats;
+  const { user } = useAuth();
+  const [stats, setStats] = useState({ active_jobs: 0, completed_jobs: 0, rating: 0.0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.providerId) { setLoading(false); return; }
+    let cancelled = false;
+    getProviderStats(user.providerId)
+      .then(data => { if (!cancelled) setStats(data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.providerId]);
+
+  const displayStats = {
+    activeJobs: stats.active_jobs,
+    completedJobs: stats.completed_jobs,
+    rating: stats.rating?.toFixed(1) || '0.0',
+  };
 
   return (
     <div className={styles.grid}>
@@ -10,7 +30,9 @@ export default function StatsRow() {
         <div className={[styles.icon, styles.greenIcon].join(' ')}>🔨</div>
         <div className={styles.info}>
           <span className={styles.label}>Active Jobs</span>
-          <span className={[styles.value, styles.greenText].join(' ')}>{activeJobs}</span>
+          <span className={[styles.value, styles.greenText].join(' ')}>
+            {loading ? '—' : displayStats.activeJobs}
+          </span>
         </div>
       </div>
 
@@ -18,7 +40,9 @@ export default function StatsRow() {
         <div className={[styles.icon, styles.blueIcon].join(' ')}>✅</div>
         <div className={styles.info}>
           <span className={styles.label}>Completed</span>
-          <span className={[styles.value, styles.blueText].join(' ')}>{completedJobs}</span>
+          <span className={[styles.value, styles.blueText].join(' ')}>
+            {loading ? '—' : displayStats.completedJobs}
+          </span>
         </div>
       </div>
 
@@ -26,7 +50,9 @@ export default function StatsRow() {
         <div className={[styles.icon, styles.goldIcon].join(' ')}>⭐</div>
         <div className={styles.info}>
           <span className={styles.label}>Rating</span>
-          <span className={[styles.value, styles.goldText].join(' ')}>{rating}</span>
+          <span className={[styles.value, styles.goldText].join(' ')}>
+            {loading ? '—' : displayStats.rating}
+          </span>
         </div>
       </div>
     </div>
