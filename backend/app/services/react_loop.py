@@ -286,7 +286,7 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
         removals = [RemoveMessage(id=m.id) for m in messages if getattr(m, "id", None) and m.id not in trimmed_ids]
         
         if removals or trimmed_msgs:
-            await agent.aupdate_state(config, {"messages": removals + trimmed_msgs}, as_node="model")
+            await agent.aupdate_state(config, {"messages": removals + trimmed_msgs})
 
         result = await agent.ainvoke(
             {"messages": [HumanMessage(content=user_prompt)]},
@@ -310,6 +310,10 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
             break
 
     for msg in messages:
+        if msg.type == "human":
+            candidates.clear()
+            clarification_question = None
+
         # Count LLM reasoning steps
         if hasattr(msg, "tool_calls") and msg.tool_calls:
             iteration_count += 1
