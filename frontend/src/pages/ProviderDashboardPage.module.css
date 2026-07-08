@@ -35,9 +35,32 @@
 
 .profileForm {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xl);
-  padding: var(--space-6);
+  padding: 0;
+}
+
+.availabilityToggle {
+  margin-bottom: var(--space-6);
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.toggleLabel input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--accent-green);
+}
+
+.toggleText {
+  font-weight: 500;
 }
 
 .photoUpload {
