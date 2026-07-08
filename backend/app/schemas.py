@@ -100,6 +100,14 @@ class ConfirmBookingRequest(BaseModel):
         min_length=1,
         description="List of provider IDs the user has approved for booking.",
     )
+    exact_address: str = Field(
+        ...,
+        description="The customer's exact address (house/street).",
+    )
+    customer_notes: str | None = Field(
+        None,
+        description="Optional notes from the customer about the issue.",
+    )
 
 
 class ConfirmBookingResponse(BaseModel):
@@ -169,6 +177,32 @@ class ProviderStatsResponse(BaseModel):
     active_jobs: int
     completed_jobs: int
     rating: float
+
+# ─────────────────────────────────────────────
+# PROVIDER DASHBOARD
+# ─────────────────────────────────────────────
+
+class ProviderJob(BaseModel):
+    """Represents a job assigned to a provider."""
+    session_id: str
+    status: str
+    created_at: str
+    service_type: str
+    exact_address: str | None = None
+    customer_notes: str | None = None
+
+class ProviderJobsResponse(BaseModel):
+    jobs: list[ProviderJob]
+
+class UpdateJobStatusRequest(BaseModel):
+    status: Literal["In_Progress", "Completed", "Cancelled"]
+
+class UpdateAvailabilityRequest(BaseModel):
+    is_available: bool
+
+class ProviderAvailabilityResponse(BaseModel):
+    is_available: bool
+
 
 
 class ActiveServicesResponse(BaseModel):
