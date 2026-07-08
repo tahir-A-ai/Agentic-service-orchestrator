@@ -40,8 +40,8 @@ def get_public_stats(db: Session) -> dict:
 def get_provider_stats(db: Session, provider_id: int) -> dict:
     """
     Returns dashboard metrics for a specific provider:
-      - active_jobs: count of pending booking sessions for this provider
-      - completed_jobs: count of confirmed booking sessions for this provider
+      - active_jobs: count of pending or in-progress booking sessions for this provider
+      - completed_jobs: count of completed booking sessions for this provider
       - rating: the provider's current rating
     """
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
@@ -50,10 +50,13 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
 
     completed_jobs = db.query(func.count(BookingSession.id)).filter(
         BookingSession.confirmed_provider_id == provider_id,
-        BookingSession.status == "confirmed"
+        BookingSession.status == "Completed"
     ).scalar() or 0
 
-    active_jobs = 1 if provider.status == "Busy" else 0
+    active_jobs = db.query(func.count(BookingSession.id)).filter(
+        BookingSession.confirmed_provider_id == provider_id,
+        BookingSession.status.in_(["Pending_Acceptance", "In_Progress"])
+    ).scalar() or 0
 
     return {
         "active_jobs": active_jobs,
