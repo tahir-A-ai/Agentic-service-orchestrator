@@ -4,19 +4,19 @@ import { useAuth } from '../../../context/AuthContext';
 import styles from './StatsRow.module.css';
 
 export default function StatsRow() {
-  const { user } = useAuth();
+  const { providerProfile } = useAuth();
   const [stats, setStats] = useState({ active_jobs: 0, completed_jobs: 0, rating: 0.0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.providerId) { setLoading(false); return; }
+    if (!providerProfile?.id) { setLoading(false); return; }
     let cancelled = false;
-    getProviderStats(user.providerId)
+    getProviderStats(providerProfile.id)
       .then(data => { if (!cancelled) setStats(data); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [user?.providerId]);
+  }, [providerProfile?.id]);
 
   const displayStats = {
     activeJobs: stats.active_jobs,
