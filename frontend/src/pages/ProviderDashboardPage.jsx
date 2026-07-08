@@ -31,14 +31,15 @@ export function OverviewTab() {
 
   return (
     <div className={styles.tab}>
-      <h1 className={styles.title}>Dashboard Overview</h1>
+      <h1 className={styles.title}>Dashboard</h1>
+      <p className={styles.subtitle}>Aapki activity ka overview</p>
       <StatsRow />
 
       <h2 className={styles.sectionTitle}>Recent Bookings</h2>
       {mockActiveJobs.length > 0 ? (
         <div className={styles.jobList}>
           {mockActiveJobs.slice(0, 2).map(job => (
-            <JobCard key={job.id} job={job} />
+            <JobCard key={job.id} job={job} variant="compact" />
           ))}
         </div>
       ) : (
@@ -55,6 +56,7 @@ export function ActiveJobsTab() {
   return (
     <div className={styles.tab}>
       <h1 className={styles.title}>Active Jobs</h1>
+      <p className={styles.subtitle}>{mockActiveJobs.length} kaam chal raha hai</p>
       {mockActiveJobs.length > 0 ? (
         <div className={styles.jobList}>
           {mockActiveJobs.map(job => (
