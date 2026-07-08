@@ -42,7 +42,9 @@ from app.config import (
 from app.core.logger import write_audit_log
 from app.services.tools import BOOKING_TOOLS, set_session_id
 from app.services.database import commit_booking, get_db_session
-from app.models import BookingSession# ─────────────────────────────────────────────
+from app.models import BookingSession, Provider
+
+# ─────────────────────────────────────────────
 # AGENT STATE & BUILDER
 # ─────────────────────────────────────────────
 
@@ -368,6 +370,7 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
             if existing:
                 existing.candidates = json.dumps(candidates)
                 existing.status = "pending"
+                existing.created_at = datetime.now(tz=timezone.utc)
             else:
                 booking_session = BookingSession(
                     id=session_id,
@@ -399,22 +402,17 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
 # PHASE 2 — CONFIRM BOOKING
 # ─────────────────────────────────────────────
 
-async def run_confirm_booking(session_id: str, approved_provider_ids: list[int]) -> dict:
+async def run_confirm_booking(
+    session_id: str, 
+    approved_provider_ids: list[int],
+    exact_address: str,
+    customer_notes: str | None
+) -> dict:
     """
     Phase 2: Commit bookings for the user's approved providers.
 
     Loads the BookingSession created in Phase 1, validates TTL, then
-    attempts to atomically claim each approved provider via commit_booking().
-
-    Handles race conditions: if a provider was taken by a concurrent
-    request between Phase 1 and Phase 2, it appears in the 'failed' list
-    and the system suggests the next best alternative.
-
-    Returns a dict with:
-        session_id: str
-        message: str
-        booked: list[dict]
-        failed: list[dict]
+    assigns the booking to the first approved provider in Pending_Acceptance state.
     """
     set_session_id(session_id)
 
@@ -423,7 +421,7 @@ async def run_confirm_booking(session_id: str, approved_provider_ids: list[int])
         "[PLANNING]",
         (
             f"Phase 2 started. Session '{session_id}'. "
-            f"User approved provider IDs: {approved_provider_ids}."
+            f"User approved provider IDs: {approved_provider_ids}. Address: {exact_address}"
         ),
     )
 
@@ -436,22 +434,12 @@ async def run_confirm_booking(session_id: str, approved_provider_ids: list[int])
         )
 
         if not booking_session:
-            write_audit_log(
-                session_id,
-                "[DECISION]",
-                f"Session '{session_id}' not found in DB. Returning 404.",
-            )
             return {
                 "error": "SESSION_NOT_FOUND",
                 "message": "Session expired ya exist nahi karta. Naya booking start karein.",
             }
 
         if booking_session.status != "pending":
-            write_audit_log(
-                session_id,
-                "[DECISION]",
-                f"Session '{session_id}' status is '{booking_session.status}', not 'pending'. Cannot confirm.",
-            )
             return {
                 "error": "SESSION_ALREADY_PROCESSED",
                 "message": "Yeh session pehle se process ho chuka hai.",
@@ -467,11 +455,6 @@ async def run_confirm_booking(session_id: str, approved_provider_ids: list[int])
         if age_minutes > BOOKING_SESSION_TTL_MINUTES:
             booking_session.status = "expired"
             session.commit()
-            write_audit_log(
-                session_id,
-                "[DECISION]",
-                f"Session '{session_id}' expired ({age_minutes:.1f} min > {BOOKING_SESSION_TTL_MINUTES} min TTL).",
-            )
             return {
                 "error": "SESSION_EXPIRED",
                 "message": f"Session expire ho gaya ({BOOKING_SESSION_TTL_MINUTES} minute limit). Naya booking start karein.",
@@ -487,89 +470,49 @@ async def run_confirm_booking(session_id: str, approved_provider_ids: list[int])
         for p in svc_providers:
             all_candidates[p["id"]] = p
 
-    # ── Attempt atomic booking for each approved provider ─────────
     booked: list[dict] = []
     failed: list[dict] = []
 
-    for provider_id in approved_provider_ids:
-        if provider_id not in all_candidates:
-            write_audit_log(
-                session_id,
-                "[DECISION]",
-                f"Provider ID {provider_id} not found in session candidates. Skipping.",
-            )
+    # Assign to the first valid approved provider for now
+    provider_id = approved_provider_ids[0] if approved_provider_ids else None
+    
+    if provider_id and provider_id in all_candidates:
+        provider_info = all_candidates[provider_id]
+        
+        # Check if provider is still Active and Available
+        with get_db_session() as session:
+            provider = session.query(Provider).filter(Provider.id == provider_id).first()
+            if provider and provider.status == "Active" and provider.is_available:
+                # Assign the booking
+                booking_session = session.query(BookingSession).filter(BookingSession.id == session_id).first()
+                booking_session.status = "Pending_Acceptance"
+                booking_session.confirmed_provider_id = provider_id
+                booking_session.confirmed_at = datetime.now(tz=timezone.utc)
+                booking_session.exact_address = exact_address
+                booking_session.customer_notes = customer_notes
+                session.commit()
+                
+                booked.append(provider_info)
+            else:
+                failed.append({
+                    "provider_id": provider_id,
+                    "name": provider_info["name"],
+                    "service_type": provider_info["service_type"],
+                    "reason": "Provider is currently busy or offline.",
+                })
+    else:
+        if provider_id:
             failed.append({
                 "provider_id": provider_id,
                 "reason": "Provider is not in the candidate list for this session.",
             })
-            continue
-
-        provider_info = all_candidates[provider_id]
-        claimed = commit_booking(provider_id)
-
-        if claimed:
-            provider_info["status"] = "Busy"
-            booked.append(provider_info)
-            write_audit_log(
-                session_id,
-                "[ACTION]",
-                (
-                    f"BOOKING COMMITTED: Provider '{provider_info['name']}' "
-                    f"(Id={provider_id}) status updated to 'Busy'."
-                ),
-            )
-        else:
-            failed.append({
-                "provider_id": provider_id,
-                "name": provider_info["name"],
-                "service_type": provider_info["service_type"],
-                "reason": "Provider was already booked by another user.",
-            })
-            write_audit_log(
-                session_id,
-                "[DECISION]",
-                (
-                    f"Atomic claim FAILED for '{provider_info['name']}' "
-                    f"(Id={provider_id}) — already taken by a concurrent request."
-                ),
-            )
-
-    # ── Update session status ─────────────────────────────────────
-    with get_db_session() as session:
-        booking_session = (
-            session.query(BookingSession)
-            .filter(BookingSession.id == session_id)
-            .first()
-        )
-        if booking_session:
-            booking_session.status = "confirmed"
-            if booked:
-                booking_session.confirmed_provider_id = booked[0]["id"]
-            booking_session.confirmed_at = datetime.now(tz=timezone.utc)
-            session.commit()
 
     # ── Build confirmation message ────────────────────────────────
-    if booked and not failed:
+    if booked:
         booked_names = ", ".join(f"'{p['name']}'" for p in booked)
-        message = f"Booking confirm ho gayi! {booked_names} aapke kaam ke liye aa rahe hain."
-    elif booked and failed:
-        booked_names = ", ".join(f"'{p['name']}'" for p in booked)
-        failed_names = ", ".join(f.get("name", f"ID {f['provider_id']}") for f in failed)
-        message = (
-            f"Kuch bookings confirm hain: {booked_names}. "
-            f"Lekin {failed_names} already busy hain — naya provider try karein."
-        )
+        message = f"Booking request bhej di gayi hai! {booked_names} accept karne ke baad aapko notify kiya jayega."
     else:
-        message = "Maaf kijiye, koi bhi provider available nahi raha. Naya booking start karein."
-
-    write_audit_log(
-        session_id,
-        "[ACTION]",
-        (
-            f"Phase 2 complete. Booked: {len(booked)}, Failed: {len(failed)}. "
-            f"Session '{session_id}' marked as 'confirmed'."
-        ),
-    )
+        message = "Maaf kijiye, selected provider available nahi hai. Naya booking start karein."
 
     return {
         "session_id": session_id,
