@@ -41,6 +41,10 @@ from app.schemas import (
     PublicStatsResponse,
     ProviderStatsResponse,
     ActiveServicesResponse,
+    ProviderJobsResponse,
+    UpdateJobStatusRequest,
+    UpdateAvailabilityRequest,
+    ProviderAvailabilityResponse,
 )
 from app.services.database import init_db, get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
@@ -165,6 +169,45 @@ async def active_services() -> ActiveServicesResponse:
         return ActiveServicesResponse(active_services=services)
 
 
+# ─────────────────────────────────────────────
+# PROVIDER DASHBOARD ROUTES
+# ─────────────────────────────────────────────
+
+from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability
+
+@app.get(
+    "/api/v1/providers/{provider_id}/jobs",
+    response_model=ProviderJobsResponse,
+    summary="Get jobs assigned to a provider",
+    tags=["Provider"],
+)
+async def fetch_provider_jobs(provider_id: int) -> ProviderJobsResponse:
+    with get_db_session() as db:
+        jobs = get_provider_jobs(db, provider_id)
+        return ProviderJobsResponse(jobs=jobs)
+
+@app.put(
+    "/api/v1/providers/{provider_id}/jobs/{session_id}/status",
+    summary="Update the status of a job (In_Progress, Completed, Cancelled)",
+    tags=["Provider"],
+)
+async def change_job_status(provider_id: int, session_id: str, request: UpdateJobStatusRequest):
+    with get_db_session() as db:
+        res = update_job_status(db, provider_id, session_id, request.status)
+        return res
+
+@app.put(
+    "/api/v1/providers/{provider_id}/availability",
+    response_model=ProviderAvailabilityResponse,
+    summary="Toggle provider availability",
+    tags=["Provider"],
+)
+async def toggle_availability(provider_id: int, request: UpdateAvailabilityRequest) -> ProviderAvailabilityResponse:
+    with get_db_session() as db:
+        res = update_provider_availability(db, provider_id, request.is_available)
+        return ProviderAvailabilityResponse(**res)
+
+
 @app.post(
     "/api/v1/book-service",
     response_model=FindProvidersResponse,
@@ -213,7 +256,12 @@ async def confirm_booking_route(request: ConfirmBookingRequest, current_user: di
     """
     Phase 2 — Commits bookings for user-approved providers.
     """
-    result = await confirm_booking(request.session_id, request.approved_provider_ids)
+    result = await confirm_booking(
+        request.session_id, 
+        request.approved_provider_ids,
+        request.exact_address,
+        request.customer_notes
+    )
 
     return ConfirmBookingResponse(
         session_id=result["session_id"],
