@@ -21,7 +21,7 @@ export default function Input({
   ...rest
 }) {
   const [focused, setFocused] = useState(false);
-  const filled = value !== undefined && value !== '';
+  const filled = (value !== undefined && value !== '') || (rest.defaultValue !== undefined && rest.defaultValue !== '');
   const isFloating = focused || filled;
 
   const Tag = as === 'textarea' ? 'textarea' : 'input';
