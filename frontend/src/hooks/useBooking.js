@@ -84,13 +84,13 @@ export default function useBooking() {
   /**
    * Phase 2 — Confirm booking with approved provider IDs.
    */
-  const confirm = useCallback(async () => {
+  const confirm = useCallback(async (exactAddress, customerNotes) => {
     if (!sessionId || approvedIds.length === 0) return;
 
     setThinking(true);
 
     try {
-      const data = await confirmBooking(sessionId, approvedIds);
+      const data = await confirmBooking(sessionId, approvedIds, exactAddress, customerNotes);
       setConfirmed(data);
       clearApproved();
       return data;
