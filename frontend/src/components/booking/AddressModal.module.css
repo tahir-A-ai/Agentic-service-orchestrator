@@ -1,0 +1,183 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #1A1C23; /* Dark background matching the image */
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  padding: 1.5rem 1.5rem 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: #9CA3AF;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.formBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.asterisk {
+  color: #22C55E; /* Bright green */
+}
+
+.optionalText {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 1rem;
+  color: #6B7280;
+  pointer-events: none;
+}
+
+.inputWithIcon {
+  padding-left: 2.75rem !important;
+}
+
+.field input, .field textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #252830; /* Slightly lighter than modal bg */
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: all 200ms ease;
+}
+
+.field input::placeholder, .field textarea::placeholder {
+  color: #6B7280;
+}
+
+.field input:focus, .field textarea:focus {
+  outline: none;
+  border-color: #22C55E;
+}
+
+.textareaWrapper {
+  position: relative;
+}
+
+.field textarea {
+  resize: none;
+  line-height: 1.5;
+}
+
+.charCount {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-top: 0.25rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #E5E7EB;
+  padding: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background 200ms ease;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.submitBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #22C55E;
+  color: #000000;
+  border: none;
+  padding: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: opacity 200ms ease;
+}
+
+.submitBtn:hover {
+  opacity: 0.9;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
