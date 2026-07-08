@@ -48,10 +48,12 @@ export async function bookService(userPrompt, sessionId = null) {
   return request('POST', '/api/v1/book-service', payload);
 }
 
-export async function confirmBooking(sessionId, approvedProviderIds) {
+export async function confirmBooking(sessionId, approvedProviderIds, exactAddress, customerNotes) {
   return request('POST', '/api/v1/confirm-booking', {
     session_id: sessionId,
     approved_provider_ids: approvedProviderIds,
+    exact_address: exactAddress,
+    customer_notes: customerNotes,
   });
 }
 
@@ -75,6 +77,18 @@ export async function getProviderStats(providerId) {
   return request('GET', `/api/v1/stats/provider/${providerId}`);
 }
 
+export async function getProviderJobs(providerId) {
+  return request('GET', `/api/v1/providers/${providerId}/jobs`);
+}
+
+export async function updateJobStatus(providerId, sessionId, status) {
+  return request('PUT', `/api/v1/providers/${providerId}/jobs/${sessionId}/status`, { status });
+}
+
+export async function toggleAvailability(providerId, isAvailable) {
+  return request('PUT', `/api/v1/providers/${providerId}/availability`, { is_available: isAvailable });
+}
+
 export async function getActiveServices() {
   return request('GET', '/api/v1/stats/services');
 }
@@ -84,13 +98,19 @@ export async function getActiveServices() {
  */
 export function getErrorMessage(err) {
   if (err instanceof ApiError) {
+    // If the backend provided a specific detail message, prioritize it
+    const detailMsg = err.body?.detail?.message || err.body?.message;
+    if (detailMsg) return detailMsg;
+
     switch (err.status) {
       case 400:
-        return err.body?.detail?.message || 'Request mein masla hai.';
+        return 'Request mein masla hai.';
       case 404:
         return 'Koi provider nahi mila.';
       case 409:
         return 'Providers busy ho gaye, dobara try karein.';
+      case 410:
+        return 'Session expire ho gaya. Naya booking start karein.';
       case 429:
         return 'Bohat zyada requests. Thodi der baad try karein.';
       default:
@@ -99,7 +119,7 @@ export function getErrorMessage(err) {
   }
 
   if (err?.message === 'Request timed out') {
-    return 'Request ka waqt khatam. Dobara try karein.';
+    return 'Server se connect nahi ho pa raha. Thodi der baad try karein.';
   }
 
   if (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
