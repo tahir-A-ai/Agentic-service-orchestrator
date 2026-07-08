@@ -227,7 +227,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
             <div className={styles.headerCenter}>
               <div className={styles.iconBoxGreen}><ZapIcon size={20} color="#0D1117" /></div>
               <h2 className={styles.title}>Karigar.pk Join Karein</h2>
-              <p className={styles.subtitle}>Aap platform use karna chahte hain kaise?</p>
+              <p className={styles.subtitle}>Aap platform kaise use karna chahte hain?</p>
             </div>
             <div className={styles.roleGrid}>
               <button className={styles.roleCardGreen} onClick={() => setView('customer-signup')}>
@@ -308,18 +308,9 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
               <button className={[styles.tab, loginTab === 'user' ? styles.tabActiveGreen : ''].filter(Boolean).join(' ')} onClick={() => setLoginTab('user')}>
                 <UserIcon size={14} color={loginTab === 'user' ? '#0D1117' : '#8B949E'} /> User
               </button>
-              <button className={[styles.tab, loginTab === 'provider' ? styles.tabActiveBlue : ''].filter(Boolean).join(' ')} onClick={() => setLoginTab('provider')}>
+              <button className={[styles.tab, loginTab === 'provider' ? styles.tabActiveGreen : ''].filter(Boolean).join(' ')} onClick={() => setLoginTab('provider')}>
                 <HammerIcon size={14} color={loginTab === 'provider' ? '#0D1117' : '#8B949E'} /> Provider
               </button>
-            </div>
-
-            {/* Context hint */}
-            <div className={loginTab === 'user' ? styles.hintGreen : styles.hintBlue}>
-              {loginTab === 'user' ? (
-                <><UserIcon size={13} color="#22C55E" /> <span>Service book karo — chat mein redirect hoga</span></>
-              ) : (
-                <><HammerIcon size={13} color="#3B82F6" /> <span>Dashboard par redirect hoga</span></>
-              )}
             </div>
 
             {errors.form && <div className={styles.formError}>{errors.form}</div>}
@@ -330,11 +321,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
               <div className={styles.forgotRow}>
                 <button type="button" className={styles.forgotBtn}>Password bhool gaye?</button>
               </div>
-              <button type="submit" className={loginTab === 'user' ? styles.btnGreen : styles.btnBlue} disabled={loading}>
+              <button type="submit" className={styles.btnGreen} disabled={loading}>
                 {loading ? 'Verify ho raha hai...' : (
                   loginTab === 'user'
-                    ? <><span>Chat mein Login</span> <ArrowRightIcon /></>
-                    : <><span>Dashboard mein Login</span> <ArrowRightIcon /></>
+                    ? <><span>Login</span> <ArrowRightIcon /></>
+                    : <><span>Login</span> <ArrowRightIcon /></>
                 )}
               </button>
             </form>
