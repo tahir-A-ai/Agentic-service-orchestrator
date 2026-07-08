@@ -17,11 +17,13 @@ belong here. If you are adding any of that here you are in the wrong file.
 """
 
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from app.services.websockets import manager
 from app.config import (
     API_DESCRIPTION,
     API_TITLE,
@@ -194,7 +196,28 @@ async def fetch_provider_jobs(provider_id: int) -> ProviderJobsResponse:
 async def change_job_status(provider_id: int, session_id: str, request: UpdateJobStatusRequest):
     with get_db_session() as db:
         res = update_job_status(db, provider_id, session_id, request.status)
-        return res
+        
+    # Broadcast status change to the customer via WebSocket
+    await manager.broadcast_to_job(session_id, {
+        "type": "status_update",
+        "status": request.status,
+        "provider_name": res.get("provider_name", "Unknown"),
+        "service_type": res.get("service_type", "Unknown"),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": res["message"]}
+
+@app.websocket("/api/v1/stream/booking/{job_id}")
+async def websocket_endpoint(websocket: WebSocket, job_id: str):
+    await manager.connect(websocket, job_id)
+    try:
+        while True:
+            # We don't expect messages from the client in this flow,
+            # but we need to await receive to keep connection alive and detect disconnects.
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, job_id)
 
 @app.put(
     "/api/v1/providers/{provider_id}/availability",
