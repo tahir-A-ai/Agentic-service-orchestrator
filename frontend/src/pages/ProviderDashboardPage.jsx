@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import StatsRow from '../components/provider/Dashboard/StatsRow';
@@ -6,8 +6,43 @@ import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { mockActiveJobs, mockCompletedJobs, mockProviderProfile } from '../data/mockData';
+import { getProviderJobs, toggleAvailability } from '../api/client';
+import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
+
+/**
+ * Custom hook to fetch dynamic provider jobs.
+ */
+function useProviderJobs() {
+  const { providerProfile } = useAuth();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
+
+  const fetchJobs = useCallback(async () => {
+    if (!providerProfile?.id) return;
+    try {
+      setLoading(true);
+      const data = await getProviderJobs(providerProfile.id);
+      setJobs(data.jobs || []);
+    } catch (err) {
+      showToast('Jobs fetch karne mein error: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [providerProfile, showToast]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  return {
+    activeJobs: jobs.filter(j => j.status === 'Pending_Acceptance' || j.status === 'In_Progress'),
+    completedJobs: jobs.filter(j => j.status === 'Completed'),
+    loading,
+    refetch: fetchJobs
+  };
+}
 
 /**
  * Protected wrapper for dashboard components.
@@ -27,6 +62,8 @@ function useRequireAuth() {
 
 export function OverviewTab() {
   const isAuth = useRequireAuth();
+  const { activeJobs, loading, refetch } = useProviderJobs();
+  
   if (!isAuth) return null;
 
   return (
@@ -36,10 +73,12 @@ export function OverviewTab() {
       <StatsRow />
 
       <h2 className={styles.sectionTitle}>Recent Bookings</h2>
-      {mockActiveJobs.length > 0 ? (
+      {loading ? (
+        <p>Loading...</p>
+      ) : activeJobs.length > 0 ? (
         <div className={styles.jobList}>
-          {mockActiveJobs.slice(0, 2).map(job => (
-            <JobCard key={job.id} job={job} variant="compact" />
+          {activeJobs.slice(0, 2).map(job => (
+            <JobCard key={job.session_id} job={job} variant="compact" onActionComplete={refetch} />
           ))}
         </div>
       ) : (
@@ -51,16 +90,21 @@ export function OverviewTab() {
 
 export function ActiveJobsTab() {
   const isAuth = useRequireAuth();
+  const { activeJobs, loading, refetch } = useProviderJobs();
+
   if (!isAuth) return null;
 
   return (
     <div className={styles.tab}>
       <h1 className={styles.title}>Active Jobs</h1>
-      <p className={styles.subtitle}>{mockActiveJobs.length} kaam chal raha hai</p>
-      {mockActiveJobs.length > 0 ? (
+      <p className={styles.subtitle}>{activeJobs.length} kaam chal raha hai</p>
+      
+      {loading ? (
+        <p>Loading...</p>
+      ) : activeJobs.length > 0 ? (
         <div className={styles.jobList}>
-          {mockActiveJobs.map(job => (
-            <JobCard key={job.id} job={job} />
+          {activeJobs.map(job => (
+            <JobCard key={job.session_id} job={job} onActionComplete={refetch} />
           ))}
         </div>
       ) : (
@@ -76,15 +120,19 @@ export function ActiveJobsTab() {
 
 export function CompletedJobsTab() {
   const isAuth = useRequireAuth();
+  const { completedJobs, loading } = useProviderJobs();
+
   if (!isAuth) return null;
 
   return (
     <div className={styles.tab}>
       <h1 className={styles.title}>Completed Jobs</h1>
-      {mockCompletedJobs.length > 0 ? (
+      {loading ? (
+        <p>Loading...</p>
+      ) : completedJobs.length > 0 ? (
         <div className={styles.jobList}>
-          {mockCompletedJobs.map(job => (
-            <JobCard key={job.id} job={job} readOnly />
+          {completedJobs.map(job => (
+            <JobCard key={job.session_id} job={job} readOnly />
           ))}
         </div>
       ) : (
@@ -101,7 +149,22 @@ export function CompletedJobsTab() {
 export function ProfileTab() {
   const { providerProfile } = useAuth();
   const isAuth = useRequireAuth();
+  const [isAvailable, setIsAvailable] = useState(true);
+  const { showToast } = useToast();
+
   if (!isAuth) return null;
+
+  const handleToggle = async () => {
+    try {
+      const newStatus = !isAvailable;
+      setIsAvailable(newStatus);
+      await toggleAvailability(providerProfile.id, newStatus);
+      showToast(`Status updated to ${newStatus ? 'Available' : 'Offline'}`, 'success');
+    } catch (err) {
+      setIsAvailable(!isAvailable); // revert
+      showToast('Failed to update status', 'error');
+    }
+  };
 
   return (
     <div className={styles.tab}>
@@ -115,13 +178,20 @@ export function ProfileTab() {
           <Button variant="ghost" size="sm">+ Upload Photo</Button>
         </div>
 
+        <div className={styles.availabilityToggle}>
+          <label className={styles.toggleLabel}>
+            <input type="checkbox" checked={isAvailable} onChange={handleToggle} />
+            <span className={styles.toggleText}>Currently {isAvailable ? 'Available' : 'Offline'}</span>
+          </label>
+        </div>
+
         <div className={styles.formGrid}>
-          <Input label="Full Name" defaultValue={mockProviderProfile.name} />
-          <Input label="Email Address" type="email" defaultValue={mockProviderProfile.email} />
-          <Input label="Phone Number" prefix="+92" defaultValue={mockProviderProfile.phone} />
-          <Input label="Service Area" defaultValue={mockProviderProfile.sector} disabled />
+          <Input label="Full Name" defaultValue={providerProfile?.name || ''} />
+          <Input label="Email Address" type="email" defaultValue="" />
+          <Input label="Phone Number" prefix="+92" defaultValue="" />
+          <Input label="Service Area" defaultValue={providerProfile?.sector || ''} disabled />
           <div className={styles.fullWidth}>
-            <Input as="textarea" label="Bio / Skills" defaultValue={mockProviderProfile.bio} />
+            <Input as="textarea" label="Bio / Skills" defaultValue="" />
           </div>
         </div>
 
