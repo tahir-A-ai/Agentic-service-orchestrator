@@ -9,7 +9,7 @@ the tables automatically on startup via Base.metadata.create_all().
 For request/response validation, see app/schemas.py.
 """
 
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, Boolean
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -36,6 +36,7 @@ class Provider(Base):
     longitude    = Column(Float, nullable=False)
     rating       = Column(Float, nullable=False, default=0.0)
     status       = Column(String(20), nullable=False, default="Active")
+    is_available = Column(Boolean, nullable=False, default=True)
 
     def __repr__(self) -> str:
         return f"<Provider(id={self.id}, name='{self.name}', service_type='{self.service_type}')>"
@@ -100,8 +101,11 @@ class BookingSession(Base):
 
     The status lifecycle is:
         pending   → Phase 1 complete, waiting for user confirmation.
-        confirmed → Phase 2 complete, booking(s) committed.
-        expired   → TTL exceeded without confirmation (cleaned up at query time).
+        Pending_Acceptance → Phase 2 complete, waiting for provider to accept.
+        In_Progress       → Provider accepted the job.
+        Completed         → Job marked as completed.
+        Cancelled         → Job cancelled by provider or customer.
+        expired           → TTL exceeded without confirmation (cleaned up at query time).
     """
 
     __tablename__ = "booking_sessions"
@@ -112,6 +116,8 @@ class BookingSession(Base):
     status                = Column(String(20), nullable=False, default="pending", index=True)
     confirmed_provider_id = Column(Integer, nullable=True)         # which provider was booked
     confirmed_at          = Column(DateTime, nullable=True)        # when Phase 2 completed
+    exact_address         = Column(String(255), nullable=True)     # Customer's full address
+    customer_notes        = Column(Text, nullable=True)            # Any additional notes from customer
 
     def __repr__(self) -> str:
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"
