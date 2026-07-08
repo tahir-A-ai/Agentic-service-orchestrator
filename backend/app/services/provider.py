@@ -62,7 +62,11 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
             provider.status = "Active"
             
     db.commit()
-    return {"message": "Job status updated."}
+    return {
+        "message": "Job status updated.",
+        "provider_name": provider.name if provider else "Unknown",
+        "service_type": provider.service_type if provider else "Unknown",
+    }
 
 def update_provider_availability(db: Session, provider_id: int, is_available: bool) -> dict:
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
