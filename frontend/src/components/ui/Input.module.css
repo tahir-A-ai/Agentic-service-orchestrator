@@ -12,11 +12,11 @@
   align-items: center;
   height: 48px;
   padding: 0 var(--space-3);
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-muted);
   font-size: var(--text-sm);
   font-weight: 500;
-  border: 1px solid var(--border-default);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-right: none;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
@@ -30,12 +30,12 @@
   width: 100%;
   height: 48px;
   padding: var(--space-4) var(--space-4) var(--space-1);
-  background: var(--bg-tertiary);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-primary);
   font-size: var(--text-base);
-  border: 1px solid var(--border-default);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition: all 200ms ease;
 }
 
 .prefix + .fieldWrap .field {
@@ -44,7 +44,7 @@
 
 .field:focus {
   border-color: var(--accent-green);
-  box-shadow: 0 0 0 3px var(--accent-green-glow);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .textarea {
