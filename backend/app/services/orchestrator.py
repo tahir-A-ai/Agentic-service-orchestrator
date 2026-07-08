@@ -68,7 +68,12 @@ async def find_providers(user_prompt: str, session_id: str | None = None) -> dic
 # PHASE 2 — CONFIRM BOOKING
 # ─────────────────────────────────────────────
 
-async def confirm_booking(session_id: str, approved_provider_ids: list[int]) -> dict:
+async def confirm_booking(
+    session_id: str, 
+    approved_provider_ids: list[int],
+    exact_address: str,
+    customer_notes: str | None
+) -> dict:
     """
     Commit bookings for the user's approved providers.
 
@@ -83,7 +88,7 @@ async def confirm_booking(session_id: str, approved_provider_ids: list[int]) -> 
         HTTPException(404): If session not found or expired.
         HTTPException(409): If session was already processed.
     """
-    result = await run_confirm_booking(session_id, approved_provider_ids)
+    result = await run_confirm_booking(session_id, approved_provider_ids, exact_address, customer_notes)
 
     # Map error codes to HTTP exceptions
     if "error" in result:
