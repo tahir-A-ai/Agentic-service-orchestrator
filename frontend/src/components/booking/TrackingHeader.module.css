@@ -211,3 +211,21 @@
 .lineInactive {
   background: #374151;
 }
+
+.textRed {
+  color: #EF4444;
+}
+
+.redStatic::before {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.redStatic .solidCircle circle {
+  stroke: #EF4444;
+  opacity: 1;
+}
+
+.redStatic .iconInner {
+  border: 2px solid #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+}
