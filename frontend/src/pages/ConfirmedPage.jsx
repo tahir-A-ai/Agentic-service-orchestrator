@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useChat } from '../context/ChatContext';
 import TrackingHeader from '../components/booking/TrackingHeader';
 import LiveProviderCard from '../components/booking/LiveProviderCard';
+import RatingModal from '../components/booking/RatingModal';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
-  const { confirmed, reset } = useChat();
+  const { confirmed, reset, lastUserPrompt } = useChat();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState('Pending_Acceptance');
   const [liveProvider, setLiveProvider] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Initialize and redirect check
   useEffect(() => {
@@ -39,6 +41,16 @@ export default function ConfirmedPage() {
             ...(data.provider_name && { name: data.provider_name }),
             ...(data.service_type && { service_type: data.service_type })
           }));
+
+          if (data.status === 'Pending_Completion') {
+            setShowRatingModal(true);
+          } else if (data.status === 'Cancelled') {
+            // Show auto-redirect after a short delay so they can see the "Declined" state
+            setTimeout(() => {
+              reset();
+              navigate('/chat', { state: { autoFetch: lastUserPrompt } });
+            }, 3000);
+          }
         }
       } catch (err) {
         console.error("WebSocket message parse error", err);
@@ -98,6 +110,16 @@ export default function ConfirmedPage() {
           </svg>
           New Booking
         </button>
+
+        <RatingModal 
+          isOpen={showRatingModal}
+          sessionId={confirmed.session_id}
+          providerName={liveProvider.name}
+          onComplete={() => {
+            setShowRatingModal(false);
+            setStatus('Completed');
+          }}
+        />
       </div>
     </div>
   );
