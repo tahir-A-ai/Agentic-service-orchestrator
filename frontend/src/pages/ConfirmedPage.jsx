@@ -1,48 +1,71 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '../context/ChatContext';
-import BookingReceipt from '../components/booking/BookingReceipt';
-import Button from '../components/ui/Button';
+import TrackingHeader from '../components/booking/TrackingHeader';
+import LiveProviderCard from '../components/booking/LiveProviderCard';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
   const { confirmed, reset } = useChat();
   const navigate = useNavigate();
 
-  // If accessed directly without a confirmed booking, redirect to home
+  const [status, setStatus] = useState('Pending_Acceptance');
+  const [liveProvider, setLiveProvider] = useState(null);
+
+  // Initialize and redirect check
   useEffect(() => {
     if (!confirmed) {
       navigate('/');
+    } else if (confirmed.booked && confirmed.booked.length > 0) {
+      setLiveProvider(confirmed.booked[0]);
     }
   }, [confirmed, navigate]);
 
-  if (!confirmed) return null;
+  // WebSocket Connection
+  useEffect(() => {
+    if (!confirmed?.session_id) return;
+
+    const wsUrl = `ws://localhost:8000/api/v1/stream/booking/${confirmed.session_id}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'status_update') {
+          setStatus(data.status);
+          
+          setLiveProvider(prev => ({
+            ...prev,
+            ...(data.provider_name && { name: data.provider_name }),
+            ...(data.service_type && { service_type: data.service_type })
+          }));
+        }
+      } catch (err) {
+        console.error("WebSocket message parse error", err);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [confirmed?.session_id]);
+
+  if (!confirmed || !liveProvider) return null;
 
   const handleNewBooking = () => {
     reset();
     navigate('/chat');
   };
 
+  const shortId = confirmed.session_id ? confirmed.session_id.substring(0, 8) : 'bkg-123';
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* Success Animation */}
-        <div className={styles.iconWrapper}>
-          <svg className={styles.checkIcon} viewBox="0 0 52 52">
-            <circle className={styles.checkCircle} cx="26" cy="26" r="25" fill="none" />
-            <path className={styles.checkPath} fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
-          </svg>
-        </div>
-
-        <h1 className={styles.title}>Booking Confirmed!</h1>
-        <p className={styles.subtitle}>Aapka karigar aa raha hai.</p>
-
-        {/* Booked Providers */}
-        <div className={styles.receipts}>
-          {confirmed.booked?.map((provider) => (
-            <BookingReceipt key={provider.id} provider={provider} />
-          ))}
-        </div>
+        
+        <TrackingHeader status={status} />
+        
+        <LiveProviderCard provider={liveProvider} status={status} />
 
         {/* Failed Providers Warning */}
         {confirmed.failed && confirmed.failed.length > 0 && (
@@ -55,14 +78,26 @@ export default function ConfirmedPage() {
           </div>
         )}
 
-        {/* Session Info */}
-        <div className={styles.sessionInfo}>
-          Booking ID: {confirmed.session_id}
+        <div className={styles.footer}>
+          <div className={styles.footerCol}>
+            <span className={styles.footerLabel}>Booking ID</span>
+            <span className={styles.footerValue}>{shortId}</span>
+          </div>
+          <div className={`${styles.footerCol} ${styles.footerColRight}`}>
+            <span className={styles.footerLabel}>{status === 'Pending_Acceptance' ? 'Last Checked' : 'ETA'}</span>
+            <span className={status === 'Pending_Acceptance' ? styles.footerValue : styles.footerValueGreen}>
+              {status === 'Pending_Acceptance' ? 'Just now' : '30-45 min'}
+            </span>
+          </div>
         </div>
 
-        <Button fullWidth onClick={handleNewBooking} className={styles.newBtn}>
+        <button onClick={handleNewBooking} className={styles.newBtn}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 2v6h-6"></path>
+            <path d="M3 12a9 9 0 1 0 2.13-5.88L2 9"></path>
+          </svg>
           New Booking
-        </Button>
+        </button>
       </div>
     </div>
   );
