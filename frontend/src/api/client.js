@@ -93,6 +93,10 @@ export async function getActiveServices() {
   return request('GET', '/api/v1/stats/services');
 }
 
+export async function confirmCompletion(sessionId, rating) {
+  return request('POST', '/api/v1/confirm-completion', { session_id: sessionId, rating });
+}
+
 /**
  * Maps HTTP error status to a user-facing Roman Urdu message.
  */
