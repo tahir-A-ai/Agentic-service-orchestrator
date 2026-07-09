@@ -104,13 +104,22 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
           {!readOnly && (
             <div className={styles.actions}>
               {job.status === 'Pending_Acceptance' && (
-                <button 
-                  className={styles.callBtn} 
-                  onClick={() => handleStatusChange('In_Progress')}
-                  disabled={loading}
-                >
-                  Accept Job
-                </button>
+                <>
+                  <button 
+                    className={styles.acceptBtn} 
+                    onClick={() => handleStatusChange('In_Progress')}
+                    disabled={loading}
+                  >
+                    Accept Job
+                  </button>
+                  <button 
+                    className={styles.declineBtn} 
+                    onClick={() => handleStatusChange('Cancelled')}
+                    disabled={loading}
+                  >
+                    Decline
+                  </button>
+                </>
               )}
               {job.status === 'In_Progress' && (
                 <>
