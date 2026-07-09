@@ -30,7 +30,8 @@ DB_PATH: Final[Path] = BASE_DIR / "providers.db"
 AUDIT_LOG_PATH: Final[Path] = BASE_DIR / "trace_logs.txt"
 
 # SQLAlchemy connection URL (sqlite)
-DATABASE_URL: Final[str] = f"sqlite:///{DB_PATH}"
+# Using as_posix() to ensure forward slashes which SQLAlchemy/SQLite parse reliably on Windows
+DATABASE_URL: Final[str] = f"sqlite:///{DB_PATH.resolve().as_posix()}"
 
 
 # ─────────────────────────────────────────────
