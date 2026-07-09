@@ -4,6 +4,8 @@ import styles from './LiveProviderCard.module.css';
 export default function LiveProviderCard({ provider, status }) {
   const isWaiting = status === 'Pending_Acceptance';
   const isInProgress = status === 'In_Progress';
+  const isPendingCompletion = status === 'Pending_Completion';
+  const isCompleted = status === 'Completed';
   
   // Fake ETA generation based on distance for realism
   const etaRange = provider.distance_km ? `${Math.ceil(provider.distance_km * 5 + 10)}-${Math.ceil(provider.distance_km * 5 + 25)} min` : '30-45 min';
@@ -49,6 +51,18 @@ export default function LiveProviderCard({ provider, status }) {
             On the Way
           </div>
         )}
+        {isPendingCompletion && (
+          <div className={styles.badgePending}>
+            <span className={styles.dotYellow}></span>
+            Verifying
+          </div>
+        )}
+        {isCompleted && (
+          <div className={styles.badgeActive}>
+            <span className={styles.dotGreen}></span>
+            Completed
+          </div>
+        )}
       </div>
 
       {/* Info Row */}
@@ -66,7 +80,7 @@ export default function LiveProviderCard({ provider, status }) {
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <span className={isWaiting ? styles.infoTextGray : styles.infoTextWhite}>
-            {isWaiting ? 'Calculating ETA...' : etaRange}
+            {isWaiting ? 'Calculating ETA...' : (isCompleted || isPendingCompletion) ? 'Arrived' : etaRange}
           </span>
         </div>
 
