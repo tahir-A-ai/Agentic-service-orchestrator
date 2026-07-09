@@ -35,6 +35,7 @@ class Provider(Base):
     latitude     = Column(Float, nullable=False)
     longitude    = Column(Float, nullable=False)
     rating       = Column(Float, nullable=False, default=0.0)
+    rating_count = Column(Integer, nullable=False, default=0)
     status       = Column(String(20), nullable=False, default="Active")
     is_available = Column(Boolean, nullable=False, default=True)
 
@@ -118,6 +119,8 @@ class BookingSession(Base):
     confirmed_at          = Column(DateTime, nullable=True)        # when Phase 2 completed
     exact_address         = Column(String(255), nullable=True)     # Customer's full address
     customer_notes        = Column(Text, nullable=True)            # Any additional notes from customer
+    customer_rating       = Column(Integer, nullable=True)         # 1-5 star rating from customer
+    customer_confirmed_at = Column(DateTime, nullable=True)        # When customer confirmed completion
 
     def __repr__(self) -> str:
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"
