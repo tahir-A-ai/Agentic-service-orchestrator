@@ -47,11 +47,14 @@ from app.schemas import (
     UpdateJobStatusRequest,
     UpdateAvailabilityRequest,
     ProviderAvailabilityResponse,
+    CustomerConfirmRequest,
+    CustomerConfirmResponse,
 )
 from app.services.database import init_db, get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
 from app.services.auth import signup_user, login_user, get_current_user_from_credentials
 from app.services.stats import get_public_stats, get_provider_stats, get_active_services
+from app.services.confirmation import confirm_completion
 
 
 # ─────────────────────────────────────────────
@@ -198,15 +201,34 @@ async def change_job_status(provider_id: int, session_id: str, request: UpdateJo
         res = update_job_status(db, provider_id, session_id, request.status)
         
     # Broadcast status change to the customer via WebSocket
+    actual = res.get("actual_status", request.status)
     await manager.broadcast_to_job(session_id, {
         "type": "status_update",
-        "status": request.status,
+        "status": actual,
         "provider_name": res.get("provider_name", "Unknown"),
         "service_type": res.get("service_type", "Unknown"),
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
     
     return {"message": res["message"]}
+
+@app.post(
+    "/api/v1/confirm-completion",
+    response_model=CustomerConfirmResponse,
+    summary="Customer confirms the job is done and submits a rating",
+    tags=["Customer"],
+)
+async def confirm_completion_route(request: CustomerConfirmRequest):
+    with get_db_session() as db:
+        result = confirm_completion(db, request.session_id, request.rating)
+        
+    await manager.broadcast_to_job(request.session_id, {
+        "type": "status_update",
+        "status": "Completed",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return CustomerConfirmResponse(**result)
 
 @app.websocket("/api/v1/stream/booking/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
