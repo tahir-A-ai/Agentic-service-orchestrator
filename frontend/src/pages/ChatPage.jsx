@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import ChatWindow from '../components/chat/ChatWindow';
 import InputBar from '../components/chat/InputBar';
@@ -16,6 +16,21 @@ export default function ChatPage() {
   const { findProviders, confirm } = useBooking();
   const { isThinking } = useChat();
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasAutoFetched = useRef(false);
+
+  useEffect(() => {
+    if (location.state?.autoFetch && !hasAutoFetched.current) {
+      hasAutoFetched.current = true;
+      // Small delay to ensure state reset propagation
+      setTimeout(() => {
+        findProviders(location.state.autoFetch);
+      }, 100);
+      
+      // Clear the state so it doesn't refetch on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, findProviders]);
 
   const handleConfirmClick = () => {
     setIsModalOpen(true);
