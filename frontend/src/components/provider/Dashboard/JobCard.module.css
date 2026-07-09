@@ -178,16 +178,58 @@
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  transition: background 200ms ease;
   cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .callBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--border-subtle);
+}
+
+.acceptBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: #22C55E;
+  color: #000000;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  transition: opacity 200ms ease;
+  border: none;
+  cursor: pointer;
+}
+
+.acceptBtn:hover {
+  opacity: 0.9;
+}
+
+.declineBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: transparent;
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.declineBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 @media (max-width: 600px) {
