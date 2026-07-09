@@ -16,6 +16,7 @@ export default function useBooking() {
     setThinking,
     setConfirmed,
     clearApproved,
+    setLastUserPrompt,
   } = useChat();
 
   const { showToast } = useToast();
@@ -26,7 +27,8 @@ export default function useBooking() {
    */
   const findProviders = useCallback(
     async (prompt) => {
-      // Add user message to chat
+      // Add user message to chat and store prompt
+      setLastUserPrompt(prompt);
       addMessage({ id: newId(), role: 'user', type: 'text', content: prompt });
       setThinking(true);
 
