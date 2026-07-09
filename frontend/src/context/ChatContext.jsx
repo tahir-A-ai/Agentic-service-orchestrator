@@ -26,6 +26,7 @@ export function ChatProvider({ children }) {
   const [approvedIds, setApprovedIds] = useState([]);
   const [isThinking, setThinking] = useState(false);
   const [confirmed, setConfirmed] = useState(null);
+  const [lastUserPrompt, setLastUserPrompt] = useState(null);
 
   const addMessage = useCallback((msg) => {
     setMessages((prev) => [...prev, msg]);
@@ -45,6 +46,7 @@ export function ChatProvider({ children }) {
     setApprovedIds([]);
     setThinking(false);
     setConfirmed(null);
+    // Note: Do NOT clear lastUserPrompt on reset, it's needed for the auto-fetch flow
   }, []);
 
   return (
@@ -55,12 +57,14 @@ export function ChatProvider({ children }) {
         approvedIds,
         isThinking,
         confirmed,
+        lastUserPrompt,
         addMessage,
         setSessionId,
         toggleApproved,
         clearApproved,
         setThinking,
         setConfirmed,
+        setLastUserPrompt,
         reset,
       }}
     >
