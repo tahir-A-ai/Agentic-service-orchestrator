@@ -14,7 +14,7 @@ def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
     sessions = (
         db.query(BookingSession)
         .filter(BookingSession.confirmed_provider_id == provider_id)
-        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Completed"]))
+        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion", "Completed"]))
         .order_by(BookingSession.created_at.desc())
         .all()
     )
@@ -43,13 +43,16 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
     if not session:
         raise HTTPException(status_code=404, detail="Job not found.")
         
-    session.status = status
+    actual_status = status
+    if status == "Completed":
+        actual_status = "Pending_Completion"
+    session.status = actual_status
     
     # If the provider accepted the job, mark them as Busy
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
     if status == "In_Progress" and provider:
         provider.status = "Busy"
-    elif status in ["Completed", "Cancelled"] and provider:
+    elif actual_status == "Cancelled" and provider:
         # Check if they have other In_Progress jobs?
         # For simplicity, if they complete a job, they might become Active again
         # Let's count if they have any other In_Progress
@@ -64,6 +67,7 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
     db.commit()
     return {
         "message": "Job status updated.",
+        "actual_status": actual_status,
         "provider_name": provider.name if provider else "Unknown",
         "service_type": provider.service_type if provider else "Unknown",
     }
