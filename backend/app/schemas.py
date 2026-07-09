@@ -195,7 +195,7 @@ class ProviderJobsResponse(BaseModel):
     jobs: list[ProviderJob]
 
 class UpdateJobStatusRequest(BaseModel):
-    status: Literal["In_Progress", "Completed", "Cancelled"]
+    status: Literal["In_Progress", "Completed", "Pending_Completion", "Cancelled"]
 
 class UpdateAvailabilityRequest(BaseModel):
     is_available: bool
@@ -207,3 +207,11 @@ class ProviderAvailabilityResponse(BaseModel):
 
 class ActiveServicesResponse(BaseModel):
     active_services: list[str]
+
+class CustomerConfirmRequest(BaseModel):
+    session_id: str = Field(...)
+    rating: int = Field(..., ge=1, le=5)
+
+class CustomerConfirmResponse(BaseModel):
+    message: str
+    new_average_rating: float
