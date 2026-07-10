@@ -26,7 +26,7 @@ export default function useBooking() {
    * Adds user message, shows thinking state, processes response.
    */
   const findProviders = useCallback(
-    async (prompt) => {
+    async (prompt, excludedIds = []) => {
       // Add user message to chat and store prompt
       setLastUserPrompt(prompt);
       addMessage({ id: newId(), role: 'user', type: 'text', content: prompt });
@@ -37,7 +37,7 @@ export default function useBooking() {
 
       try {
         const [data] = await Promise.all([
-          bookService(prompt, sessionId),
+          bookService(prompt, sessionId, excludedIds),
           minDelay,
         ]);
 
