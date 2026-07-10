@@ -7,7 +7,7 @@ import RatingModal from '../components/booking/RatingModal';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
-  const { confirmed, reset, lastUserPrompt } = useChat();
+  const { confirmed, reset, lastUserPrompt, addExcludedId } = useChat();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState('Pending_Acceptance');
@@ -49,6 +49,10 @@ export default function ConfirmedPage() {
             // Show auto-redirect after a short delay so they can see the "Declined" state
             setTimeout(() => {
               isNavigatingRef.current = true;
+              const providerId = data.provider_id || confirmed?.booked?.[0]?.id;
+              if (providerId) {
+                addExcludedId(providerId);
+              }
               reset();
               navigate('/chat', { state: { autoFetch: lastUserPrompt } });
             }, 3000);
