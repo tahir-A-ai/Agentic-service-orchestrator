@@ -84,14 +84,16 @@ def query_active_providers(
     user_lat: float,
     user_lon: float,
     radius_km: float | None = None,
-) -> list[dict]:
+    excluded_ids: list[int] | None = None,
+) -> tuple[list[dict], int]:
     """
-    Return Active providers matching service_type within `radius_km` of
+    Find Active providers matching the given service_type that are within
     the user's coordinates, sorted by distance (nearest first), then
     by rating (highest first).
 
     If radius_km is None, the default from config (PROVIDER_SEARCH_RADIUS_KM)
     is used.  Each returned dict includes a 'distance_km' field.
+    Returns (results, excluded_count).
     """
     if radius_km is None:
         radius_km = PROVIDER_SEARCH_RADIUS_KM
@@ -123,15 +125,22 @@ def query_active_providers(
 
         # Sort: nearest first, then highest rated
         results.sort(key=lambda x: (x["distance_km"], -x["rating"]))
+        
+        excluded_count = 0
+        if excluded_ids:
+            filtered_results = [r for r in results if r["id"] not in excluded_ids]
+            excluded_count = len(results) - len(filtered_results)
+            results = filtered_results
 
-    return results
+    return results, excluded_count
 
 
 def query_all_active_providers(
     service_type: str,
     user_lat: float | None = None,
     user_lon: float | None = None,
-) -> list[dict]:
+    excluded_ids: list[int] | None = None,
+) -> tuple[list[dict], int]:
     """
     Return ALL active providers matching service_type across the entire city.
     No radius filtering — every active provider is included.
@@ -141,6 +150,7 @@ def query_all_active_providers(
     Otherwise results are sorted by rating only.
 
     Used as a fallback when no providers are found in the user's requested sector.
+    Returns (results, excluded_count).
     """
     with get_db_session() as session:
         providers = (
@@ -172,8 +182,14 @@ def query_all_active_providers(
             results.sort(key=lambda x: (x["distance_km"], -x["rating"]))
         else:
             results.sort(key=lambda x: -x["rating"])
+            
+        excluded_count = 0
+        if excluded_ids:
+            filtered_results = [r for r in results if r["id"] not in excluded_ids]
+            excluded_count = len(results) - len(filtered_results)
+            results = filtered_results
 
-    return results
+    return results, excluded_count
 
 
 def query_busy_providers(
