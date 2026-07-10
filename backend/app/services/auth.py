@@ -123,10 +123,20 @@ def login_user(db: Session, payload: dict) -> dict:
     }
     token = create_access_token(token_data)
     
+    service_type = None
+    location = None
+    if user.provider_id:
+        provider = db.query(Provider).filter(Provider.id == user.provider_id).first()
+        if provider:
+            service_type = provider.service_type
+            location = provider.location
+    
     return {
         "access_token": token,
         "token_type": "bearer",
         "role": user.role,
         "username": user.username,
-        "provider_id": user.provider_id
+        "provider_id": user.provider_id,
+        "service_type": service_type,
+        "location": location
     }
