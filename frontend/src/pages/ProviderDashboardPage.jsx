@@ -37,7 +37,9 @@ function useProviderJobs() {
   }, [fetchJobs]);
 
   return {
-    activeJobs: jobs.filter(j => j.status === 'Pending_Acceptance' || j.status === 'In_Progress'),
+    allJobs: jobs,
+    recentJobs: jobs.filter(j => j.status !== 'Pending_Acceptance'),
+    activeJobs: jobs.filter(j => j.status === 'Pending_Acceptance' || j.status === 'In_Progress' || j.status === 'Pending_Completion'),
     completedJobs: jobs.filter(j => j.status === 'Completed'),
     loading,
     refetch: fetchJobs
@@ -62,7 +64,7 @@ function useRequireAuth() {
 
 export function OverviewTab() {
   const isAuth = useRequireAuth();
-  const { activeJobs, loading, refetch } = useProviderJobs();
+  const { recentJobs, activeJobs, loading, refetch } = useProviderJobs();
   
   if (!isAuth) return null;
 
@@ -75,10 +77,10 @@ export function OverviewTab() {
       <h2 className={styles.sectionTitle}>Recent Bookings</h2>
       {loading ? (
         <p>Loading...</p>
-      ) : activeJobs.length > 0 ? (
+      ) : recentJobs.length > 0 ? (
         <div className={styles.jobList}>
-          {activeJobs.slice(0, 2).map(job => (
-            <JobCard key={job.session_id} job={job} variant="compact" onActionComplete={refetch} />
+          {recentJobs.slice(0, 5).map(job => (
+            <JobCard key={job.session_id || job.id} job={job} variant="compact" onActionComplete={refetch} />
           ))}
         </div>
       ) : (
@@ -178,18 +180,11 @@ export function ProfileTab() {
           <Button variant="ghost" size="sm">+ Upload Photo</Button>
         </div>
 
-        <div className={styles.availabilityToggle}>
-          <label className={styles.toggleLabel}>
-            <input type="checkbox" checked={isAvailable} onChange={handleToggle} />
-            <span className={styles.toggleText}>Currently {isAvailable ? 'Available' : 'Offline'}</span>
-          </label>
-        </div>
-
         <div className={styles.formGrid}>
           <Input label="Full Name" defaultValue={providerProfile?.name || ''} />
-          <Input label="Email Address" type="email" defaultValue="" />
+          <Input label="Email Address" type="email" defaultValue={providerProfile?.name || ''} />
           <Input label="Phone Number" prefix="+92" defaultValue="" />
-          <Input label="Service Area" defaultValue={providerProfile?.sector || ''} disabled />
+          <Input label="Service Area" defaultValue={providerProfile?.sector || ''} />
           <div className={styles.fullWidth}>
             <Input as="textarea" label="Bio / Skills" defaultValue="" />
           </div>
