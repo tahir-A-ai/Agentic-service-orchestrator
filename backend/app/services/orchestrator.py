@@ -23,7 +23,7 @@ from app.services.react_loop import run_confirm_booking, run_find_providers
 # PHASE 1 — FIND PROVIDERS
 # ─────────────────────────────────────────────
 
-async def find_providers(user_prompt: str, session_id: str | None = None) -> dict:
+async def find_providers(user_prompt: str, session_id: str | None = None, excluded_provider_ids: list[int] | None = None) -> dict:
     """
     Run the ReAct agent to discover provider candidates for the user's request.
 
@@ -38,7 +38,7 @@ async def find_providers(user_prompt: str, session_id: str | None = None) -> dic
         HTTPException(500): If the agent loop fails unexpectedly.
     """
     try:
-        result = await run_find_providers(user_prompt, session_id)
+        result = await run_find_providers(user_prompt, session_id, excluded_provider_ids)
     except RuntimeError as e:
         # GROQ_API_KEY not configured
         raise HTTPException(status_code=500, detail=str(e))
