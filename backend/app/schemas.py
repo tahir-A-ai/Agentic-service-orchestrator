@@ -53,6 +53,10 @@ class ServiceRequest(BaseModel):
         None,
         description="Optional session ID to continue an existing conversation.",
     )
+    excluded_provider_ids: list[int] | None = Field(
+        default_factory=list,
+        description="List of provider IDs to exclude from this search (e.g. they previously declined).",
+    )
 
 
 class FindProvidersResponse(BaseModel):
