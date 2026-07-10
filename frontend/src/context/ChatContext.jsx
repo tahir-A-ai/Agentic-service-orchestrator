@@ -27,6 +27,11 @@ export function ChatProvider({ children }) {
   const [isThinking, setThinking] = useState(false);
   const [confirmed, setConfirmed] = useState(null);
   const [lastUserPrompt, setLastUserPrompt] = useState(null);
+  const [excludedIds, setExcludedIds] = useState([]);
+
+  const addExcludedId = useCallback((id) => {
+    setExcludedIds((prev) => [...prev, id]);
+  }, []);
 
   const addMessage = useCallback((msg) => {
     setMessages((prev) => [...prev, msg]);
@@ -46,26 +51,36 @@ export function ChatProvider({ children }) {
     setApprovedIds([]);
     setThinking(false);
     setConfirmed(null);
-    // Note: Do NOT clear lastUserPrompt on reset, it's needed for the auto-fetch flow
+    // Note: Do NOT clear lastUserPrompt or excludedIds on reset, they are needed for the auto-fetch flow
   }, []);
+
+  // Hard reset is used when user clicks "New Booking" to completely clear everything
+  const hardReset = useCallback(() => {
+    reset();
+    setLastUserPrompt(null);
+    setExcludedIds([]);
+  }, [reset]);
 
   return (
     <ChatCtx.Provider
       value={{
         messages,
-        sessionId,
-        approvedIds,
-        isThinking,
-        confirmed,
-        lastUserPrompt,
         addMessage,
+        sessionId,
         setSessionId,
+        approvedIds,
         toggleApproved,
         clearApproved,
+        isThinking,
         setThinking,
+        confirmed,
         setConfirmed,
+        lastUserPrompt,
         setLastUserPrompt,
+        excludedIds,
+        addExcludedId,
         reset,
+        hardReset,
       }}
     >
       {children}
