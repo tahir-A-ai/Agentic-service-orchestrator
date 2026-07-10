@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '../context/ChatContext';
 import TrackingHeader from '../components/booking/TrackingHeader';
@@ -13,12 +13,13 @@ export default function ConfirmedPage() {
   const [status, setStatus] = useState('Pending_Acceptance');
   const [liveProvider, setLiveProvider] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   // Initialize and redirect check
   useEffect(() => {
-    if (!confirmed) {
+    if (!confirmed && !isNavigatingRef.current) {
       navigate('/');
-    } else if (confirmed.booked && confirmed.booked.length > 0) {
+    } else if (confirmed?.booked && confirmed.booked.length > 0) {
       setLiveProvider(confirmed.booked[0]);
     }
   }, [confirmed, navigate]);
@@ -47,6 +48,7 @@ export default function ConfirmedPage() {
           } else if (data.status === 'Cancelled') {
             // Show auto-redirect after a short delay so they can see the "Declined" state
             setTimeout(() => {
+              isNavigatingRef.current = true;
               reset();
               navigate('/chat', { state: { autoFetch: lastUserPrompt } });
             }, 3000);
@@ -65,6 +67,7 @@ export default function ConfirmedPage() {
   if (!confirmed || !liveProvider) return null;
 
   const handleNewBooking = () => {
+    isNavigatingRef.current = true;
     reset();
     navigate('/chat');
   };
