@@ -161,6 +161,8 @@ class AuthResponse(BaseModel):
     role: str
     username: str
     provider_id: int | None = None
+    service_type: str | None = None
+    location: str | None = None
 
 
 # ─────────────────────────────────────────────
@@ -177,6 +179,7 @@ class ProviderStatsResponse(BaseModel):
     active_jobs: int
     completed_jobs: int
     rating: float
+    service_type: str | None = None
 
 # ─────────────────────────────────────────────
 # PROVIDER DASHBOARD
