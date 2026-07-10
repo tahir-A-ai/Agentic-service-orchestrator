@@ -14,6 +14,7 @@ IMPORTANT:
 """
 
 import httpx
+import contextvars
 from langchain_core.tools import tool
 
 from app.config import (
@@ -33,16 +34,16 @@ from app.models import Provider
 
 
 # ─────────────────────────────────────────────
-# Session ID injected at call-time by the loop
+# Context injected at call-time by the loop
 # ─────────────────────────────────────────────
 
-_current_session_id: str = "unknown"
+session_id_var = contextvars.ContextVar("session_id", default="unknown")
+excluded_providers_var = contextvars.ContextVar("excluded_providers", default=[])
 
-
-def set_session_id(session_id: str) -> None:
-    """Set the session ID for audit logging within tools."""
-    global _current_session_id
-    _current_session_id = session_id
+def set_session_context(session_id: str, excluded_ids: list[int] | None = None) -> None:
+    """Set the session ID and excluded providers for the current request."""
+    session_id_var.set(session_id)
+    excluded_providers_var.set(excluded_ids or [])
 
 
 # ─────────────────────────────────────────────
@@ -63,7 +64,7 @@ def geocode_location(location_text: str) -> dict:
         {"lat": float, "lon": float} on success.
         {"error": "not_found", "message": str} if location cannot be resolved.
     """
-    session_id = _current_session_id
+    session_id = session_id_var.get()
 
     # Append "Islamabad" to improve Nominatim accuracy for sector codes
     search_query = f"{location_text}, Islamabad, Pakistan"
@@ -155,7 +156,8 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
     Returns:
         {"providers": [list of provider dicts with id, name, rating, distance_km, location, service_type], "count": int, "busy_count": int, "total_count": int}
     """
-    session_id = _current_session_id
+    session_id = session_id_var.get()
+    excluded_ids = excluded_providers_var.get()
 
     # Validate service_type
     valid_types = {"AC Technician", "Electrician", "Plumber"}
@@ -180,7 +182,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         ),
     )
 
-    providers = query_active_providers(service_type, lat, lon)
+    providers, excluded_count = query_active_providers(service_type, lat, lon, excluded_ids=excluded_ids)
 
     with get_db_session() as session:
         total_count = (
@@ -212,6 +214,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         "service_type": service_type,
         "providers": providers,
         "count": len(providers),
+        "excluded_count": excluded_count,
         "busy_count": busy_count,
         "total_count": total_count,
         "busy_providers": busy_providers,
@@ -235,7 +238,7 @@ def ask_clarification(question: str) -> dict:
     Returns:
         {"clarification_requested": true, "question": str}
     """
-    session_id = _current_session_id
+    session_id = session_id_var.get()
 
     write_audit_log(
         session_id,
@@ -271,7 +274,8 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     Returns:
         {"providers": [...], "count": int, "busy_count": int, "total_count": int} — all active providers of that type, sorted by distance then rating.
     """
-    session_id = _current_session_id
+    session_id = session_id_var.get()
+    excluded_ids = excluded_providers_var.get()
 
     valid_types = {"AC Technician", "Electrician", "Plumber"}
     if service_type not in valid_types:
@@ -289,7 +293,7 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
         "Searching ALL sectors in Islamabad for available providers.",
     )
 
-    providers = query_all_active_providers(service_type, lat, lon)
+    providers, excluded_count = query_all_active_providers(service_type, lat, lon, excluded_ids=excluded_ids)
 
     with get_db_session() as session:
         total_count = (
@@ -315,6 +319,7 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
         "service_type": service_type,
         "providers": providers,
         "count": len(providers),
+        "excluded_count": excluded_count,
         "busy_count": busy_count,
         "total_count": total_count,
     }
