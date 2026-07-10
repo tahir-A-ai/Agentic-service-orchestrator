@@ -14,7 +14,7 @@ export default function ChatPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { findProviders, confirm } = useBooking();
-  const { isThinking } = useChat();
+  const { isThinking, excludedIds } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const hasAutoFetched = useRef(false);
@@ -24,7 +24,7 @@ export default function ChatPage() {
       hasAutoFetched.current = true;
       // Small delay to ensure state reset propagation
       setTimeout(() => {
-        findProviders(location.state.autoFetch);
+        findProviders(location.state.autoFetch, excludedIds);
       }, 100);
       
       // Clear the state so it doesn't refetch on refresh
@@ -54,9 +54,9 @@ export default function ChatPage() {
         <ChatWindow 
           onConfirm={handleConfirmClick} 
           onToggleSidebar={() => setSidebarOpen(prev => !prev)}
-          onSend={findProviders}
+          onSend={(text) => findProviders(text, excludedIds)}
         />
-        <InputBar onSend={findProviders} disabled={isThinking} />
+        <InputBar onSend={(text) => findProviders(text, excludedIds)} disabled={isThinking} />
       </main>
 
       <AddressModal 
