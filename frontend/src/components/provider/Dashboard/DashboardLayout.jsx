@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { getProviderStats } from '../../../api/client';
 import StatusToggle from './StatusToggle';
 import Badge from '../../ui/Badge';
 import styles from './DashboardLayout.module.css';
@@ -10,6 +11,30 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeJobsCount, setActiveJobsCount] = useState(0);
+  const [liveServiceType, setLiveServiceType] = useState(providerProfile?.service || 'Service');
+
+  useEffect(() => {
+    if (providerProfile?.id) {
+      getProviderStats(providerProfile.id)
+        .then(stats => {
+          setActiveJobsCount(stats.active_jobs);
+          if (stats.service_type) setLiveServiceType(stats.service_type);
+        })
+        .catch(console.error);
+      
+      // Simple poll every 15s to keep the badge somewhat live
+      const interval = setInterval(() => {
+        getProviderStats(providerProfile.id)
+          .then(stats => {
+            setActiveJobsCount(stats.active_jobs);
+            if (stats.service_type) setLiveServiceType(stats.service_type);
+          })
+          .catch(console.error);
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [providerProfile?.id]);
 
   const handleLogout = () => {
     logout();
@@ -38,7 +63,7 @@ export default function DashboardLayout() {
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
         </svg>
       ),
-      badge: 3
+      badge: activeJobsCount > 0 ? activeJobsCount : undefined
     },
     { 
       path: '/provider/dashboard/completed', 
@@ -105,7 +130,7 @@ export default function DashboardLayout() {
               <div className={styles.profileDetails}>
                 <h2 className={styles.name}>{providerProfile?.name || 'Tariq Mehmood'}</h2>
                 <Badge variant="blue" className={styles.serviceBadge}>
-                  <span className={styles.badgeIcon}>⚡</span> {providerProfile?.service || 'Electrician'}
+                  <span className={styles.badgeIcon}>⚡</span> {liveServiceType}
                 </Badge>
               </div>
             )}
