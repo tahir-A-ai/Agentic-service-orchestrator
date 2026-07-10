@@ -24,6 +24,8 @@ export function AuthProvider({ children }) {
       username: data.username,
       role: data.role,
       providerId: data.provider_id,
+      service_type: data.service_type,
+      location: data.location,
     };
     localStorage.setItem('karigar_user', JSON.stringify(payload));
     setUser(payload);
@@ -39,6 +41,8 @@ export function AuthProvider({ children }) {
       username: profile?.name || 'Demo Provider',
       role: 'provider',
       providerId: null,
+      service_type: 'Electrician',
+      location: 'G-13',
     };
     localStorage.setItem('karigar_user', JSON.stringify(payload));
     setUser(payload);
@@ -54,8 +58,8 @@ export function AuthProvider({ children }) {
   const providerProfile = providerLoggedIn ? {
     id: user.providerId,
     name: user.username,
-    service: 'Electrician',
-    sector: 'G-13',
+    service: user.service_type || 'Service',
+    sector: user.location || 'Location',
   } : null;
 
   // Global Auth Modal State
