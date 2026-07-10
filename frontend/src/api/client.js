@@ -42,9 +42,10 @@ async function request(method, path, body) {
 
 /* ── Public API ───────────────────────────────── */
 
-export async function bookService(userPrompt, sessionId = null) {
+export async function bookService(userPrompt, sessionId = null, excludedIds = []) {
   const payload = { user_prompt: userPrompt };
   if (sessionId) payload.session_id = sessionId;
+  if (excludedIds && excludedIds.length > 0) payload.excluded_provider_ids = excludedIds;
   return request('POST', '/api/v1/book-service', payload);
 }
 
