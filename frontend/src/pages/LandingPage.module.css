@@ -35,6 +35,12 @@
   animation: fadeInUp 600ms ease;
 }
 
+@media (max-width: 768px) {
+  .hero {
+    padding: 100px var(--space-4) 60px;
+  }
+}
+
 /* ── Badge Pill ──────────────────────── */
 
 .badge {
@@ -85,6 +91,13 @@
   width: 100%;
   max-width: 680px;
   margin-bottom: var(--space-10);
+}
+
+@media (max-width: 768px) {
+  .ctaRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
 }
 
 .ctaCard {
