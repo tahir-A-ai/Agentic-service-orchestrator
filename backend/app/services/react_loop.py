@@ -40,7 +40,7 @@ from app.config import (
     BOOKING_SESSION_TTL_MINUTES,
 )
 from app.core.logger import write_audit_log
-from app.services.tools import BOOKING_TOOLS, set_session_id
+from app.services.tools import BOOKING_TOOLS, set_session_context
 from app.services.database import commit_booking, get_db_session
 from app.models import BookingSession, Provider
 
@@ -227,7 +227,7 @@ async def _update_intent_state(agent, config, messages):
 # PHASE 1 — FIND PROVIDERS
 # ─────────────────────────────────────────────
 
-async def run_find_providers(user_prompt: str, session_id: str | None = None) -> dict:
+async def run_find_providers(user_prompt: str, session_id: str | None = None, excluded_provider_ids: list[int] | None = None) -> dict:
     """
     Phase 1: Run the ReAct agent to discover provider candidates.
 
@@ -245,8 +245,8 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None) ->
     if session_id is None:
         session_id = str(uuid.uuid4())
 
-    # Set the session ID so tools can write audit logs
-    set_session_id(session_id)
+    # Set the session context so tools can read session_id and excluded_ids
+    set_session_context(session_id, excluded_provider_ids)
 
     write_audit_log(
         session_id,
@@ -414,7 +414,7 @@ async def run_confirm_booking(
     Loads the BookingSession created in Phase 1, validates TTL, then
     assigns the booking to the first approved provider in Pending_Acceptance state.
     """
-    set_session_id(session_id)
+    set_session_context(session_id)
 
     write_audit_log(
         session_id,
