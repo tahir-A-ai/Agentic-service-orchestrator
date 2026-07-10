@@ -268,7 +268,7 @@ async def book_service(request: ServiceRequest, current_user: dict = Depends(get
     """
     Phase 1 — Agent discovers providers, returns candidates for approval.
     """
-    result = await find_providers(request.user_prompt, request.session_id)
+    result = await find_providers(request.user_prompt, request.session_id, request.excluded_provider_ids)
 
     # Convert raw provider dicts to ProviderDetail models
     candidates: dict[str, list[ProviderDetail]] = {}
