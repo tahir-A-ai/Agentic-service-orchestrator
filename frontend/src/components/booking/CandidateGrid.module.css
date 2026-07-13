@@ -7,6 +7,27 @@
   margin-top: var(--space-3);
 }
 
+.locationBadge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-2);
+}
+
+.pinIcon {
+  font-size: 1.1rem;
+}
+
+.locText {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
 .group {
   display: flex;
   flex-direction: column;
