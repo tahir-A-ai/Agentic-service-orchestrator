@@ -10,15 +10,14 @@
 .prefix {
   display: flex;
   align-items: center;
-  height: 48px;
+  height: 52px;
   padding: 0 var(--space-3);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1C2128;
+  color: #8B949E;
+  font-size: 15px;
+  border: 1px solid #30363D;
   border-right: none;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  border-radius: 8px 0 0 8px;
 }
 
 .fieldWrap {
@@ -28,23 +27,29 @@
 
 .field {
   width: 100%;
-  height: 48px;
-  padding: var(--space-4) var(--space-4) var(--space-1);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-primary);
-  font-size: var(--text-base);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
+  height: 52px;
+  padding: 16px 14px;
+  background: #1C2128;
+  color: #F0F6FC;
+  font-size: 15px;
+  border: 1px solid #30363D;
+  border-radius: 8px;
   transition: all 200ms ease;
+  outline: none;
 }
 
 .prefix + .fieldWrap .field {
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .field:focus {
-  border-color: var(--accent-green);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: #22C55E;
+}
+
+.field:not(:placeholder-shown),
+.field:focus,
+.floating {
+  padding: 22px 14px 10px;
 }
 
 .textarea {
@@ -60,23 +65,21 @@
 
 .label {
   position: absolute;
-  left: var(--space-4);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: var(--text-base);
-  color: var(--text-muted);
+  left: 14px;
+  top: 16px;
+  font-size: 15px;
+  color: #8B949E;
   pointer-events: none;
-  transition: all 200ms ease;
-  transform-origin: left center;
+  transition: 200ms ease;
+  transform-origin: left top;
 }
 
 .textarea ~ .label,
 .field:focus ~ .label,
 .field:not(:placeholder-shown) ~ .label,
 .floating {
-  top: 6px;
-  transform: translateY(0) scale(0.75);
-  color: var(--text-secondary);
+  transform: translateY(-8px) scale(0.75);
+  color: #8B949E;
 }
 
 /* ── Error state ────────────────────── */
