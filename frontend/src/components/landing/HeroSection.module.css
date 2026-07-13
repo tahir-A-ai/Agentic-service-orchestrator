@@ -1,0 +1,215 @@
+.hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px var(--space-6) 120px;
+  text-align: center;
+  animation: fadeInUp 600ms ease;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 100px var(--space-4) 60px;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  margin-bottom: var(--space-6);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-green);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: var(--radius-full);
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-hero);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: var(--space-5);
+}
+
+.subtext {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.6;
+  margin-bottom: var(--space-10);
+}
+
+.ctaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 680px;
+  margin-bottom: var(--space-10);
+}
+
+@media (max-width: 768px) {
+  .ctaRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+.ctaCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  transition: all 250ms ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ctaCard:hover {
+  transform: translateY(-4px);
+}
+
+.customerCard {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.04));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.customerCard:hover {
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: var(--shadow-green);
+}
+
+.providerCard {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.04));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.providerCard:hover {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: var(--shadow-blue);
+}
+
+.ctaIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+  margin-bottom: var(--space-4);
+}
+
+.blueIcon {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.ctaTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.ctaSubtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-5);
+  text-align: left;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-5);
+  background: var(--accent-green);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: background 200ms ease;
+  margin-top: auto;
+}
+
+.ctaCard:hover .ctaButton {
+  background: var(--accent-green-dim);
+}
+
+.blueBtn {
+  background: var(--accent-blue);
+}
+
+.ctaCard:hover .blueBtn {
+  background: var(--accent-blue-dim);
+}
+
+.servicePills {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-10);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  transition: border-color 200ms ease;
+}
+
+.pill:hover {
+  border-color: var(--accent-green);
+}
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.statNum {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statDivider {
+  width: 1px;
+  height: 40px;
+  background: var(--border-default);
+}
