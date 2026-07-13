@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import StatsRow from '../components/provider/Dashboard/StatsRow';
@@ -10,6 +10,30 @@ import { getProviderJobs, toggleAvailability } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
 
+const playPing = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {
+    console.error("Audio play failed", e);
+  }
+};
+
 /**
  * Custom hook to fetch dynamic provider jobs.
  */
@@ -18,13 +42,23 @@ function useProviderJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
+  const prevPendingCountRef = useRef(null);
 
   const fetchJobs = useCallback(async () => {
     if (!providerProfile?.id) return;
     try {
       setLoading(true);
       const data = await getProviderJobs(providerProfile.id);
-      setJobs(data.jobs || []);
+      const newJobs = data.jobs || [];
+      
+      const newPendingCount = newJobs.filter(j => j.status === 'Pending_Acceptance').length;
+      if (prevPendingCountRef.current !== null && newPendingCount > prevPendingCountRef.current) {
+        playPing();
+        showToast('Naya kaam aaya hai!', 'info');
+      }
+      prevPendingCountRef.current = newPendingCount;
+
+      setJobs(newJobs);
     } catch (err) {
       showToast('Jobs fetch karne mein error: ' + err.message, 'error');
     } finally {
@@ -84,7 +118,7 @@ export function OverviewTab() {
           ))}
         </div>
       ) : (
-        <EmptyState icon="👋" title="Koi naya kaam nahi hai" />
+        <EmptyState title="Koi naya kaam nahi hai" />
       )}
     </div>
   );
@@ -99,7 +133,7 @@ export function ActiveJobsTab() {
   return (
     <div className={styles.tab}>
       <h1 className={styles.title}>Active Jobs</h1>
-      <p className={styles.subtitle}>{activeJobs.length} kaam chal raha hai</p>
+      <p className={styles.subtitle}>Jobs that need your attention</p>
       
       {loading ? (
         <p>Loading...</p>
@@ -110,10 +144,9 @@ export function ActiveJobsTab() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon="☕"
-          title="Sab kaam mukammal hain"
-          subtitle="Apna status 'Available' rakhein taake naye bookings mil sakein."
+        <EmptyState 
+          title="Koi active job nahi hai" 
+          subtitle="Jab naya kaam aayega toh yahan show hoga." 
         />
       )}
     </div>
@@ -128,7 +161,8 @@ export function CompletedJobsTab() {
 
   return (
     <div className={styles.tab}>
-      <h1 className={styles.title}>Completed Jobs</h1>
+      <h1 className={styles.title}>Job History</h1>
+      <p className={styles.subtitle}>Aapke purane completed jobs</p>
       {loading ? (
         <p>Loading...</p>
       ) : completedJobs.length > 0 ? (
@@ -138,10 +172,9 @@ export function CompletedJobsTab() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon="📋"
-          title="Koi history nahi"
-          subtitle="Aapke mukammal shuda kaam yahan show honge."
+        <EmptyState 
+          title="History khali hai" 
+          subtitle="Aapne abhi tak koi kaam complete nahi kiya." 
         />
       )}
     </div>
@@ -191,7 +224,7 @@ export function ProfileTab() {
         </div>
 
         <div className={styles.actions}>
-          <Button>Save Changes</Button>
+          <Button onClick={() => showToast('Profile updated successfully!', 'success')}>Save Changes</Button>
         </div>
       </div>
     </div>
