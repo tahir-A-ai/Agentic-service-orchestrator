@@ -125,7 +125,7 @@ function AnimatedCheckmark() {
 export default function AuthModal({ isOpen, onClose, initialView = 'role-select' }) {
   const [view, setView] = useState(initialView);
   const navigate = useNavigate();
-  const { login, signup, loginAsProvider } = useAuth();
+  const { login, signup } = useAuth();
   const { showToast } = useToast();
 
   // Form states
@@ -196,11 +196,9 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
       await new Promise(r => setTimeout(r, 900));
       const user = await login(loginEmail, loginPw);
       if (user.role === 'provider') {
-        showToast('Provider dashboard mein khush aamdeed!', 'success');
         onClose();
         navigate('/provider/dashboard');
       } else {
-        showToast('Chat mein khush aamdeed!', 'success');
         onClose();
         navigate('/chat');
       }
