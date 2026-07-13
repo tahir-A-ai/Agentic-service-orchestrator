@@ -21,7 +21,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/provider/register" element={<ProviderRegisterPage />} />
-              
+
               {/* Chat Flow */}
               <Route path="/chat" element={
                 <ProtectedRoute>
