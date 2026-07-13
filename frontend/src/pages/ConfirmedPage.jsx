@@ -4,10 +4,12 @@ import { useChat } from '../context/ChatContext';
 import TrackingHeader from '../components/booking/TrackingHeader';
 import LiveProviderCard from '../components/booking/LiveProviderCard';
 import RatingModal from '../components/booking/RatingModal';
+import { useToast } from '../context/ToastContext';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
   const { confirmed, reset, lastUserPrompt, addExcludedId } = useChat();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState('Pending_Acceptance');
@@ -46,6 +48,7 @@ export default function ConfirmedPage() {
           if (data.status === 'Pending_Completion') {
             setShowRatingModal(true);
           } else if (data.status === 'Cancelled') {
+            showToast('Provider declined the request. Searching again...', 'error');
             // Show auto-redirect after a short delay so they can see the "Declined" state
             setTimeout(() => {
               isNavigatingRef.current = true;
