@@ -6,7 +6,7 @@ export default function LiveProviderCard({ provider, status }) {
   const isInProgress = status === 'In_Progress';
   const isPendingCompletion = status === 'Pending_Completion';
   const isCompleted = status === 'Completed';
-  
+
   // Fake ETA generation based on distance for realism
   const etaRange = provider.distance_km ? `${Math.ceil(provider.distance_km * 5 + 10)}-${Math.ceil(provider.distance_km * 5 + 25)} min` : '30-45 min';
 
@@ -73,7 +73,7 @@ export default function LiveProviderCard({ provider, status }) {
           </svg>
           <span className={styles.infoTextBold}>{provider.rating || '4.5'}</span>
         </div>
-        
+
         <div className={styles.infoItem}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
