@@ -10,7 +10,7 @@ import styles from './CandidateGrid.module.css';
  */
 export default function CandidateGrid({ candidates, approvedIds = [], onToggle }) {
   const serviceTypes = Object.keys(candidates || {});
-
+  
   if (serviceTypes.length === 0) return null;
 
   return (
