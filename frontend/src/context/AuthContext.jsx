@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { loginApi, signupApi } from '../api/auth';
+import { loginApi, signupApi, logoutApi } from '../api/auth';
 import { useToast } from './ToastContext';
 
 const AuthCtx = createContext(null);
@@ -22,7 +22,6 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (username, password) => {
     try {
       const data = await loginApi(username, password);
-      localStorage.setItem('karigar_token', data.access_token);
       const payload = {
         username: data.username,
         role: data.role,
@@ -53,8 +52,12 @@ export function AuthProvider({ children }) {
 
 
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('karigar_token');
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch (e) {
+      console.error('Logout API failed', e);
+    }
     localStorage.removeItem('karigar_user');
     setUser(null);
     showToast('Logged out successfully', 'info');
