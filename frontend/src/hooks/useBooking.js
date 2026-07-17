@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { useChat, newId } from '../context/ChatContext';
 import { useToast } from '../context/ToastContext';
-import { bookService, confirmBooking, getErrorMessage } from '../api/client';
+import { getErrorMessage } from '../api/core';
+import { bookService, confirmBooking } from '../api/booking';
 
 /**
  * Custom hook for the two-phase booking flow.

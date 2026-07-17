@@ -1,66 +1,10 @@
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getActiveServices } from '../../api/client';
+import { getServiceTypes } from '../../api/stats';
+import { getIconComponent, WrenchIcon } from '../../constants/serviceIcons';
 import styles from './ServicesSection.module.css';
 
-// ── Per-service data ─────────────────────────────────────────────────────────
-
-const SERVICES = [
-  {
-    key: 'electrician',
-    label: 'Electrician',
-    urdu: 'BIJLI WALA',
-    emoji: '⚡',
-    color: '#3B82F6',
-    colorDim: 'rgba(59,130,246,0.12)',
-    colorBorder: 'rgba(59,130,246,0.25)',
-    colorGlow: 'rgba(59,130,246,0.18)',
-    description: 'Ghar ki wiring, MCB, fans, switches — har bijli ki masla hal karein.',
-  },
-  {
-    key: 'plumber',
-    label: 'Plumber',
-    urdu: 'NALQE WALA',
-    emoji: '🔧',
-    color: '#22C55E',
-    colorDim: 'rgba(34,197,94,0.10)',
-    colorBorder: 'rgba(34,197,94,0.25)',
-    colorGlow: 'rgba(34,197,94,0.18)',
-    description: 'Leakage, blockage, geyser, ya naye pipe — sab kuch thik kar dein.',
-  },
-  {
-    key: 'ac technician',
-    label: 'AC Technician',
-    urdu: 'AC WALA',
-    emoji: '❄️',
-    color: '#06B6D4',
-    colorDim: 'rgba(6,182,212,0.10)',
-    colorBorder: 'rgba(6,182,212,0.25)',
-    colorGlow: 'rgba(6,182,212,0.18)',
-    description: 'AC service, gas filling, installation ya repair — expert se karwao.',
-  },
-  {
-    key: 'painter',
-    label: 'Painter',
-    urdu: 'PAINTER',
-    emoji: '🖌️',
-    color: '#A855F7', // Purple
-    colorDim: 'rgba(168,85,247,0.10)',
-    colorBorder: 'rgba(168,85,247,0.25)',
-    colorGlow: 'rgba(168,85,247,0.18)',
-    description: 'Ghar ke andar ya bahar — painting, touch-up, waterproofing sab.',
-  },
-];
-
 // ── Icons (inline SVG) ────────────────────────────────────────────────────────
-
-function WrenchIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-    </svg>
-  );
-}
 
 function ArrowRightIcon() {
   return (
@@ -85,12 +29,30 @@ function ChevronIcon({ direction = 'right' }) {
 // ── Service Card ─────────────────────────────────────────────────────────────
 
 function ServiceCard({ svc, navigate }) {
+  // Compute semi-transparent colors based on the hex theme color if not explicitly provided
+  // Assuming theme_color is a hex code like "#3B82F6"
+  const hex = svc.theme_color || '#3B82F6';
+  
+  // Very simple hex to rgba for the CSS variables
+  let r = 59, g = 130, b = 246; // fallback blue
+  if (hex.match(/^#[0-9a-f]{6}$/i)) {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+
+  const colorDim = `rgba(${r},${g},${b},0.12)`;
+  const colorBorder = `rgba(${r},${g},${b},0.25)`;
+  const colorGlow = `rgba(${r},${g},${b},0.18)`;
+
   const cardStyle = {
-    '--svc-color': svc.color,
-    '--svc-dim': svc.colorDim,
-    '--svc-border': svc.colorBorder,
-    '--svc-glow': svc.colorGlow,
+    '--svc-color': hex,
+    '--svc-dim': colorDim,
+    '--svc-border': colorBorder,
+    '--svc-glow': colorGlow,
   };
+
+  const IconComponent = getIconComponent(svc.key);
 
   return (
     <div className={styles.card} style={cardStyle} onClick={() => navigate('/chat')}>
@@ -100,11 +62,11 @@ function ServiceCard({ svc, navigate }) {
       {/* Card Body */}
       <div className={styles.cardBody}>
         <div className={styles.iconBox}>
-          <span className={styles.emoji}>{svc.emoji}</span>
+          <IconComponent size={28} color={hex} />
         </div>
 
         <h3 className={styles.cardTitle}>{svc.label}</h3>
-        <p className={styles.cardUrdu} style={{ color: svc.color }}>{svc.urdu}</p>
+        <p className={styles.cardUrdu} style={{ color: hex }}>{svc.label_urdu}</p>
 
         <p className={styles.cardDesc}>{svc.description}</p>
 
@@ -135,32 +97,24 @@ export default function ServicesSection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // State for dynamic active services from DB
-  const [activeServiceKeys, setActiveServiceKeys] = useState(null);
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    getActiveServices()
+    getServiceTypes()
       .then((data) => {
-        if (mounted && data?.active_services) {
-          // Normalize to lowercase for robust matching
-          setActiveServiceKeys(data.active_services.map(k => k.toLowerCase()));
+        if (mounted && data?.service_types) {
+          setServices(data.service_types);
         }
       })
-      .catch((err) => console.error('Failed to fetch active services:', err));
+      .catch((err) => console.error('Failed to fetch service types:', err))
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
 
     return () => { mounted = false; };
   }, []);
-
-  // Filter the hardcoded list based on DB availability.
-  // If activeServiceKeys is null (loading) or empty (error or no active providers), 
-  // we could optionally fallback to all, but let's filter if it's an array.
-  const displayedServices = useMemo(() => {
-    if (activeServiceKeys === null) return SERVICES; // show all while loading
-    // Filter to only those whose key is in the active list
-    const filtered = SERVICES.filter(svc => activeServiceKeys.includes(svc.key.toLowerCase()));
-    // Fallback to all if somehow the DB returned none or no matches, to avoid empty section
-    return filtered.length > 0 ? filtered : SERVICES;
-  }, [activeServiceKeys]);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -230,9 +184,13 @@ export default function ServicesSection() {
 
           {/* Scroll track */}
           <div className={styles.scrollTrack} ref={scrollRef}>
-            {displayedServices.map((svc) => (
-              <ServiceCard key={svc.key} svc={svc} navigate={navigate} />
-            ))}
+            {isLoading ? (
+              <p style={{ padding: '2rem' }}>Loading services...</p>
+            ) : (
+              services.map((svc) => (
+                <ServiceCard key={svc.key} svc={svc} navigate={navigate} />
+              ))
+            )}
           </div>
 
           {/* Right arrow */}
@@ -248,16 +206,18 @@ export default function ServicesSection() {
         </div>
 
         {/* Carousel Dots */}
-        <div className={styles.dotsWrap}>
-          {displayedServices.map((_, idx) => (
-            <button
-              key={idx}
-              className={`${styles.dot} ${idx === activeIndex ? styles.dotActive : ''}`}
-              onClick={() => scrollToDot(idx)}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
-        </div>
+        {!isLoading && services.length > 0 && (
+          <div className={styles.dotsWrap}>
+            {services.map((_, idx) => (
+              <button
+                key={idx}
+                className={`${styles.dot} ${idx === activeIndex ? styles.dotActive : ''}`}
+                onClick={() => scrollToDot(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -130,6 +130,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
 
   // Form states
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -146,7 +147,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
   useEffect(() => {
     if (isOpen) {
       setView(initialView);
-      setName(''); setEmail(''); setPassword(''); setConfirmPw('');
+      setName(''); setPhone(''); setEmail(''); setPassword(''); setConfirmPw('');
       setLoginEmail(''); setLoginPw('');
       setErrors({}); setLoading(false);
     }
@@ -172,7 +173,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
     setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 1000));
-      await signup({ username: email, email, password, role: 'customer' });
+      await signup({ username: email, email, password, role: 'customer', full_name: name, phone });
       setSignupEmail(email);
       setView('signup-success');
     } catch (err) {
@@ -262,6 +263,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
 
             <form onSubmit={handleCustomerSignup} className={styles.form}>
               <FloatingInput id="signup-name" label="Full Name" value={name} onChange={e => setName(e.target.value)} error={errors.name} autoFocus />
+              <FloatingInput id="signup-phone" label="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} error={errors.phone} />
               <FloatingInput id="signup-email" label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} error={errors.email} />
               <FloatingInput id="signup-pw" label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} error={errors.password} />
               <FloatingInput id="signup-cpw" label="Confirm Password" type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} error={errors.confirmPw} />

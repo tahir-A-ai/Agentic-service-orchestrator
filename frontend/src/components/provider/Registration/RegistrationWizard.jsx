@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useMultiStep from '../../hooks/useMultiStep';
-import { useAuth } from '../../context/AuthContext';
-import { islamabadSectors } from '../../data/mockData';
+import useMultiStep from '../../../hooks/useMultiStep';
+import { useAuth } from '../../../context/AuthContext';
+import { islamabadSectors } from '../../../constants/sectors';
 import StepIndicator from './StepIndicator';
 import ServiceTypeSelector from './ServiceTypeSelector';
-import Input from '../ui/Input';
-import Button from '../ui/Button';
+import Input from '../../ui/Input';
+import Button from '../../ui/Button';
 import styles from './RegistrationWizard.module.css';
 
 const STEPS = ['Personal Info', 'Service Details', 'Review'];

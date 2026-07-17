@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Badge from '../../ui/Badge';
-import { updateJobStatus } from '../../../api/client';
+import { updateJobStatus } from '../../../api/provider';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import styles from './JobCard.module.css';

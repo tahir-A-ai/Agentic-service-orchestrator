@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getPublicStats } from '../../api/client';
+import { getPublicStats, getServiceTypes } from '../../api/stats';
+import { getIconComponent } from '../../constants/serviceIcons';
 import styles from './HeroSection.module.css';
 
 export default function HeroSection() {
@@ -9,11 +10,19 @@ export default function HeroSection() {
     bookings_completed: 0,
     average_rating: 0,
   });
+  
+  const [services, setServices] = useState([]);
 
   useEffect(() => {
     getPublicStats()
       .then((data) => setStats(data))
       .catch((err) => console.error("Failed to fetch public stats:", err));
+      
+    getServiceTypes()
+      .then((data) => {
+        if (data?.service_types) setServices(data.service_types);
+      })
+      .catch((err) => console.error("Failed to fetch service types:", err));
   }, []);
 
   return (
@@ -70,11 +79,21 @@ export default function HeroSection() {
       </div>
 
       {/* Service Pills */}
-      <div className={styles.servicePills}>
-        <span className={styles.pill}>❄️ AC Technician</span>
-        <span className={styles.pill}>⚡ Electrician</span>
-        <span className={styles.pill}>🔧 Plumber</span>
-      </div>
+      {services.length > 0 && (
+        <div className={styles.servicePills}>
+          {services.map((svc) => {
+            const IconComponent = getIconComponent(svc.key);
+            return (
+              <span key={svc.key} className={styles.pill}>
+                <span className={styles.pillIcon} style={{ color: svc.theme_color }}>
+                  <IconComponent size={14} color="currentColor" />
+                </span>
+                {svc.label}
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {/* Stats Row */}
       <div className={styles.statsRow}>
@@ -89,7 +108,12 @@ export default function HeroSection() {
         </div>
         <div className={styles.statDivider} />
         <div className={styles.stat}>
-          <span className={styles.statNum}>{stats.average_rating}⭐</span>
+          <span className={styles.statNum}>
+            {stats.average_rating}
+            <span className={styles.starIcon}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+          </span>
           <span className={styles.statLabel}>Average Rating</span>
         </div>
       </div>

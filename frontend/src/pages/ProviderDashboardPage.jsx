@@ -6,7 +6,7 @@ import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { getProviderJobs, toggleAvailability } from '../api/client';
+import { getProviderJobs, toggleAvailability } from '../api/provider';
 import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
 
@@ -175,6 +175,37 @@ export function CompletedJobsTab() {
         <EmptyState 
           title="History khali hai" 
           subtitle="Aapne abhi tak koi kaam complete nahi kiya." 
+        />
+      )}
+    </div>
+  );
+}
+
+export function DeclinedJobsTab() {
+  const isAuth = useRequireAuth();
+  const { allJobs, loading } = useProviderJobs();
+  
+  if (!isAuth) return null;
+
+  // Filter declined jobs client-side since API returns all jobs
+  const declinedJobs = allJobs.filter(j => j.status === 'Declined' || j.status === 'Cancelled');
+
+  return (
+    <div className={styles.tab}>
+      <h1 className={styles.title}>Declined Jobs</h1>
+      <p className={styles.subtitle}>Jobs that you have declined or missed</p>
+      {loading ? (
+        <p>Loading...</p>
+      ) : declinedJobs.length > 0 ? (
+        <div className={styles.jobList}>
+          {declinedJobs.map(job => (
+            <JobCard key={job.session_id} job={job} readOnly />
+          ))}
+        </div>
+      ) : (
+        <EmptyState 
+          title="Koi declined job nahi hai" 
+          subtitle="Aapne koi job decline nahi ki." 
         />
       )}
     </div>

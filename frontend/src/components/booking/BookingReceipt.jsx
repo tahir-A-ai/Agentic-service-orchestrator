@@ -29,12 +29,17 @@ export default function BookingReceipt({ provider }) {
       </div>
 
       <div className={styles.actions}>
-        <button className={styles.callBtn} disabled>
+        <a href={provider.phone ? `tel:${provider.phone}` : '#'} className={styles.callBtn}>
           Call Provider
-        </button>
-        <button className={styles.mapBtn}>
+        </a>
+        <a 
+          href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(provider.location || 'Islamabad')}`}
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={styles.mapBtn}
+        >
           View on Map
-        </button>
+        </a>
       </div>
     </div>
   );

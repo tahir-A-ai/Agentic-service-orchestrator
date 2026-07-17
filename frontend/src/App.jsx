@@ -8,7 +8,7 @@ import ChatPage from './pages/ChatPage';
 import ConfirmedPage from './pages/ConfirmedPage';
 import ProviderRegisterPage from './pages/ProviderRegisterPage';
 import DashboardLayout from './components/provider/Dashboard/DashboardLayout';
-import { OverviewTab, ActiveJobsTab, CompletedJobsTab, ProfileTab } from './pages/ProviderDashboardPage';
+import { OverviewTab, ActiveJobsTab, CompletedJobsTab, DeclinedJobsTab, ProfileTab } from './pages/ProviderDashboardPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -43,6 +43,7 @@ function App() {
                 <Route index element={<OverviewTab />} />
                 <Route path="active" element={<ActiveJobsTab />} />
                 <Route path="completed" element={<CompletedJobsTab />} />
+                <Route path="declined" element={<DeclinedJobsTab />} />
                 <Route path="profile" element={<ProfileTab />} />
               </Route>
             </Routes>

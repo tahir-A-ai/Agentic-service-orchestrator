@@ -36,13 +36,13 @@ from app.config import (
     GROQ_API_KEY,
     GROQ_MODEL,
     REACT_MAX_ITERATIONS,
-    REACT_SYSTEM_PROMPT,
+    build_system_prompt,
     BOOKING_SESSION_TTL_MINUTES,
 )
 from app.core.logger import write_audit_log
-from app.services.tools import BOOKING_TOOLS, set_session_context
+from app.services.tools import BOOKING_TOOLS, set_session_context, refresh_valid_service_types
 from app.services.database import commit_booking, get_db_session
-from app.models import BookingSession, Provider
+from app.models import BookingSession, Provider, ServiceType
 
 # ─────────────────────────────────────────────
 # AGENT STATE & BUILDER
@@ -64,12 +64,14 @@ def _trim_messages(state):
     return [SystemMessage(content=REACT_SYSTEM_PROMPT)] + trimmed
 
 
-def _get_agent(checkpointer):
+def _get_agent(checkpointer, system_prompt: str):
     """
     Build the LangGraph ReAct agent.
-    
-    The checkpointer is passed in from an async context manager
-    to ensure it is properly initialized and closed per request.
+
+    The system_prompt is passed in from the caller (built dynamically from
+    the ServiceType DB table so new service types propagate automatically).
+    The checkpointer is passed in from an async context manager to ensure
+    it is properly initialized and closed per request.
     """
     if not GROQ_API_KEY or not GROQ_API_KEY.startswith("gsk_"):
         raise RuntimeError(
@@ -87,7 +89,7 @@ def _get_agent(checkpointer):
         model=llm,
         tools=BOOKING_TOOLS,
         checkpointer=checkpointer,
-        system_prompt=REACT_SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         state_schema=CustomAgentState,
     )
 
@@ -248,6 +250,15 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None, ex
     # Set the session context so tools can read session_id and excluded_ids
     set_session_context(session_id, excluded_provider_ids)
 
+    # Build dynamic system prompt from current active service types in DB
+    with get_db_session() as _db:
+        service_labels = [r[0] for r in _db.query(ServiceType.label).filter(
+            ServiceType.is_active == True  # noqa: E712
+        ).order_by(ServiceType.sort_order).all()]
+    if not service_labels:
+        service_labels = ["Electrician", "Plumber"]  # fallback
+    system_prompt = build_system_prompt(service_labels)
+
     write_audit_log(
         session_id,
         "[PLANNING]",
@@ -266,7 +277,7 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None, ex
     }
 
     async with AsyncSqliteSaver.from_conn_string(str(DB_PATH)) as checkpointer:
-        agent = _get_agent(checkpointer)
+        agent = _get_agent(checkpointer, system_prompt)
 
         # ── Apply Pair-Safe Trimmer and Locked Context System Message ──
         state = await agent.aget_state(config)

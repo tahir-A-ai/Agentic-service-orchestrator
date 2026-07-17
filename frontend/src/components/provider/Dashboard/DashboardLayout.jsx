@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { getProviderStats } from '../../../api/client';
+import { getProviderStats } from '../../../api/provider';
+import { getIconComponent } from '../../../constants/serviceIcons';
 import StatusToggle from './StatusToggle';
 import Badge from '../../ui/Badge';
 import styles from './DashboardLayout.module.css';
@@ -76,6 +77,17 @@ export default function DashboardLayout() {
       )
     },
     { 
+      path: '/provider/dashboard/declined', 
+      label: 'Declined', 
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      )
+    },
+    { 
       path: '/provider/dashboard/profile', 
       label: 'Profile', 
       icon: (
@@ -130,7 +142,12 @@ export default function DashboardLayout() {
               <div className={styles.profileDetails}>
                 <h2 className={styles.name}>{providerProfile?.name || 'Tariq Mehmood'}</h2>
                 <Badge variant="blue" className={styles.serviceBadge}>
-                  <span className={styles.badgeIcon}>⚡</span> {liveServiceType}
+                  <span className={styles.badgeIcon}>
+                    {(() => {
+                      const Icon = getIconComponent(liveServiceType);
+                      return <Icon size={12} color="currentColor" />;
+                    })()}
+                  </span> {liveServiceType}
                 </Badge>
               </div>
             )}

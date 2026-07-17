@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { loginApi, signupApi } from '../api/client';
+import { loginApi, signupApi } from '../api/auth';
 import { useToast } from './ToastContext';
 
 const AuthCtx = createContext(null);

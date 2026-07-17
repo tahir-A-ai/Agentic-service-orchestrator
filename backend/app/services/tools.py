@@ -30,7 +30,34 @@ from app.services.database import (
     save_location_cache,
     get_db_session,
 )
-from app.models import Provider
+from app.models import Provider, ServiceType
+
+
+# ─────────────────────────────────────────────
+# Dynamic valid service types (loaded from DB, fallback to known set)
+# ─────────────────────────────────────────────
+
+def _load_valid_service_types() -> set[str]:
+    """Load active service type labels from the DB. Falls back to empty set on error."""
+    try:
+        with get_db_session() as session:
+            rows = session.query(ServiceType.label).filter(ServiceType.is_active == True).all()  # noqa: E712
+            if rows:
+                return {r[0] for r in rows}
+    except Exception:
+        pass
+    # ponytail: fallback so agent still works if DB is temporarily unavailable
+    return {"Electrician", "Plumber", "AC Technician"}
+
+
+# Loaded once at module import; refreshed when main.py seeds the DB
+VALID_SERVICE_TYPES: set[str] = _load_valid_service_types()
+
+
+def refresh_valid_service_types() -> None:
+    """Re-read service types from DB. Called after seeding on startup."""
+    global VALID_SERVICE_TYPES
+    VALID_SERVICE_TYPES = _load_valid_service_types()
 
 
 # ─────────────────────────────────────────────
@@ -159,18 +186,17 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
     session_id = session_id_var.get()
     excluded_ids = excluded_providers_var.get()
 
-    # Validate service_type
-    valid_types = {"AC Technician", "Electrician", "Plumber"}
-    if service_type not in valid_types:
+    # Validate service_type against DB-loaded set
+    if service_type not in VALID_SERVICE_TYPES:
         write_audit_log(
             session_id,
             "[TOOL USAGE]",
-            f"TOOL CALLED -> query_providers('{service_type}', ...). INVALID service_type. Must be one of {valid_types}.",
+            f"TOOL CALLED -> query_providers('{service_type}', ...). INVALID service_type. Must be one of {VALID_SERVICE_TYPES}.",
         )
         return {
             "providers": [],
             "count": 0,
-            "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(valid_types))}",
+            "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}",
         }
 
     write_audit_log(
@@ -277,12 +303,11 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     session_id = session_id_var.get()
     excluded_ids = excluded_providers_var.get()
 
-    valid_types = {"AC Technician", "Electrician", "Plumber"}
-    if service_type not in valid_types:
+    if service_type not in VALID_SERVICE_TYPES:
         return {
             "providers": [],
             "count": 0,
-            "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(valid_types))}",
+            "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}",
         }
 
     write_audit_log(

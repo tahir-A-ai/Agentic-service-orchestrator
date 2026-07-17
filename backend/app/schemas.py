@@ -141,17 +141,21 @@ class ConfirmBookingResponse(BaseModel):
 # ─────────────────────────────────────────────
 
 class SignupRequest(BaseModel):
+    full_name: str | None = Field(None, max_length=150)
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=5, max_length=100)
-    password: str = Field(..., min_length=4, max_length=50)
+    password: str = Field(..., min_length=6, max_length=100)
+    phone: str | None = Field(None, max_length=20)
     role: Literal["customer", "provider"]
-    
-    # Provider-specific fields (optional for signup request, required if role is provider)
+
+    # Provider-specific fields (required when role is provider)
     name: str | None = None
     service_type: str | None = None
     location: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    experience_years: int | None = None
+    bio: str | None = None
 
 
 class LoginRequest(BaseModel):
@@ -164,6 +168,7 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     role: str
     username: str
+    full_name: str | None = None
     provider_id: int | None = None
     service_type: str | None = None
     location: str | None = None
@@ -182,6 +187,7 @@ class PublicStatsResponse(BaseModel):
 class ProviderStatsResponse(BaseModel):
     active_jobs: int
     completed_jobs: int
+    declined_jobs: int = 0
     rating: float
     service_type: str | None = None
 
@@ -212,7 +218,23 @@ class ProviderAvailabilityResponse(BaseModel):
 
 
 
+class ServiceTypeOut(BaseModel):
+    """Full service type object returned from the service-types API."""
+    id: int
+    key: str
+    label: str
+    label_urdu: str
+    theme_color: str
+    description: str
+    sort_order: int
+
+
+class ServiceTypesResponse(BaseModel):
+    service_types: list[ServiceTypeOut]
+
+
 class ActiveServicesResponse(BaseModel):
+    """Legacy: simple list of service type labels (keys). Kept for backward compatibility."""
     active_services: list[str]
 
 class CustomerConfirmRequest(BaseModel):

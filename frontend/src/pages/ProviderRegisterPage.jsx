@@ -1,5 +1,5 @@
 import Navbar from '../components/layout/Navbar';
-import RegistrationWizard from '../components/provider/RegistrationWizard';
+import RegistrationWizard from '../components/provider/Registration/RegistrationWizard';
 import styles from './ProviderRegisterPage.module.css';
 
 export default function ProviderRegisterPage() {

@@ -19,3 +19,6 @@ langgraph-checkpoint-sqlite>=1.0.0
 
 # HTTP Client (for Tools & End-to-End Tests)
 httpx>=0.27.0
+
+# Security — password hashing
+passlib[bcrypt]>=1.7.4

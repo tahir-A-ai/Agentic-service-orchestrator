@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { confirmCompletion } from '../../api/client';
+import { confirmCompletion } from '../../api/booking';
 import styles from './RatingModal.module.css';
 
 export default function RatingModal({ isOpen, sessionId, providerName, onComplete }) {
