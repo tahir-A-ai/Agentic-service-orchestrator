@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from app.schemas import SignupRequest, LoginRequest, AuthResponse
 from app.services.database import get_db_session
 from app.services.auth import signup_user, login_user
@@ -24,10 +24,27 @@ async def signup(request: SignupRequest):
     response_model=AuthResponse,
     summary="Login and get JWT token",
 )
-async def login(request: LoginRequest) -> AuthResponse:
+async def login(request: LoginRequest, response: Response) -> AuthResponse:
     """
-    Login using username/password. Returns access token, role, and provider_id (if provider).
+    Login using username/password. Sets access token in an HttpOnly cookie. Returns user info.
     """
     with get_db_session() as db:
         res = login_user(db, request.model_dump())
+        
+        response.set_cookie(
+            key="access_token",
+            value=res["access_token"],
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=86400  # 1 day
+        )
         return AuthResponse(**res)
+
+@router.post("/logout", summary="Logout user")
+async def logout(response: Response):
+    """
+    Clears the HttpOnly access token cookie.
+    """
+    response.delete_cookie("access_token", samesite="lax")
+    return {"message": "Logged out successfully"}
