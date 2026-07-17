@@ -12,6 +12,7 @@ Security:
 
 from datetime import datetime, timedelta, timezone
 import jwt
+from fastapi import Request
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import bcrypt
@@ -60,9 +61,16 @@ def decode_access_token(token: str) -> dict:
         )
 
 
-def get_current_user_from_credentials(credentials: HTTPAuthorizationCredentials = Security(security_scheme)) -> dict:
-    """Dependency to validate the authorization header and return the user payload."""
-    return decode_access_token(credentials.credentials)
+
+def get_current_user_from_credentials(request: Request) -> dict:
+    """Dependency to validate the HttpOnly cookie and return the user payload."""
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "MISSING_TOKEN", "message": "Login zaroori hai."}
+        )
+    return decode_access_token(token)
 
 
 def signup_user(db: Session, payload: dict) -> User:
