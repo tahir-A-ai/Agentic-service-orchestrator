@@ -19,10 +19,8 @@ async function withTimeout(promise, ms) {
 }
 
 export async function request(method, path, body) {
-  const token = localStorage.getItem('karigar_token');
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const opts = { method, headers };
+  const opts = { method, headers, credentials: 'include' };
   if (body) opts.body = JSON.stringify(body);
 
   const res = await withTimeout(fetch(`${API_BASE}${path}`, opts), TIMEOUT_MS);
