@@ -12,9 +12,7 @@ Security:
 
 from datetime import datetime, timedelta, timezone
 import jwt
-from fastapi import Request
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Request, HTTPException
 import bcrypt
 from sqlalchemy.orm import Session
 from app.config import JWT_SECRET
@@ -24,7 +22,6 @@ from app.models import User, Provider
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
 
-security_scheme = HTTPBearer()
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -107,10 +104,11 @@ def signup_user(db: Session, payload: dict) -> User:
                 status_code=400,
                 detail={"error_code": "MISSING_PROVIDER_INFO", "message": "Provider registration ke liye saari details zaroori hain."}
             )
+        normalized_service_type = payload["service_type"].title()
         provider = Provider(
             user_id=new_user.id,
             name=payload["name"],
-            service_type=payload["service_type"],
+            service_type=normalized_service_type,
             location=payload["location"],
             latitude=payload["latitude"],
             longitude=payload["longitude"],
