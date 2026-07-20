@@ -40,17 +40,10 @@ export function AuthProvider({ children }) {
   }, [showToast]);
 
   const signup = useCallback(async (payload) => {
-    try {
-      const res = await signupApi(payload);
-      showToast('Account created successfully!', 'success');
-      return res;
-    } catch (err) {
-      showToast('Signup failed. Please try again.', 'error');
-      throw err;
-    }
+    const res = await signupApi(payload);
+    showToast('Account created successfully!', 'success');
+    return res;
   }, [showToast]);
-
-
 
   const logout = useCallback(async () => {
     try {
