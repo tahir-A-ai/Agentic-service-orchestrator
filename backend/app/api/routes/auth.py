@@ -2,6 +2,7 @@ from fastapi import APIRouter, Response
 from app.schemas import SignupRequest, LoginRequest, AuthResponse
 from app.services.database import get_db_session
 from app.services.auth import signup_user, login_user
+from app.config import ENVIRONMENT
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -26,7 +27,7 @@ async def signup(request: SignupRequest):
 )
 async def login(request: LoginRequest, response: Response) -> AuthResponse:
     """
-    Login using username/password. Sets access token in an HttpOnly cookie. Returns user info.
+    Login using username/password.
     """
     with get_db_session() as db:
         res = login_user(db, request.model_dump())
@@ -35,7 +36,7 @@ async def login(request: LoginRequest, response: Response) -> AuthResponse:
             key="access_token",
             value=res["access_token"],
             httponly=True,
-            secure=True,
+            secure=(ENVIRONMENT == "production"),
             samesite="lax",
             max_age=86400  # 1 day
         )
