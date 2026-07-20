@@ -162,6 +162,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
   /* ── Customer Signup Handler ── */
   const handleCustomerSignup = async (e) => {
     e.preventDefault();
+    if (loading) return; // Guard against double-submission
+
     const errs = {};
     if (!name.trim()) errs.name = 'Naam zaroor dein';
     if (!email.trim() || !email.includes('@')) errs.email = 'Valid email dein';
@@ -172,12 +174,16 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
 
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 1000));
       await signup({ username: email, email, password, role: 'customer', full_name: name, phone });
       setSignupEmail(email);
       setView('signup-success');
     } catch (err) {
-      setErrors({ form: err?.body?.detail?.message || err.message || 'Signup fail ho gayi.' });
+      const msg =
+        err?.body?.detail?.message ||
+        err?.body?.message ||
+        err?.message ||
+        'Signup fail ho gayi. Dobara try karein.';
+      setErrors({ form: msg });
     } finally {
       setLoading(false);
     }
