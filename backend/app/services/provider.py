@@ -4,17 +4,18 @@ app/services/provider.py
 Business logic for the Provider Dashboard APIs.
 """
 
+import json
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models import Provider, BookingSession
 
 def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
     # Fetch jobs that are assigned to this provider
-    # Include Pending_Acceptance, In_Progress, Completed
+    # Include Pending_Acceptance, In_Progress, Pending_Completion, Completed, Cancelled
     sessions = (
         db.query(BookingSession)
         .filter(BookingSession.confirmed_provider_id == provider_id)
-        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion", "Completed"]))
+        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion", "Completed", "Cancelled"]))
         .order_by(BookingSession.created_at.desc())
         .all()
     )
@@ -53,9 +54,16 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
     if status == "In_Progress" and provider:
         provider.status = "Busy"
     elif actual_status == "Cancelled" and provider:
+        # Record provider in declined_provider_ids JSON list
+        try:
+            declined_list = json.loads(session.declined_provider_ids or "[]")
+        except Exception:
+            declined_list = []
+        if provider_id not in declined_list:
+            declined_list.append(provider_id)
+        session.declined_provider_ids = json.dumps(declined_list)
+
         # Check if they have other In_Progress jobs?
-        # For simplicity, if they complete a job, they might become Active again
-        # Let's count if they have any other In_Progress
         in_progress_count = (
             db.query(BookingSession)
             .filter(BookingSession.confirmed_provider_id == provider_id, BookingSession.status == "In_Progress", BookingSession.id != session_id)
