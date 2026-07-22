@@ -31,6 +31,7 @@ async def change_job_status(provider_id: int, session_id: str, request: UpdateJo
     await manager.broadcast_to_job(session_id, {
         "type": "status_update",
         "status": actual,
+        "provider_id": provider_id,
         "provider_name": res.get("provider_name", "Unknown"),
         "service_type": res.get("service_type", "Unknown"),
         "timestamp": datetime.now(timezone.utc).isoformat()
