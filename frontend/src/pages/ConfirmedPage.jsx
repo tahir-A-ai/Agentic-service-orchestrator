@@ -30,7 +30,9 @@ export default function ConfirmedPage() {
   useEffect(() => {
     if (!confirmed?.session_id) return;
 
-    const wsUrl = `ws://localhost:8000/api/v1/stream/booking/${confirmed.session_id}`;
+    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+    const wsBase = apiBase.replace(/^http/, 'ws');
+    const wsUrl = `${wsBase}/api/v1/stream/booking/${confirmed.session_id}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

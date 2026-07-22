@@ -8,7 +8,7 @@ import styles from './Sidebar.module.css';
 export default function Sidebar({ isOpen, onClose }) {
   const { reset } = useChat();
   const { user } = useAuth();
-  
+
   const userName = user?.username || 'Guest User';
   const initial = userName.substring(0, 2).toUpperCase();
 
@@ -23,7 +23,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <aside className={[styles.sidebar, isOpen ? styles.sidebarOpen : ''].filter(Boolean).join(' ')}>
         <div className={styles.header}>
-          <button className={styles.newBtn} onClick={() => { reset(); onClose?.(); }}>
+          <button className={styles.newBtn} onClick={() => { reset(); }}>
             + New Chat
           </button>
         </div>
