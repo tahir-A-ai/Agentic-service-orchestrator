@@ -142,7 +142,6 @@ class ConfirmBookingResponse(BaseModel):
 
 class SignupRequest(BaseModel):
     full_name: str | None = Field(None, max_length=150)
-    username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=5, max_length=100)
     password: str = Field(..., min_length=6, max_length=100)
     phone: str | None = Field(None, max_length=20)
@@ -159,7 +158,7 @@ class SignupRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
 
 
@@ -167,7 +166,7 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: str
-    username: str
+    email: str
     full_name: str | None = None
     provider_id: int | None = None
     service_type: str | None = None
