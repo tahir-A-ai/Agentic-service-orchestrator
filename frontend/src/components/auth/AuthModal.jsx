@@ -174,7 +174,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
 
     setLoading(true);
     try {
-      await signup({ username: email, email, password, role: 'customer', full_name: name, phone });
+      await signup({ email, password, role: 'customer', full_name: name, phone });
       setSignupEmail(email);
       setView('signup-success');
     } catch (err) {
@@ -193,7 +193,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
   const handleLogin = async (e) => {
     e.preventDefault();
     const errs = {};
-    if (!loginEmail.trim()) errs.loginEmail = 'Email / username dein';
+    if (!loginEmail.trim()) errs.loginEmail = 'Email dein';
     if (!loginPw.trim()) errs.loginPw = 'Password dein';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -210,7 +210,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
         navigate('/chat');
       }
     } catch (err) {
-      setErrors({ form: err?.body?.detail?.message || 'Ghalat username ya password.' });
+      setErrors({ form: err?.body?.detail?.message || 'Ghalat email ya password.' });
     } finally {
       setLoading(false);
     }

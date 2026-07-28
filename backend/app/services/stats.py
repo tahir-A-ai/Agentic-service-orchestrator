@@ -1,13 +1,11 @@
 """
-app/services/stats.py
-=====================
 Aggregation queries for public landing page stats and provider dashboard stats.
 """
 
 import json
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import Provider, BookingSession, ServiceType
+from app.models import Provider, BookingSession, ServiceType, SessionDecline
 
 
 def get_public_stats(db: Session) -> dict:
@@ -59,22 +57,9 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
         BookingSession.status.in_(["Pending_Acceptance", "In_Progress"])
     ).scalar() or 0
 
-    # Count sessions where this provider declined (their ID appears in declined_provider_ids JSON list)
-    # ponytail: O(n) scan on declined_provider_ids — acceptable for MVP; upgrade to a junction table
-    # if declined counts grow large enough to hurt query time.
-    all_sessions_with_declines = db.query(BookingSession.declined_provider_ids).filter(
-        BookingSession.declined_provider_ids.isnot(None),
-        BookingSession.declined_provider_ids != "[]",
-    ).all()
-
-    declined_jobs = 0
-    for (raw,) in all_sessions_with_declines:
-        try:
-            ids = json.loads(raw) if raw else []
-            if provider_id in ids:
-                declined_jobs += 1
-        except (json.JSONDecodeError, TypeError):
-            pass
+    declined_jobs = db.query(func.count(SessionDecline.id)).filter(
+        SessionDecline.provider_id == provider_id
+    ).scalar() or 0
 
     return {
         "active_jobs": active_jobs,
@@ -91,7 +76,8 @@ def get_active_services(db: Session) -> list[str]:
     Used by the /api/v1/stats/services endpoint for backward compatibility.
     """
     rows = (
-        db.query(Provider.service_type)
+        db.query(ServiceType.label)
+        .join(Provider, Provider.service_type_id == ServiceType.id)
         .filter(Provider.status == "Active")
         .distinct()
         .all()
@@ -106,7 +92,7 @@ def get_all_service_types(db: Session) -> list[dict]:
     """
     rows = (
         db.query(ServiceType)
-        .filter(ServiceType.is_active == True)  # noqa: E712
+        .filter(ServiceType.is_active == True)
         .order_by(ServiceType.sort_order, ServiceType.id)
         .all()
     )

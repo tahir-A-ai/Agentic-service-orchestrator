@@ -98,7 +98,7 @@ export default function Navbar() {
                   )}
                   <span className={styles.userPill}>
                     <UserIcon />
-                    <span>{user?.username}</span>
+                    <span>{user?.full_name || user?.email}</span>
                   </span>
                   <button className={styles.logoutBtn} onClick={logout} title="Logout">
                     <LogOutIcon />

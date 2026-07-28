@@ -70,7 +70,6 @@ export default function RegistrationWizard() {
     
     try {
       await signup({
-        username: formData.email,
         email: formData.email,
         password: formData.password,
         role: 'provider',

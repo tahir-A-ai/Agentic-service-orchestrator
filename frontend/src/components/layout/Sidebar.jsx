@@ -9,7 +9,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const { reset } = useChat();
   const { user } = useAuth();
 
-  const userName = user?.username || 'Guest User';
+  const userName = user?.full_name || user?.email || 'Guest User';
   const initial = userName.substring(0, 2).toUpperCase();
 
   return (

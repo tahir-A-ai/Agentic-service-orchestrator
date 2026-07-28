@@ -19,11 +19,12 @@ export function AuthProvider({ children }) {
     } catch { return null; }
   });
 
-  const login = useCallback(async (username, password) => {
+  const login = useCallback(async (email, password) => {
     try {
-      const data = await loginApi(username, password);
+      const data = await loginApi(email, password);
       const payload = {
-        username: data.username,
+        email: data.email,
+        full_name: data.full_name,
         role: data.role,
         providerId: data.provider_id,
         service_type: data.service_type,
@@ -31,7 +32,7 @@ export function AuthProvider({ children }) {
       };
       localStorage.setItem('karigar_user', JSON.stringify(payload));
       setUser(payload);
-      showToast(`Welcome back, ${data.username}!`, 'success');
+      showToast(`Welcome back, ${data.full_name || data.email}!`, 'success');
       return payload;
     } catch (err) {
       showToast('Login failed. Please check your credentials.', 'error');
@@ -59,7 +60,7 @@ export function AuthProvider({ children }) {
   const providerLoggedIn = !!(user && user.role === 'provider');
   const providerProfile = providerLoggedIn ? {
     id: user.providerId,
-    name: user.username,
+    name: user.full_name || user.email,
     service: user.service_type || 'Service',
     sector: user.location || 'Location',
   } : null;
