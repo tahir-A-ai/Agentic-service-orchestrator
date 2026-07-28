@@ -1,13 +1,6 @@
 """
-app/services/auth.py
-====================
 Service for JWT-based authentication.
 Generates access tokens and handles validation.
-
-Security:
-  - Passwords are hashed with bcrypt via passlib.
-  - JWT secret is loaded from .env (JWT_SECRET).
-  - Provider link is via Provider.user_id FK (not User.provider_id).
 """
 
 from datetime import datetime, timedelta, timezone
@@ -17,7 +10,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from app.config import JWT_SECRET
 from app.services.database import get_db_session
-from app.models import User, Provider
+from app.models import User, Provider, ServiceType
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
@@ -71,23 +64,17 @@ def get_current_user_from_credentials(request: Request) -> dict:
 
 
 def signup_user(db: Session, payload: dict) -> User:
-    """
-    Register a user. If role is provider, create the provider entry and link via user_id FK.
-    Passwords are bcrypt-hashed before storage.
-    """
+    """Register a user. If role is provider, create the provider entry and link via user_id FK."""
     existing_user = db.query(User).filter(
-        (User.username == payload["username"]) | (User.email == payload["email"])
+        User.email == payload["email"]
     ).first()
     if existing_user:
         raise HTTPException(
             status_code=400,
-            detail={"error_code": "USER_ALREADY_EXISTS", "message": "Username ya Email pehle se registered hai."}
+            detail={"error_code": "USER_ALREADY_EXISTS", "message": "Email pehle se registered hai."}
         )
-
-    # Create User record first (Provider will reference it via user_id)
     new_user = User(
         full_name=payload.get("full_name"),
-        username=payload["username"],
         email=payload["email"],
         password_hash=hash_password(payload["password"]),
         phone=payload.get("phone"),
@@ -104,11 +91,19 @@ def signup_user(db: Session, payload: dict) -> User:
                 status_code=400,
                 detail={"error_code": "MISSING_PROVIDER_INFO", "message": "Provider registration ke liye saari details zaroori hain."}
             )
-        normalized_service_type = payload["service_type"].title()
+        raw_st = payload["service_type"].strip()
+        st_obj = db.query(ServiceType).filter(
+            (ServiceType.label.ilike(raw_st)) | (ServiceType.key.ilike(raw_st.lower()))
+        ).first()
+        if not st_obj:
+            raise HTTPException(
+                status_code=400,
+                detail={"error_code": "INVALID_SERVICE_TYPE", "message": f"Service type '{raw_st}' system mein maujood nahi hai."}
+            )
         provider = Provider(
             user_id=new_user.id,
             name=payload["name"],
-            service_type=normalized_service_type,
+            service_type_id=st_obj.id,
             location=payload["location"],
             latitude=payload["latitude"],
             longitude=payload["longitude"],
@@ -126,27 +121,26 @@ def signup_user(db: Session, payload: dict) -> User:
 
 def login_user(db: Session, payload: dict) -> dict:
     """
-    Authenticate user by username/email and password.
+    Authenticate user by email and password.
     Returns dict with user fields and JWT access token.
     """
     user = db.query(User).filter(
-        (User.username == payload["username"]) | (User.email == payload["username"])
+        User.email == payload["email"]
     ).first()
 
     if not user or not verify_password(payload["password"], user.password_hash):
         raise HTTPException(
             status_code=401,
-            detail={"error_code": "INVALID_CREDENTIALS", "message": "Ghalat username ya password."}
+            detail={"error_code": "INVALID_CREDENTIALS", "message": "Ghalat email ya password."}
         )
 
-    # Look up provider via Provider.user_id (correct FK direction)
     provider = db.query(Provider).filter(Provider.user_id == user.id).first()
     provider_id = provider.id if provider else None
     service_type = provider.service_type if provider else None
     location = provider.location if provider else None
 
     token_data = {
-        "sub": user.username,
+        "sub": user.email,
         "role": user.role,
         "user_id": user.id,
         "provider_id": provider_id,
@@ -157,7 +151,7 @@ def login_user(db: Session, payload: dict) -> dict:
         "access_token": token,
         "token_type": "bearer",
         "role": user.role,
-        "username": user.username,
+        "email": user.email,
         "full_name": user.full_name,
         "provider_id": provider_id,
         "service_type": service_type,
