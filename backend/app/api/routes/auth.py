@@ -17,7 +17,7 @@ async def signup(request: SignupRequest):
     """
     with get_db_session() as db:
         user = signup_user(db, request.model_dump())
-        return {"message": "User successfully registered.", "username": user.username}
+        return {"message": "User successfully registered.", "email": user.email}
 
 
 @router.post(
@@ -27,7 +27,7 @@ async def signup(request: SignupRequest):
 )
 async def login(request: LoginRequest, response: Response) -> AuthResponse:
     """
-    Login using username/password.
+    Login using email/password.
     """
     with get_db_session() as db:
         res = login_user(db, request.model_dump())
