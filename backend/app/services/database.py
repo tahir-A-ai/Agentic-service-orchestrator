@@ -1,13 +1,5 @@
 """
-app/services/database.py
-========================
-All database interaction is centralised here using SQLAlchemy ORM.
-
-Design decisions
-----------------
-* SQLAlchemy's sessionmaker provides safe, scoped database sessions.
-* Every query uses ORM filters — no raw SQL string interpolation.
-* Public functions return plain Python dicts so callers are ORM-agnostic.
+All database interactions are centralised here using SQLAlchemy ORM.
 """
 
 import math
@@ -16,17 +8,13 @@ from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-
 from app.config import DATABASE_URL, PROVIDER_SEARCH_RADIUS_KM
-from app.models import Base, LocationCache, Provider
+from app.models import Base, LocationCache, Provider, ServiceType
 
-# ─────────────────────────────────────────────
-# ENGINE & SESSION FACTORY
-# ─────────────────────────────────────────────
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},  # required for SQLite
+    connect_args={"check_same_thread": False},
     echo=False,
 )
 
@@ -35,7 +23,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def init_db() -> None:
     """
-    Create all tables defined in app/models.py if they do not exist.
+    Create all tables if they do not exist.
     Called once during the FastAPI lifespan startup event.
     """
     Base.metadata.create_all(bind=engine)
@@ -57,10 +45,6 @@ def get_db_session() -> Generator[Session, None, None]:
     finally:
         session.close()
 
-
-# ─────────────────────────────────────────────
-# READ — ACTIVE PROVIDERS (with distance sort)
-# ─────────────────────────────────────────────
 
 def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -101,7 +85,8 @@ def query_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type)
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
             .all()
         )
@@ -114,7 +99,7 @@ def query_active_providers(
             results.append({
                 "id":           p.id,
                 "name":         p.name,
-                "service_type": p.service_type,
+                "service_type": service_type,
                 "location":     p.location,
                 "latitude":     p.latitude,
                 "longitude":    p.longitude,
@@ -155,7 +140,8 @@ def query_all_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type)
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
             .all()
         )
@@ -165,7 +151,7 @@ def query_all_active_providers(
             entry = {
                 "id":           p.id,
                 "name":         p.name,
-                "service_type": p.service_type,
+                "service_type": service_type,
                 "location":     p.location,
                 "latitude":     p.latitude,
                 "longitude":    p.longitude,
@@ -204,7 +190,8 @@ def query_busy_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type)
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Busy")
             .all()
         )
@@ -229,10 +216,6 @@ def query_busy_providers(
     return results
 
 
-# ─────────────────────────────────────────────
-# WRITE — COMMIT BOOKING
-# ─────────────────────────────────────────────
-
 def commit_booking(provider_id: int) -> bool:
     """
     Atomically mark a provider as 'Busy' ONLY if they are still 'Active'.
@@ -255,10 +238,6 @@ def commit_booking(provider_id: int) -> bool:
         return rows_affected > 0
 
 
-# ─────────────────────────────────────────────
-# LOCATION CACHE — READ / WRITE
-# ─────────────────────────────────────────────
-
 def get_cached_location(query_text: str) -> tuple[float, float] | None:
     """
     Look up a previously geocoded location by its normalised query text.
@@ -272,14 +251,13 @@ def get_cached_location(query_text: str) -> tuple[float, float] | None:
             .first()
         )
         if cached:
-            return (float(cached.latitude), float(cached.longitude))  # type: ignore[arg-type]
-    return None
+            return (float(cached.latitude), float(cached.longitude))
 
 
 def save_location_cache(query_text: str, latitude: float, longitude: float) -> None:
     """
     Save a geocoded location to the cache for future lookups.
-    Silently skips if the query already exists (UNIQUE constraint).
+    Silently skips if the query already exists.
     """
     normalised = query_text.strip().lower()
     with get_db_session() as session:
