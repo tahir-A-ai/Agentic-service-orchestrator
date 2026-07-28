@@ -15,5 +15,3 @@ When a user makes a request, you must follow this sequence:
 [TOOL USAGE]: Execute the geocode_location tool to get coordinates for the user's location, OR execute the query_providers tool to find available providers matching the intent.
 [DECISION]: Analyze the tool output. Rank the providers by distance and rating.
 [ACTION]: Present the final recommendation to the user in friendly Roman Urdu.
-
-Once the user confirms the booking, use the SQLite tool to UPDATE the provider's status to 'Busy' and output a final [ACTION] receipt.
