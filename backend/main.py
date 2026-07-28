@@ -52,8 +52,8 @@ async def lifespan(app: FastAPI):
     with get_db_session() as db:
         if db.query(ServiceType).count() == 0:
             db.add_all([
-                ServiceType(key="electrician", label="Electrician", label_urdu="BIJLI WALA", theme_color="#3B82F6", description="Ghar ki wiring, UPS, aur bijli ke har tarah ke masle.", sort_order=1),
-                ServiceType(key="plumber", label="Plumber", label_urdu="NALQE WALA", theme_color="#22C55E", description="Pipes, motor, aur paani ki har tarah ki repair.", sort_order=2)
+                ServiceType(key="electrician", label="Electrician", label_urdu="BIJLI WALA", aliases="bijli wala, electrician, bijli", theme_color="#3B82F6", description="Ghar ki wiring, UPS, aur bijli ke har tarah ke masle.", sort_order=1),
+                ServiceType(key="plumber", label="Plumber", label_urdu="NALQE WALA", aliases="nalqe wala, plumber, pani", theme_color="#22C55E", description="Pipes, motor, aur paani ki har tarah ki repair.", sort_order=2)
             ])
             db.commit()
             refresh_valid_service_types()
