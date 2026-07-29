@@ -1,66 +1,254 @@
-/* ServiceTypeSelector.module.css */
+/* ServiceTypeSelector.module.css — Searchable dropdown selector */
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
+/* ── Wrapper ──────────────────────────────── */
+.wrapper {
+  position: relative;
   width: 100%;
 }
 
-.card {
+/* ── Trigger Button ───────────────────────── */
+.trigger {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-6) var(--space-2);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--space-3) var(--space-4);
+  background: #1C2128;
+  border: 1px solid #30363D;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  text-align: left;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-.card:hover {
-  background: var(--bg-secondary);
+.trigger:hover {
   border-color: var(--text-muted);
 }
 
-.selected {
-  background: rgba(34, 197, 94, 0.08);
+.triggerOpen {
   border-color: var(--accent-green);
-  box-shadow: 0 0 0 1px var(--accent-green), var(--shadow-green);
+  box-shadow: 0 0 0 3px var(--accent-green-glow);
 }
 
-.selected:hover {
-  background: rgba(34, 197, 94, 0.12);
+.triggerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+}
+
+.triggerContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.triggerLabel {
+  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.triggerSub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.triggerPlaceholder {
+  font-size: var(--text-base);
+  color: #8B949E;
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform 200ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown Panel ───────────────────────── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #1C2128;
+  border: 1px solid #30363D;
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: dropdownIn 200ms ease;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Search Input ─────────────────────────── */
+.searchWrap {
+  position: relative;
+  padding: var(--space-3);
+  border-bottom: 1px solid #21262D;
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--space-6);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3) 0 var(--space-8);
+  background: var(--bg-primary);
+  border: 1px solid #21262D;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.searchInput:focus {
   border-color: var(--accent-green);
 }
 
-.icon {
-  font-size: 32px;
-  line-height: 1;
+/* ── Options List ─────────────────────────── */
+.optionsList {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
 }
 
-.label {
+.optionsList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.optionsList::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+/* ── Option Item ──────────────────────────── */
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+  font-family: inherit;
+}
+
+.option:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.optionSelected {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.optionSelected:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.optionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 120ms ease;
+}
+
+.option:hover .optionIcon {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.optionContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.optionLabel {
   font-size: var(--text-sm);
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
+}
+
+.optionUrdu {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.optionDesc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkMark {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--accent-green);
+}
+
+/* ── Empty State ──────────────────────────── */
+.emptyState {
+  padding: var(--space-6) var(--space-4);
   text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .card {
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: var(--space-4);
-  }
-}
-
+/* ── Status (Loading / Error) ─────────────── */
 .status {
   display: flex;
   flex-direction: column;
@@ -89,4 +277,21 @@
 
 .retryBtn:hover {
   background: var(--bg-secondary);
+}
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 600px) {
+  .dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 70vh;
+  }
+
+  .optionsList {
+    max-height: 50vh;
+  }
 }
