@@ -56,8 +56,8 @@ class Provider(Base):
     service_type_obj = relationship("ServiceType", backref="providers", foreign_keys=[service_type_id])
 
     @property
-    def service_type(self) -> str:
-        """Helper property so provider.service_type returns label string seamlessly."""
+    def get_service_type_label(self) -> str:
+        """Helper property so provider.get_service_type_label returns label string seamlessly."""
         return self.service_type_obj.label if self.service_type_obj else "Unknown"
 
     def __repr__(self) -> str:
