@@ -12,9 +12,11 @@ from app.config import DATABASE_URL, PROVIDER_SEARCH_RADIUS_KM
 from app.models import Base, LocationCache, Provider, ServiceType
 
 
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args=connect_args,
     echo=False,
 )
 
@@ -202,7 +204,7 @@ def query_busy_providers(
             results.append({
                 "id":           p.id,
                 "name":         p.name,
-                "service_type": p.service_type,
+                "service_type": p.get_service_type_label,
                 "location":     p.location,
                 "latitude":     p.latitude,
                 "longitude":    p.longitude,

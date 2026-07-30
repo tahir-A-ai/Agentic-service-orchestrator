@@ -136,7 +136,7 @@ def login_user(db: Session, payload: dict) -> dict:
 
     provider = db.query(Provider).filter(Provider.user_id == user.id).first()
     provider_id = provider.id if provider else None
-    service_type = provider.service_type if provider else None
+    service_type = provider.get_service_type_label if provider else None
     location = provider.location if provider else None
 
     token_data = {

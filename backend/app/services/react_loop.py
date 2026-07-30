@@ -45,16 +45,6 @@ class CustomAgentState(AgentState):
     current_coords: NotRequired[dict | None]
 
 
-def _trim_messages(state):
-    """
-    Keep the system prompt plus the last 6 messages so the agent can
-    answer follow-up questions using recent conversation context.
-    """
-    messages = state.get("messages", [])
-    trimmed = messages[-6:] if len(messages) > 6 else messages
-    return [SystemMessage(content=REACT_SYSTEM_PROMPT)] + trimmed
-
-
 def _get_agent(checkpointer, system_prompt: str):
     """
     Build the LangGraph ReAct agent.
@@ -208,7 +198,12 @@ async def _update_intent_state(agent, config, messages):
 # PHASE 1 — FIND PROVIDERS
 # ─────────────────────────────────────────────
 
-async def run_find_providers(user_prompt: str, session_id: str | None = None, excluded_provider_ids: list[int] | None = None) -> dict:
+async def run_find_providers(
+    user_prompt: str,
+    session_id: str | None = None,
+    excluded_provider_ids: list[int] | None = None,
+    customer_id: int | None = None,
+) -> dict:
     """
     Phase 1: Run the ReAct agent to discover provider candidates.
 
@@ -335,9 +330,12 @@ async def run_find_providers(user_prompt: str, session_id: str | None = None, ex
                 existing.candidates = json.dumps(candidates)
                 existing.status = "pending"
                 existing.created_at = datetime.now(tz=timezone.utc)
+                if customer_id is not None:
+                    existing.customer_id = customer_id
             else:
                 booking_session = BookingSession(
                     id=session_id,
+                    customer_id=customer_id,
                     candidates=json.dumps(candidates),
                     created_at=datetime.now(tz=timezone.utc),
                     status="pending",

@@ -66,7 +66,7 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
         "completed_jobs": completed_jobs,
         "declined_jobs": declined_jobs,
         "rating": round(float(provider.rating), 1),
-        "service_type": provider.service_type,
+        "service_type": provider.get_service_type_label,
     }
 
 

@@ -176,7 +176,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
     Call geocode_location first to get lat and lon.
 
     Args:
-        service_type: Must be exactly one of: "AC Technician", "Electrician", "Plumber".
+        service_type: Must be one of the active service types listed in the system prompt (e.g. Electrician, Plumber, AC Technician).
         lat: User's latitude from geocode_location.
         lon: User's longitude from geocode_location.
 
@@ -204,7 +204,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         "[TOOL USAGE]",
         (
             f"TOOL CALLED -> query_providers('{service_type}', "
-            f"lat={lat}, lon={lon}). Querying SQLite for active providers."
+            f"lat={lat}, lon={lon}). Querying database for active providers."
         ),
     )
 
@@ -233,7 +233,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         session_id,
         "[TOOL USAGE]",
         (
-            f"SQLite returned {len(providers)} active '{service_type}' provider(s). "
+            f"Database returned {len(providers)} active '{service_type}' provider(s). "
             f"Total {total_count}, busy {busy_count}. Results: {provider_names}."
         ),
     )
@@ -295,7 +295,7 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     specific sector. Results include distance_km from the user's location.
 
     Args:
-        service_type: Must be exactly one of: "AC Technician", "Electrician", "Plumber".
+        service_type: Must be one of the active service types listed in the system prompt (e.g. Electrician, Plumber, AC Technician).
         lat: User's latitude from geocode_location (same value you used for query_providers).
         lon: User's longitude from geocode_location (same value you used for query_providers).
 
@@ -325,12 +325,14 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     with get_db_session() as session:
         total_count = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type)
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type)
             .count()
         )
         busy_count = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type, Provider.status == "Busy")
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type, Provider.status == "Busy")
             .count()
         )
 
