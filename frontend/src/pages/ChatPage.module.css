@@ -2,7 +2,7 @@
 
 .layout {
   display: flex;
-  height: 100vh;
+  height: 100dvh;
   background: var(--bg-primary);
   overflow: hidden;
 }

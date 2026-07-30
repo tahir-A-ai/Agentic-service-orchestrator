@@ -78,21 +78,27 @@ export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
           </div>
         ) : (
           messages.map((msg) => (
-            <MessageBubble key={msg.id} role={msg.role}>
+            <div key={msg.id} className={styles.messageGroup}>
               {/* Text content */}
-              <div className={msg.type === 'clarification' ? styles.clarification : ''}>
-                {msg.content}
-              </div>
+              {msg.content && (
+                <MessageBubble role={msg.role}>
+                  <div className={msg.type === 'clarification' ? styles.clarification : ''}>
+                    {msg.content}
+                  </div>
+                </MessageBubble>
+              )}
 
               {/* Candidates Grid (if any) */}
               {msg.type === 'candidates' && msg.candidates && (
-                <CandidateGrid
-                  candidates={msg.candidates}
-                  approvedIds={approvedIds}
-                  onToggle={toggleApproved}
-                />
+                <div className={styles.candidatesWrapper}>
+                  <CandidateGrid
+                    candidates={msg.candidates}
+                    approvedIds={approvedIds}
+                    onToggle={toggleApproved}
+                  />
+                </div>
               )}
-            </MessageBubble>
+            </div>
           ))
         )}
 
