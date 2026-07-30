@@ -22,7 +22,10 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
+from app.limiter import limiter
 from app.services.websockets import manager
 from app.config import (
     API_DESCRIPTION,
@@ -72,6 +75,8 @@ app = FastAPI(
     contact={"name": "Karigar.pk — Islamabad Local Services Marketplace"},
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware for cross-origin requests
 # Note: Wildcard "*" MUST NOT be used in allow_origins when allow_credentials=True.
@@ -87,8 +92,8 @@ app.add_middleware(
     ],
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
 
 
