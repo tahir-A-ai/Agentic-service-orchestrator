@@ -213,12 +213,14 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
     with get_db_session() as session:
         total_count = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type)
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type)
             .count()
         )
         busy_count = (
             session.query(Provider)
-            .filter(Provider.service_type == service_type, Provider.status == "Busy")
+            .join(ServiceType, Provider.service_type_id == ServiceType.id)
+            .filter(ServiceType.label == service_type, Provider.status == "Busy")
             .count()
         )
 

@@ -14,7 +14,9 @@ load_dotenv(BASE_DIR / ".env")
 DB_PATH: Final[Path] = BASE_DIR / "providers.db"
 AUDIT_LOG_PATH: Final[Path] = BASE_DIR / "trace_logs.txt"
 
-DATABASE_URL: Final[str] = f"sqlite:///{DB_PATH.resolve().as_posix()}"
+# Use PostgreSQL if defined, else fallback to local SQLite
+_sqlite_url = f"sqlite:///{DB_PATH.resolve().as_posix()}"
+DATABASE_URL: Final[str] = os.getenv("DATABASE_URL", _sqlite_url)
 
 
 API_TITLE: Final[str] = "Service Orchestrator API"
@@ -40,7 +42,8 @@ VALID_STEP_TYPES: Final[frozenset[str]] = frozenset(
 
 
 JWT_SECRET: Final[str] = os.getenv("JWT_SECRET")
-
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is missing! Refusing to start.")
 
 GROQ_API_KEY: Final[str | None] = os.getenv("GROQ_API_KEY")
 GROQ_MODEL: Final[str] = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
