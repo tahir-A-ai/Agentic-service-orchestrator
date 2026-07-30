@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas import PublicStatsResponse, ProviderStatsResponse, ActiveServicesResponse, ServiceTypesResponse
 from app.services.database import get_db_session
 from app.services.stats import get_public_stats, get_provider_stats, get_active_services, get_all_service_types
+from app.services.auth import get_current_user_from_credentials
 
 router = APIRouter(tags=["Stats"])
 
@@ -24,10 +25,19 @@ async def public_stats() -> PublicStatsResponse:
     response_model=ProviderStatsResponse,
     summary="Get live metrics for a specific provider dashboard",
 )
-async def provider_stats(provider_id: int) -> ProviderStatsResponse:
+async def provider_stats(
+    provider_id: int,
+    current_user: dict = Depends(get_current_user_from_credentials)
+) -> ProviderStatsResponse:
     """
     Get live stats for a specific provider (active/completed jobs, rating).
     """
+    if current_user.get("role") != "provider" or current_user.get("provider_id") != provider_id:
+        raise HTTPException(
+            status_code=403,
+            detail={"error_code": "FORBIDDEN", "message": "Aap is provider stats ko access nai kr sakty."}
+        )
+
     with get_db_session() as db:
         res = get_provider_stats(db, provider_id)
         return ProviderStatsResponse(**res)

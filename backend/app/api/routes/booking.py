@@ -11,7 +11,7 @@ from app.schemas import (
 )
 from app.services.database import get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
-from app.services.auth import get_current_user_from_credentials
+from app.services.auth import get_current_user_from_credentials, decode_access_token
 from app.services.confirmation import confirm_completion
 from app.services.websockets import manager
 
@@ -28,7 +28,8 @@ router = APIRouter(tags=["Booking"])
     ),
 )
 async def book_service(request: ServiceRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> FindProvidersResponse:
-    result = await find_providers(request.user_prompt, request.session_id, request.excluded_provider_ids)
+    customer_id = current_user.get("user_id") if isinstance(current_user, dict) else None
+    result = await find_providers(request.user_prompt, request.session_id, request.excluded_provider_ids, customer_id=customer_id)
 
     # Convert raw provider dicts to ProviderDetail models
     candidates: dict[str, list[ProviderDetail]] = {}
@@ -77,7 +78,10 @@ async def confirm_booking_route(request: ConfirmBookingRequest, current_user: di
     response_model=CustomerConfirmResponse,
     summary="Customer confirms the job is done and submits a rating",
 )
-async def confirm_completion_route(request: CustomerConfirmRequest):
+async def confirm_completion_route(
+    request: CustomerConfirmRequest,
+    current_user: dict = Depends(get_current_user_from_credentials)
+):
     with get_db_session() as db:
         result = confirm_completion(db, request.session_id, request.rating)
         
@@ -91,11 +95,20 @@ async def confirm_completion_route(request: CustomerConfirmRequest):
 
 @router.websocket("/stream/booking/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
+    token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return
+    try:
+        decode_access_token(token)
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
     await manager.connect(websocket, job_id)
     try:
         while True:
-            # We don't expect messages from the client in this flow,
-            # but we need to await receive to keep connection alive and detect disconnects.
+            # Keep connection alive and detect disconnects
             data = await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket, job_id)

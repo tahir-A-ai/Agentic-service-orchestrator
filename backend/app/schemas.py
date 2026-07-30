@@ -13,7 +13,7 @@ The API follows a two-phase booking flow:
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ─────────────────────────────────────────────
@@ -139,8 +139,6 @@ class ConfirmBookingResponse(BaseModel):
 # ─────────────────────────────────────────────
 # AUTH SCHEMAS
 # ─────────────────────────────────────────────
-
-from pydantic import EmailStr, BaseModel, Field
 
 class SignupRequest(BaseModel):
     full_name: str | None = Field(None, max_length=150)

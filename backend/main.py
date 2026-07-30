@@ -17,11 +17,9 @@ belong here. If you are adding any of that here you are in the wrong file.
 """
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
-from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
