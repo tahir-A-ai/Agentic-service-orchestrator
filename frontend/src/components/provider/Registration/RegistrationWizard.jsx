@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useMultiStep from '../../../hooks/useMultiStep';
 import { useAuth } from '../../../context/AuthContext';
-import { islamabadSectors } from '../../../constants/sectors';
+import { islamabadSectors, sectorCoordinates } from '../../../constants/sectors';
 import StepIndicator from './StepIndicator';
 import ServiceTypeSelector from './ServiceTypeSelector';
 import Input from '../../ui/Input';
@@ -67,17 +67,21 @@ export default function RegistrationWizard() {
       setErrors({ terms: 'Terms se agree karna zaroori hai' });
       return;
     }
-    
+
     try {
       await signup({
+        full_name: formData.name,
         email: formData.email,
         password: formData.password,
+        phone: formData.phone,
         role: 'provider',
         name: formData.name,
         service_type: formData.serviceType,
         location: formData.sector,
-        latitude: 33.6844, // Mock coordinate for demo
-        longitude: 73.0479, // Mock coordinate for demo
+        latitude: sectorCoordinates[formData.sector]?.lat || 33.6844,
+        longitude: sectorCoordinates[formData.sector]?.lng || 73.0479,
+        experience_years: formData.experience ? parseInt(formData.experience, 10) : null,
+        bio: formData.bio || null,
       });
       await login(formData.email, formData.password);
       navigate('/provider/dashboard');
@@ -92,7 +96,7 @@ export default function RegistrationWizard() {
 
       <form onSubmit={handleSubmit}>
         {errors.form && <div className={styles.formError}>{errors.form}</div>}
-        
+
         {/* STEP 1 */}
         {step === 0 && (
           <div className={styles.stepContent}>
@@ -138,7 +142,7 @@ export default function RegistrationWizard() {
         {step === 1 && (
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>Service Details</h2>
-            
+
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Aap kya kaam karte hain?</label>
               <ServiceTypeSelector
@@ -184,7 +188,7 @@ export default function RegistrationWizard() {
         {step === 2 && (
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>Review Details</h2>
-            
+
             <div className={styles.summaryCard}>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryLabel}>Name</span>
@@ -223,7 +227,7 @@ export default function RegistrationWizard() {
           ) : (
             <div /> /* Empty spacer */
           )}
-          
+
           {step < STEPS.length - 1 ? (
             <Button onClick={handleNext} type="button">Next Step</Button>
           ) : (
