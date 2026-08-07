@@ -1,24 +1,11 @@
 """
-app/schemas.py
-==============
 Pydantic models for request/response validation.
-
-These are NOT database models — they define the shape of data flowing
-in and out of the API. For database table definitions, see app/models.py.
-
-The API follows a two-phase booking flow:
-    Phase 1 (book-service): User sends prompt → gets candidates back.
-    Phase 2 (confirm-booking): User approves providers → bookings committed.
 """
 
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
-
-# ─────────────────────────────────────────────
-# SHARED SCHEMAS
-# ─────────────────────────────────────────────
 
 class ProviderDetail(BaseModel):
     """Serialisable snapshot of a provider."""
@@ -34,10 +21,6 @@ class ProviderDetail(BaseModel):
         description="Distance in kilometres between the user and the provider.",
     )
 
-
-# ─────────────────────────────────────────────
-# PHASE 1 — FIND PROVIDERS
-# ─────────────────────────────────────────────
 
 class ServiceRequest(BaseModel):
     """Incoming booking request payload (Phase 1)."""
@@ -88,10 +71,6 @@ class FindProvidersResponse(BaseModel):
     audit_log_path: str | None = None
 
 
-# ─────────────────────────────────────────────
-# PHASE 2 — CONFIRM BOOKING
-# ─────────────────────────────────────────────
-
 class ConfirmBookingRequest(BaseModel):
     """Phase 2 request — user approves specific providers from the candidates list."""
 
@@ -136,10 +115,6 @@ class ConfirmBookingResponse(BaseModel):
     audit_log_path: str | None = None
 
 
-# ─────────────────────────────────────────────
-# AUTH SCHEMAS
-# ─────────────────────────────────────────────
-
 class SignupRequest(BaseModel):
     full_name: str | None = Field(None, max_length=150)
     email: EmailStr = Field(..., max_length=100)
@@ -173,10 +148,6 @@ class AuthResponse(BaseModel):
     location: str | None = None
 
 
-# ─────────────────────────────────────────────
-# STATS SCHEMAS
-# ─────────────────────────────────────────────
-
 class PublicStatsResponse(BaseModel):
     providers_registered: int
     bookings_completed: int
@@ -189,10 +160,6 @@ class ProviderStatsResponse(BaseModel):
     declined_jobs: int = 0
     rating: float
     service_type: str | None = None
-
-# ─────────────────────────────────────────────
-# PROVIDER DASHBOARD
-# ─────────────────────────────────────────────
 
 class ProviderJob(BaseModel):
     """Represents a job assigned to a provider."""
