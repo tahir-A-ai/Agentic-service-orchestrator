@@ -1,12 +1,4 @@
-"""
-app/core/logger.py
-==================
-Thread-safe audit logger for the ReAct pipeline.
-
-Writes structured, human-readable entries to trace_logs.txt so that every
-agent reasoning step is permanently traceable for debugging and portfolio
-demonstrations.
-"""
+"""Thread-safe audit logger for the ReAct pipeline."""
 
 import threading
 from datetime import datetime, timezone
@@ -18,22 +10,7 @@ _log_lock = threading.Lock()
 
 
 def write_audit_log(session_id: str, step_type: str, details: str) -> None:
-    """
-    Append a structured, timestamped entry to trace_logs.txt.
-
-    The function is intentionally synchronous and wrapped with a threading
-    lock so it is safe to call from any async FastAPI route without risk of
-    log-line interleaving across concurrent requests.
-
-    Args:
-        session_id : Unique identifier for this request session (UUID4).
-        step_type  : Must be one of [PLANNING] | [TOOL USAGE] | [DECISION] | [ACTION].
-        details    : Free-form description of the agent's internal reasoning step.
-
-    Raises:
-        ValueError: If step_type is not one of the four valid ReAct headers.
-        OSError   : If the log file cannot be opened for writing.
-    """
+    """Append a structured, timestamped entry to trace_logs.txt."""
     if step_type not in settings.VALID_STEP_TYPES:
         raise ValueError(
             f"Invalid step_type '{step_type}'. "

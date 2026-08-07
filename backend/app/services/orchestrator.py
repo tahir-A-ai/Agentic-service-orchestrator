@@ -1,17 +1,4 @@
-"""
-app/services/orchestrator.py
-============================
-Thin coordination layer between the FastAPI routes and the ReAct agent.
-
-This file used to contain the entire 487-line hardcoded pipeline. It has
-been rewritten to delegate all reasoning to the LangGraph ReAct loop in
-react_loop.py. This module now has two public functions:
-
-    1. find_providers()   — Phase 1: runs the agent, returns candidates.
-    2. confirm_booking()  — Phase 2: commits user-approved providers.
-
-No tool calls, no intent parsing, and no geocoding logic belong here.
-"""
+"""Thin coordination layer between the FastAPI routes and the ReAct agent."""
 
 from fastapi import HTTPException
 
@@ -19,9 +6,7 @@ from app.core.config import settings
 from app.services.react_loop import run_confirm_booking, run_find_providers
 
 
-# ─────────────────────────────────────────────
-# PHASE 1 — FIND PROVIDERS
-# ─────────────────────────────────────────────
+
 
 async def find_providers(
     user_prompt: str,
@@ -69,9 +54,7 @@ async def find_providers(
     }
 
 
-# ─────────────────────────────────────────────
-# PHASE 2 — CONFIRM BOOKING
-# ─────────────────────────────────────────────
+
 
 async def confirm_booking(
     session_id: str, 

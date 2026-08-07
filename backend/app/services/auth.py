@@ -1,7 +1,4 @@
-"""
-Service for JWT-based authentication.
-Generates access tokens and handles validation.
-"""
+"""Service for JWT-based authentication and token validation."""
 
 from datetime import datetime, timedelta, timezone
 import jwt

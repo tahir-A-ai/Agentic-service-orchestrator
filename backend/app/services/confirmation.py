@@ -1,8 +1,4 @@
-"""
-app/services/confirmation.py
-=============================
-Business logic for customer-side job completion confirmation and rating.
-"""
+"""Business logic for customer-side job completion confirmation and rating."""
 
 from datetime import datetime, timezone
 
@@ -13,14 +9,7 @@ from app.models import BookingSession, Provider
 
 
 def confirm_completion(db: Session, session_id: str, rating: int) -> dict:
-    """
-    Customer confirms the job is done and submits a star rating.
-
-    1. Validates the session exists and is in Pending_Completion.
-    2. Sets session.status = "Completed" and records the rating.
-    3. Computes a rolling average for the provider.
-    4. Marks the provider as Active if they have no other In_Progress/Pending_Completion jobs.
-    """
+    """Customer confirms the job is done and submits a star rating."""
     session = db.query(BookingSession).filter(BookingSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Booking session not found.")

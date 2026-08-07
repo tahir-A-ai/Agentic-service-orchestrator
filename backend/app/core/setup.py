@@ -1,19 +1,11 @@
-"""
-app/core/setup.py
-=================
-Startup routines and initialization logic for the FastAPI application.
-"""
+"""Startup routines and initialization logic for the FastAPI application."""
 
 from app.services.database import init_db, get_db_session
 from app.models import ServiceType
 from app.services.tools import refresh_valid_service_types
 
 def run_startup_tasks() -> None:
-    """
-    Execute all one-time startup tasks for the application.
-    Creates all database tables via SQLAlchemy if they do not exist,
-    and seeds the initial service types.
-    """
+    """Execute all one-time startup tasks for the application."""
     init_db()
 
     # Seed initial service types if table is empty

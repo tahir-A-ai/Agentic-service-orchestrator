@@ -1,6 +1,4 @@
-"""
-Aggregation queries for public landing page stats and provider dashboard stats.
-"""
+"""Aggregation queries for public landing page stats and provider dashboard stats."""
 
 import json
 from sqlalchemy.orm import Session
@@ -9,12 +7,7 @@ from app.models import Provider, BookingSession, ServiceType, SessionDecline
 
 
 def get_public_stats(db: Session) -> dict:
-    """
-    Returns landing-page metrics:
-      - providers_registered: total active providers
-      - bookings_completed: total completed booking sessions
-      - average_rating: mean provider rating (rounded to 1 decimal)
-    """
+    """Returns landing-page metrics."""
     providers_registered = db.query(func.count(Provider.id)).filter(
         Provider.status == "Active"
     ).scalar() or 0

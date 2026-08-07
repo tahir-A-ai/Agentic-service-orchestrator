@@ -1,6 +1,4 @@
-"""
-Business logic for the Provider Dashboard APIs.
-"""
+"""Business logic for the Provider Dashboard APIs."""
 
 import json
 from fastapi import HTTPException

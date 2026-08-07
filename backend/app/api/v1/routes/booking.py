@@ -1,3 +1,4 @@
+"""Booking and session coordination routes."""
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from datetime import datetime, timezone
 from app.schemas import (

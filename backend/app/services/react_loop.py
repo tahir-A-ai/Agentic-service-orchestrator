@@ -1,18 +1,4 @@
-"""
-LangGraph ReAct agent and Phase 1/Phase 2 execution runners.
-
-Architecture
-------------
-* The agent is built using LangGraph's `create_react_agent` — a pre-built
-  graph that implements the ReAct (Reasoning + Acting) pattern.
-* LLM: Groq (llama-3.3-70b-versatile) via langchain-groq's ChatGroq.
-* State persistence: LangGraph's SqliteSaver writes checkpoints to the
-  same providers.db used by the rest of the application.
-* Phase 1 (run_find_providers): runs the agent until it finishes reasoning,
-  then extracts the candidates from tool call history.
-* Phase 2 (run_confirm_booking): loads the session, commits approved
-  providers via the atomic CAS in database.py.
-"""
+"""LangGraph ReAct agent and Phase 1/Phase 2 execution runners."""
 
 import json
 import uuid
@@ -188,9 +174,7 @@ async def _update_intent_state(agent, config, messages):
         "current_coords": current_coords
     })
 
-# ─────────────────────────────────────────────
-# PHASE 1 — FIND PROVIDERS
-# ─────────────────────────────────────────────
+
 
 async def run_find_providers(
     user_prompt: str,
@@ -354,9 +338,7 @@ async def run_find_providers(
     }
 
 
-# ─────────────────────────────────────────────
-# PHASE 2 — CONFIRM BOOKING
-# ─────────────────────────────────────────────
+
 
 async def run_confirm_booking(
     session_id: str, 

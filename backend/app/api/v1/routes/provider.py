@@ -1,3 +1,4 @@
+"""Provider-specific routes and WebSocket handling."""
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime, timezone
 from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse

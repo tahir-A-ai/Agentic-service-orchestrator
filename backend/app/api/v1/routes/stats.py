@@ -1,3 +1,4 @@
+"""Platform statistics routes."""
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas import PublicStatsResponse, ProviderStatsResponse, ActiveServicesResponse, ServiceTypesResponse
 from app.services.database import get_db_session

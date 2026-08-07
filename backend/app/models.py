@@ -29,13 +29,7 @@ class ServiceType(Base):
 
 
 class Provider(Base):
-    """
-    A local service provider (e.g. plumber, electrician).
-
-    Linked to a User record via user_id. The latitude/longitude columns
-    allow distance-based sorting when matching a provider to a user's
-    geocoded location.
-    """
+    """A local service provider linked to a user for distance-based sorting."""
 
     __tablename__ = "providers"
 
@@ -86,13 +80,7 @@ class User(Base):
 
 
 class LocationCache(Base):
-    """
-    Cache of geocoded locations to avoid redundant Nominatim API calls.
-
-    When a user's location text (e.g. "G-13, Islamabad") is geocoded for
-    the first time, the result is saved here. Future requests for the same
-    text skip the API and read directly from this table.
-    """
+    """Cache of geocoded locations to avoid redundant Nominatim API calls."""
 
     __tablename__ = "location_cache"
 
@@ -106,18 +94,7 @@ class LocationCache(Base):
 
 
 class BookingSession(Base):
-    """
-    Persistent state between Phase 1 (find providers) and Phase 2 (confirm booking).
-
-    Status lifecycle:
-        pending             -> Phase 1 complete, waiting for user confirmation.
-        Pending_Acceptance  -> Phase 2 complete, waiting for provider to accept.
-        In_Progress         -> Provider accepted the job.
-        Pending_Completion  -> Provider marked complete, awaiting customer confirmation.
-        Completed           -> Customer confirmed and rated.
-        Cancelled           -> Job cancelled by provider or customer.
-        expired             -> TTL exceeded without confirmation.
-    """
+    """Persistent state between Phase 1 (find providers) and Phase 2 (confirm booking)."""
 
     __tablename__ = "booking_sessions"
 
@@ -138,9 +115,7 @@ class BookingSession(Base):
 
 
 class SessionDecline(Base):
-    """
-    Junction table recording provider job declines for scalable relational analytics.
-    """
+    """Junction table recording provider job declines for scalable relational analytics."""
     __tablename__ = "session_declines"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

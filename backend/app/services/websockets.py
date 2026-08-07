@@ -1,9 +1,9 @@
+"""WebSocket connection manager for real-time updates."""
 from fastapi import WebSocket
 from typing import Dict, List
 
 class ConnectionManager:
     def __init__(self):
-        # Maps job_id (session_id) to a list of active WebSockets
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, job_id: str):
@@ -21,7 +21,6 @@ class ConnectionManager:
 
     async def broadcast_to_job(self, job_id: str, message: dict):
         if job_id in self.active_connections:
-            # We iterate over a copy of the list to handle disconnections safely
             for connection in list(self.active_connections[job_id]):
                 try:
                     await connection.send_json(message)

@@ -1,25 +1,8 @@
-"""
-app/system_prompt/prompt.py
-============================
-ReAct agent system prompt builder for Karigar.pk.
-
-Kept separate from config so that prompt engineering changes
-never require touching infrastructure code, and vice-versa.
-"""
+"""ReAct agent system prompt builder for Karigar.pk."""
 
 
 def build_system_prompt(service_entries: list[dict]) -> str:
-    """
-    Build the ReAct agent system prompt with active service types and Roman Urdu
-    aliases dynamically loaded from the ServiceType database table.
-
-    Args:
-        service_entries: List of dicts containing "label" and "aliases" from DB.
-                         e.g. [{"label": "Electrician", "aliases": "bijli wala, electrician"}]
-
-    Returns:
-        Fully-formatted system prompt string ready to pass to the LLM.
-    """
+    """Build the ReAct agent system prompt dynamically from active service types."""
     service_list = "\n".join(f'  - "{e["label"]}"' for e in service_entries)
 
     mapping_lines = []

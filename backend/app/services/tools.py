@@ -1,17 +1,4 @@
-"""
-app/services/tools.py
-=====================
-LangChain-compatible tool definitions for the ReAct agent.
-
-Each function decorated with @tool becomes a callable tool that the LLM
-can invoke during the reasoning loop. These wrap the existing database and
-geocoding logic — no business logic is duplicated.
-
-IMPORTANT:
-    commit_booking() is intentionally NOT a tool. The agent is read-only;
-    bookings are only committed in Phase 2 (confirm-booking route), called
-    directly by Python after the user approves providers.
-"""
+"""LangChain-compatible tool definitions for the ReAct agent."""
 
 import httpx
 import contextvars
@@ -30,9 +17,7 @@ from app.services.database import (
 from app.models import Provider, ServiceType
 
 
-# ─────────────────────────────────────────────
 # Dynamic valid service types (loaded from DB, fallback to known set)
-# ─────────────────────────────────────────────
 
 def _load_valid_service_types() -> set[str]:
     """Load active service type labels from the DB. Falls back to empty set on error."""
@@ -57,9 +42,7 @@ def refresh_valid_service_types() -> None:
     VALID_SERVICE_TYPES = _load_valid_service_types()
 
 
-# ─────────────────────────────────────────────
 # Context injected at call-time by the loop
-# ─────────────────────────────────────────────
 
 session_id_var = contextvars.ContextVar("session_id", default="unknown")
 excluded_providers_var = contextvars.ContextVar("excluded_providers", default=[])
@@ -70,9 +53,7 @@ def set_session_context(session_id: str, excluded_ids: list[int] | None = None) 
     excluded_providers_var.set(excluded_ids or [])
 
 
-# ─────────────────────────────────────────────
 # TOOL 1: GEOCODE LOCATION
-# ─────────────────────────────────────────────
 
 @tool
 def geocode_location(location_text: str) -> dict:
@@ -162,9 +143,7 @@ def geocode_location(location_text: str) -> dict:
     return {"lat": lat, "lon": lon}
 
 
-# ─────────────────────────────────────────────
 # TOOL 2: QUERY PROVIDERS
-# ─────────────────────────────────────────────
 
 @tool
 def query_providers(service_type: str, lat: float, lon: float) -> dict:
@@ -246,9 +225,7 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
     }
 
 
-# ─────────────────────────────────────────────
 # TOOL 3: ASK CLARIFICATION
-# ─────────────────────────────────────────────
 
 @tool
 def ask_clarification(question: str) -> dict:
@@ -277,9 +254,7 @@ def ask_clarification(question: str) -> dict:
     }
 
 
-# ─────────────────────────────────────────────
 # TOOL 4: SEARCH NEARBY PROVIDERS (city-wide fallback)
-# ─────────────────────────────────────────────
 
 @tool
 def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
@@ -351,8 +326,6 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
     }
 
 
-# ─────────────────────────────────────────────
 # TOOL REGISTRY (used by the LangGraph agent)
-# ─────────────────────────────────────────────
 
 BOOKING_TOOLS = [geocode_location, query_providers, search_nearby_providers, ask_clarification]

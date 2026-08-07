@@ -1,11 +1,4 @@
-"""
-app/core/config.py
-==================
-Centralised, validated application configuration using Pydantic BaseSettings.
-
-All environment variables are automatically read from the .env file.
-Validation failures raise clear errors at startup — not at runtime.
-"""
+"""Centralised, validated application configuration."""
 
 from pathlib import Path
 from typing import Final
@@ -15,10 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables / .env file.
-    All fields are type-checked by Pydantic at startup.
-    """
+    """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -27,7 +17,7 @@ class Settings(BaseSettings):
         extra="ignore",  # Silently ignore unknown env vars
     )
 
-    # ── Paths ─────────────────────────────────────────────────────────────
+
     # BASE_DIR is resolved at class-definition time (not from env)
     BASE_DIR: Final[Path] = Path(__file__).resolve().parent.parent.parent
 
@@ -41,7 +31,7 @@ class Settings(BaseSettings):
     def AUDIT_LOG_PATH(self) -> Path:
         return self.BASE_DIR / "trace_logs.txt"
 
-    # ── Database ──────────────────────────────────────────────────────────
+
     DATABASE_URL: str = Field(
         default="",
         description="Full database URL. Falls back to local SQLite if empty.",
@@ -54,7 +44,7 @@ class Settings(BaseSettings):
             return self.DATABASE_URL
         return f"sqlite:///{self.DB_PATH.resolve().as_posix()}"
 
-    # ── API Metadata ──────────────────────────────────────────────────────
+
     API_TITLE: str = "Service Orchestrator API"
     API_DESCRIPTION: str = (
         "An agentic backend that parses Roman Urdu service requests, "
@@ -63,11 +53,11 @@ class Settings(BaseSettings):
     )
     API_VERSION: str = "1.0.0"
 
-    # ── Runtime ───────────────────────────────────────────────────────────
+
     ENVIRONMENT: str = Field(default="development")
     LOG_LEVEL: str = Field(default="INFO")
 
-    # ── CORS ──────────────────────────────────────────────────────────────
+
     CORS_ALLOW_ORIGINS: str = Field(
         default="*",
         description="Comma-separated list of allowed CORS origins.",
@@ -78,12 +68,12 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ALLOW_ORIGINS.split(",") if o.strip()]
 
-    # ── ReAct Agent ───────────────────────────────────────────────────────
+
     VALID_STEP_TYPES: frozenset[str] = frozenset(
         {"[PLANNING]", "[TOOL USAGE]", "[DECISION]", "[ACTION]"}
     )
 
-    # ── Security / Auth ───────────────────────────────────────────────────
+
     JWT_SECRET: str = Field(
         ...,
         description="Secret key for signing JWT tokens. MUST be set in .env.",
@@ -98,15 +88,15 @@ class Settings(BaseSettings):
             )
         return v
 
-    # ── LLM / Groq ────────────────────────────────────────────────────────
+
     GROQ_API_KEY: str | None = Field(default=None)
     GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile")
 
-    # ── Geocoding ─────────────────────────────────────────────────────────
+
     NOMINATIM_BASE_URL: str = "https://nominatim.openstreetmap.org/search"
     NOMINATIM_USER_AGENT: str = "service-orchestrator/1.0 (local-marketplace)"
 
-    # ── Business Logic Constants ───────────────────────────────────────────
+
     SERVICE_UNKNOWN: str = "SERVICE_UNKNOWN"
     LOCATION_UNKNOWN: str = "LOCATION_UNKNOWN"
     BOOKING_SESSION_TTL_MINUTES: int = 10

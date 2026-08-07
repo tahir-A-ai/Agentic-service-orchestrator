@@ -1,6 +1,4 @@
-"""
-FastAPI application entry-point.
-"""
+"""FastAPI application entry-point."""
 
 from contextlib import asynccontextmanager
 
@@ -17,9 +15,7 @@ from app.core.setup import run_startup_tasks
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Runs once on startup (before any request is served).
-    """
+    """Run startup tasks before serving requests."""
     run_startup_tasks()
     yield
 

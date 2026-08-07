@@ -1,3 +1,4 @@
+"""Authentication routes."""
 from fastapi import APIRouter, Response, Request
 from app.schemas import SignupRequest, LoginRequest, AuthResponse
 from app.services.database import get_db_session
@@ -14,9 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 @limiter.limit("5/minute")
 async def signup(request: Request, payload: SignupRequest):
-    """
-    Sign up a user. If role is provider, creates a linked provider entry.
-    """
+    """Sign up a user and create a linked provider profile if applicable."""
     with get_db_session() as db:
         user = signup_user(db, payload.model_dump())
         return {"message": "User successfully registered.", "email": user.email}
