@@ -8,7 +8,7 @@ import jwt
 from fastapi import Request, HTTPException
 import bcrypt
 from sqlalchemy.orm import Session
-from app.config import JWT_SECRET
+from app.core.config import settings
 from app.services.database import get_db_session
 from app.models import User, Provider, ServiceType
 
@@ -29,7 +29,7 @@ def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
@@ -38,7 +38,7 @@ def decode_access_token(token: str) -> dict:
     Raises HTTPException 401 if invalid/expired.
     """
     try:
-        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return jwt.decode(token, settings.JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401,

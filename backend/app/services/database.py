@@ -8,14 +8,14 @@ from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from app.config import DATABASE_URL, PROVIDER_SEARCH_RADIUS_KM
+from app.core.config import settings
 from app.models import Base, LocationCache, Provider, ServiceType
 
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if settings.resolved_database_url.startswith("sqlite") else {}
 
 engine = create_engine(
-    DATABASE_URL,
+    settings.resolved_database_url,
     connect_args=connect_args,
     echo=False,
 )
@@ -77,12 +77,12 @@ def query_active_providers(
     the user's coordinates, sorted by distance (nearest first), then
     by rating (highest first).
 
-    If radius_km is None, the default from config (PROVIDER_SEARCH_RADIUS_KM)
+    If radius_km is None, the default from config (settings.PROVIDER_SEARCH_RADIUS_KM)
     is used.  Each returned dict includes a 'distance_km' field.
     Returns (results, excluded_count).
     """
     if radius_km is None:
-        radius_km = PROVIDER_SEARCH_RADIUS_KM
+        radius_km = settings.PROVIDER_SEARCH_RADIUS_KM
 
     with get_db_session() as session:
         providers = (

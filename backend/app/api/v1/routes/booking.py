@@ -59,7 +59,7 @@ async def book_service(request: ServiceRequest, current_user: dict = Depends(get
 )
 async def confirm_booking_route(request: ConfirmBookingRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> ConfirmBookingResponse:
     result = await confirm_booking(
-        request.session_id, 
+        request.session_id,
         request.approved_provider_ids,
         request.exact_address,
         request.customer_notes
@@ -84,13 +84,13 @@ async def confirm_completion_route(
 ):
     with get_db_session() as db:
         result = confirm_completion(db, request.session_id, request.rating)
-        
+
     await manager.broadcast_to_job(request.session_id, {
         "type": "status_update",
         "status": "Completed",
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
-    
+
     return CustomerConfirmResponse(**result)
 
 @router.websocket("/stream/booking/{job_id}")

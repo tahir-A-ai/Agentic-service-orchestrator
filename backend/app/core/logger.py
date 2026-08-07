@@ -11,7 +11,7 @@ demonstrations.
 import threading
 from datetime import datetime, timezone
 
-from app.config import AUDIT_LOG_PATH, VALID_STEP_TYPES
+from app.core.config import settings
 
 # Module-level lock so concurrent async requests never interleave log lines.
 _log_lock = threading.Lock()
@@ -34,10 +34,10 @@ def write_audit_log(session_id: str, step_type: str, details: str) -> None:
         ValueError: If step_type is not one of the four valid ReAct headers.
         OSError   : If the log file cannot be opened for writing.
     """
-    if step_type not in VALID_STEP_TYPES:
+    if step_type not in settings.VALID_STEP_TYPES:
         raise ValueError(
             f"Invalid step_type '{step_type}'. "
-            f"Must be one of: {', '.join(sorted(VALID_STEP_TYPES))}"
+            f"Must be one of: {', '.join(sorted(settings.VALID_STEP_TYPES))}"
         )
 
     # ISO-8601 UTC timestamp with millisecond precision
@@ -56,8 +56,8 @@ def write_audit_log(session_id: str, step_type: str, details: str) -> None:
     )
 
     # Ensure the parent directory exists (idempotent)
-    AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    settings.AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with _log_lock:
-        with open(AUDIT_LOG_PATH, "a", encoding="utf-8") as fh:
+        with open(settings.AUDIT_LOG_PATH, "a", encoding="utf-8") as fh:
             fh.write(log_entry)

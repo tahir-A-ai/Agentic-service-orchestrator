@@ -1,77 +1,24 @@
 """
-All application-level configuration.
+app/system_prompt/prompt.py
+============================
+ReAct agent system prompt builder for Karigar.pk.
+
+Kept separate from config so that prompt engineering changes
+never require touching infrastructure code, and vice-versa.
 """
 
-import os
-from pathlib import Path
-from typing import Final
 
-from dotenv import load_dotenv
-
-BASE_DIR: Final[Path] = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
-
-DB_PATH: Final[Path] = BASE_DIR / "providers.db"
-AUDIT_LOG_PATH: Final[Path] = BASE_DIR / "trace_logs.txt"
-
-# Use PostgreSQL if defined, else fallback to local SQLite
-_sqlite_url = f"sqlite:///{DB_PATH.resolve().as_posix()}"
-DATABASE_URL: Final[str] = os.getenv("DATABASE_URL", _sqlite_url)
-
-
-API_TITLE: Final[str] = "Service Orchestrator API"
-API_DESCRIPTION: Final[str] = (
-    "An agentic backend that parses Roman Urdu service requests, "
-    "reasons over a local provider database, and executes simulated bookings "
-    "with full traceable audit logs."
-)
-API_VERSION: Final[str] = "1.0.0"
-
-ENVIRONMENT: Final[str] = os.getenv("ENVIRONMENT", "development")
-LOG_LEVEL: Final[str] = os.getenv("LOG_LEVEL", "INFO")
-
-_cors_raw = os.getenv("CORS_ALLOW_ORIGINS", "*")
-CORS_ALLOW_ORIGINS: Final[list[str]] = [
-    origin.strip() for origin in _cors_raw.split(",")
-]
-
-
-VALID_STEP_TYPES: Final[frozenset[str]] = frozenset(
-    {"[PLANNING]", "[TOOL USAGE]", "[DECISION]", "[ACTION]"}
-)
-
-
-JWT_SECRET: Final[str] = os.getenv("JWT_SECRET")
-if not JWT_SECRET:
-    raise RuntimeError("JWT_SECRET environment variable is missing! Refusing to start.")
-
-GROQ_API_KEY: Final[str | None] = os.getenv("GROQ_API_KEY")
-GROQ_MODEL: Final[str] = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-
-
-NOMINATIM_BASE_URL: Final[str] = "https://nominatim.openstreetmap.org/search"
-NOMINATIM_USER_AGENT: Final[str] = "service-orchestrator/1.0 (local-marketplace)"
-
-
-SERVICE_UNKNOWN: Final[str] = "SERVICE_UNKNOWN"
-LOCATION_UNKNOWN: Final[str] = "LOCATION_UNKNOWN"
-
-BOOKING_SESSION_TTL_MINUTES: Final[int] = 10
-
-REACT_MAX_ITERATIONS: Final[int] = 10
-
-PROVIDER_SEARCH_RADIUS_KM: Final[float] = 10.0
-
-
-# REACT SYSTEM PROMPT
 def build_system_prompt(service_entries: list[dict]) -> str:
     """
-    Build the ReAct agent system prompt with active service types and Roman Urdu aliases
-    dynamically loaded from the ServiceType database table.
+    Build the ReAct agent system prompt with active service types and Roman Urdu
+    aliases dynamically loaded from the ServiceType database table.
 
     Args:
         service_entries: List of dicts containing "label" and "aliases" from DB.
-                         e.g. [{"label": "Electrician", "aliases": "bijli wala, electrician, bijli"}]
+                         e.g. [{"label": "Electrician", "aliases": "bijli wala, electrician"}]
+
+    Returns:
+        Fully-formatted system prompt string ready to pass to the LLM.
     """
     service_list = "\n".join(f'  - "{e["label"]}"' for e in service_entries)
 
@@ -134,4 +81,4 @@ EXAMPLE FLOW:
   -> If 0 results: "G-13 mein Electrician available nahi, dhundh raha hoon..."
   -> search_nearby_providers("Electrician", lat, lon)
   -> If found: "Is sector mein provider available nahi hai, lekin yeh nazdeeki providers available hain:"
-  -> If not found: "Maaf kijiye, Karigar.pk par is waqt koi Electrician registered nahi hai.""""".strip()
+  -> If not found: "Maaf kijiye, Karigar.pk par is waqt koi Electrician registered nahi hai." """.strip()

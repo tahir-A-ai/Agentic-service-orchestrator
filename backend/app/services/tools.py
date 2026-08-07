@@ -17,10 +17,7 @@ import httpx
 import contextvars
 from langchain_core.tools import tool
 
-from app.config import (
-    NOMINATIM_BASE_URL,
-    NOMINATIM_USER_AGENT,
-)
+from app.core.config import settings
 from app.core.logger import write_audit_log
 from app.services.database import (
     get_cached_location,
@@ -120,13 +117,13 @@ def geocode_location(location_text: str) -> dict:
     try:
         with httpx.Client() as client:
             response = client.get(
-                NOMINATIM_BASE_URL,
+                settings.NOMINATIM_BASE_URL,
                 params={
                     "q": search_query,
                     "format": "json",
                     "limit": 1,
                 },
-                headers={"User-Agent": NOMINATIM_USER_AGENT},
+                headers={"User-Agent": settings.NOMINATIM_USER_AGENT},
                 timeout=10.0,
             )
             response.raise_for_status()

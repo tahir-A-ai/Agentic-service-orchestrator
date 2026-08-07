@@ -15,7 +15,7 @@ No tool calls, no intent parsing, and no geocoding logic belong here.
 
 from fastapi import HTTPException
 
-from app.config import AUDIT_LOG_PATH
+from app.core.config import settings
 from app.services.react_loop import run_confirm_booking, run_find_providers
 
 
@@ -65,7 +65,7 @@ async def find_providers(
         "message": result["message"],
         "candidates": result["candidates"],
         "clarification_question": result.get("clarification_question"),
-        "audit_log_path": str(AUDIT_LOG_PATH),
+        "audit_log_path": str(settings.AUDIT_LOG_PATH),
     }
 
 
@@ -114,5 +114,5 @@ async def confirm_booking(
         "message": result["message"],
         "booked": result["booked"],
         "failed": result["failed"],
-        "audit_log_path": str(AUDIT_LOG_PATH),
+        "audit_log_path": str(settings.AUDIT_LOG_PATH),
     }

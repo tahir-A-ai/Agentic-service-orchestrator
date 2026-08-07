@@ -25,14 +25,8 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage, RemoveMessage, ToolMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from app.config import (
-    DB_PATH,
-    GROQ_API_KEY,
-    GROQ_MODEL,
-    REACT_MAX_ITERATIONS,
-    build_system_prompt,
-    BOOKING_SESSION_TTL_MINUTES,
-)
+from app.core.config import settings
+from app.system_prompt.prompt import build_system_prompt
 from app.core.logger import write_audit_log
 from app.services.tools import BOOKING_TOOLS, set_session_context, refresh_valid_service_types
 from app.services.database import commit_booking, get_db_session
@@ -54,14 +48,14 @@ def _get_agent(checkpointer, system_prompt: str):
     The checkpointer is passed in from an async context manager to ensure
     it is properly initialized and closed per request.
     """
-    if not GROQ_API_KEY or not GROQ_API_KEY.startswith("gsk_"):
+    if not settings.GROQ_API_KEY or not settings.GROQ_API_KEY.startswith("gsk_"):
         raise RuntimeError(
             "Invalid GROQ_API_KEY. "
             "Please set a valid Groq key (starts with 'gsk_') in your .env file."
         )
     llm = ChatGroq(
-        model=GROQ_MODEL,
-        api_key=GROQ_API_KEY,
+        model=settings.GROQ_MODEL,
+        api_key=settings.GROQ_API_KEY,
         temperature=0,
     )
     return create_agent(
@@ -249,10 +243,10 @@ async def run_find_providers(
 
     config = {
         "configurable": {"thread_id": session_id},
-        "recursion_limit": REACT_MAX_ITERATIONS * 2, 
+        "recursion_limit": settings.REACT_MAX_ITERATIONS * 2, 
     }
 
-    async with AsyncSqliteSaver.from_conn_string(str(DB_PATH)) as checkpointer:
+    async with AsyncSqliteSaver.from_conn_string(str(settings.DB_PATH)) as checkpointer:
         agent = _get_agent(checkpointer, system_prompt)
         state = await agent.aget_state(config)
         messages = state.values.get("messages", [])
@@ -347,7 +341,7 @@ async def run_find_providers(
             session_id,
             "[ACTION]",
             f"BookingSession '{session_id}' saved to DB (status=pending). "
-            f"TTL: {BOOKING_SESSION_TTL_MINUTES} minutes.",
+            f"TTL: {settings.BOOKING_SESSION_TTL_MINUTES} minutes.",
         )
 
     return {
@@ -413,12 +407,12 @@ async def run_confirm_booking(
             created = created.replace(tzinfo=timezone.utc)
         age_minutes = (now - created).total_seconds() / 60
 
-        if age_minutes > BOOKING_SESSION_TTL_MINUTES:
+        if age_minutes > settings.BOOKING_SESSION_TTL_MINUTES:
             booking_session.status = "expired"
             session.commit()
             return {
                 "error": "SESSION_EXPIRED",
-                "message": f"Session expire ho gaya ({BOOKING_SESSION_TTL_MINUTES} minute limit). Naya booking start karein.",
+                "message": f"Session expire ho gaya ({settings.BOOKING_SESSION_TTL_MINUTES} minute limit). Naya booking start karein.",
             }
 
         candidates_json = booking_session.candidates

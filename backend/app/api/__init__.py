@@ -1,9 +1,10 @@
-from fastapi import APIRouter
-from app.api.routes import auth, booking, stats, provider
+"""
+app/api/__init__.py
+====================
+Re-exports api_router from the versioned v1 sub-package.
+main.py mounts this at prefix="/api/v1" — no URL changes for consumers.
+"""
 
-api_router = APIRouter()
+from app.api.v1 import v1_router as api_router
 
-api_router.include_router(auth.router)
-api_router.include_router(booking.router)
-api_router.include_router(stats.router)
-api_router.include_router(provider.router)
+__all__ = ["api_router"]

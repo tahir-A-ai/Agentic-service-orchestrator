@@ -43,7 +43,7 @@ async def change_job_status(
     _verify_provider_access(current_user, provider_id)
     with get_db_session() as db:
         res = update_job_status(db, provider_id, session_id, request.status)
-        
+
     # Broadcast status change to the customer via WebSocket
     actual = res.get("actual_status", request.status)
     await manager.broadcast_to_job(session_id, {
@@ -54,7 +54,7 @@ async def change_job_status(
         "service_type": res.get("service_type", "Unknown"),
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
-    
+
     return {"message": res["message"]}
 
 
