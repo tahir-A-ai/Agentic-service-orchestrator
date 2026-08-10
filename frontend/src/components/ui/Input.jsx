@@ -17,53 +17,67 @@ export default function Input({
   id,
   className = '',
   value,
+  defaultValue,
   onChange,
   ...rest
 }) {
   const [focused, setFocused] = useState(false);
-  const filled = (value !== undefined && value !== '') || (rest.defaultValue !== undefined && rest.defaultValue !== '');
-  const isFloating = focused || filled;
+  const isControlled = value !== undefined;
+  
+  // To handle uncontrolled inputs effectively
+  const [internalValue, setInternalValue] = useState(defaultValue || '');
+  
+  const currentValue = isControlled ? value : internalValue;
+  
+  const handleChange = (e) => {
+    if (!isControlled) {
+      setInternalValue(e.target.value);
+    }
+    if (onChange) {
+      onChange(e);
+    }
+  };
 
+  const lifted = focused || (currentValue !== undefined && currentValue !== null && String(currentValue).length > 0);
   const Tag = as === 'textarea' ? 'textarea' : 'input';
 
   return (
-    <div
-      className={[
-        styles.wrapper,
-        error ? styles.hasError : '',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+    <div className={[styles.wrapper, className].filter(Boolean).join(' ')}>
       {prefix && <span className={styles.prefix}>{prefix}</span>}
 
       <div className={styles.fieldWrap}>
-        <Tag
-          id={id}
-          className={[styles.field, as === 'textarea' ? styles.textarea : '']
-            .filter(Boolean)
-            .join(' ')}
-          value={value}
-          onChange={onChange}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder=" "
-          {...rest}
-        />
-        {label && (
-          <label
-            htmlFor={id}
-            className={[styles.label, isFloating ? styles.floating : '']
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {label}
-          </label>
-        )}
+        <div className={[
+          styles.inputContainer,
+          error ? styles.inputError : '',
+          focused ? styles.inputFocused : ''
+        ].filter(Boolean).join(' ')}>
+          <Tag
+            id={id}
+            className={[
+              styles.input,
+              as === 'textarea' ? styles.textarea : '',
+              lifted ? styles.inputLifted : ''
+            ].filter(Boolean).join(' ')}
+            value={currentValue}
+            onChange={handleChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            {...rest}
+          />
+          {label && (
+            <label
+              htmlFor={id}
+              className={[
+                styles.floatLabel,
+                lifted ? styles.floatLabelLifted : ''
+              ].filter(Boolean).join(' ')}
+            >
+              {label}
+            </label>
+          )}
+        </div>
+        {error && <span className={styles.errorText}>{error}</span>}
       </div>
-
-      {error && <span className={styles.error}>{error}</span>}
     </div>
   );
 }

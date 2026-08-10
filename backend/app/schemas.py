@@ -179,7 +179,25 @@ class UpdateAvailabilityRequest(BaseModel):
 
 class ProviderAvailabilityResponse(BaseModel):
     is_available: bool
+    status: str
+    message: str
 
+
+class UpdateProviderProfileRequest(BaseModel):
+    full_name: str | None = Field(None, max_length=150)
+    email: EmailStr | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=20)
+    location: str | None = Field(None, max_length=200)
+    bio: str | None = None
+
+
+class UpdateProviderProfileResponse(BaseModel):
+    message: str
+    full_name: str | None
+    email: str | None
+    phone: str | None
+    location: str | None
+    bio: str | None
 
 
 class ServiceTypeOut(BaseModel):

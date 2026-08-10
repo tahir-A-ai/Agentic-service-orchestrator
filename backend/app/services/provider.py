@@ -75,4 +75,36 @@ def update_provider_availability(db: Session, provider_id: int, is_available: bo
         
     provider.is_available = is_available
     db.commit()
-    return {"is_available": is_available}
+    return {"is_available": is_available, "status": provider.status, "message": "Availability updated."}
+
+def update_provider_profile(db: Session, provider_id: int, request_data: dict) -> dict:
+    provider = db.query(Provider).filter(Provider.id == provider_id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found.")
+        
+    user = provider.user
+    if not user:
+        raise HTTPException(status_code=404, detail="Associated user not found.")
+        
+    if "full_name" in request_data and request_data["full_name"] is not None:
+        user.full_name = request_data["full_name"]
+        provider.name = request_data["full_name"]
+    if "email" in request_data and request_data["email"] is not None:
+        user.email = request_data["email"]
+    if "phone" in request_data and request_data["phone"] is not None:
+        user.phone = request_data["phone"]
+    if "location" in request_data and request_data["location"] is not None:
+        provider.location = request_data["location"]
+    if "bio" in request_data and request_data["bio"] is not None:
+        provider.bio = request_data["bio"]
+        
+    db.commit()
+    
+    return {
+        "message": "Profile updated successfully.",
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "location": provider.location,
+        "bio": provider.bio
+    }

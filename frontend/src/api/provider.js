@@ -15,3 +15,7 @@ export async function updateJobStatus(providerId, sessionId, status) {
 export async function toggleAvailability(providerId, isAvailable) {
   return request('PUT', `/api/v1/providers/${providerId}/availability`, { is_available: isAvailable });
 }
+
+export async function updateProviderProfile(providerId, profileData) {
+  return request('PUT', `/api/v1/providers/${providerId}/profile`, profileData);
+}

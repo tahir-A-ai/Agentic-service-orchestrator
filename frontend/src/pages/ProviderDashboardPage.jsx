@@ -6,7 +6,7 @@ import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { getProviderJobs, toggleAvailability } from '../api/provider';
+import { getProviderJobs, toggleAvailability, updateProviderProfile } from '../api/provider';
 import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
 
@@ -213,10 +213,20 @@ export function DeclinedJobsTab() {
 }
 
 export function ProfileTab() {
-  const { providerProfile } = useAuth();
+  const { providerProfile, updateUser } = useAuth();
   const isAuth = useRequireAuth();
   const [isAvailable, setIsAvailable] = useState(true);
   const { showToast } = useToast();
+  
+  // Profile state
+  const [profileData, setProfileData] = useState({
+    full_name: providerProfile?.name || '',
+    email: providerProfile?.email || '',
+    phone: providerProfile?.phone || '',
+    location: providerProfile?.sector || '',
+    bio: providerProfile?.bio || ''
+  });
+  const [saving, setSaving] = useState(false);
 
   if (!isAuth) return null;
 
@@ -231,6 +241,32 @@ export function ProfileTab() {
       showToast('Failed to update status', 'error');
     }
   };
+  
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await updateProviderProfile(providerProfile.id, profileData);
+      
+      // Update local AuthContext so it persists on reload
+      updateUser({
+        full_name: profileData.full_name,
+        email: profileData.email,
+        phone: profileData.phone,
+        location: profileData.location,
+        bio: profileData.bio
+      });
+      
+      showToast('Profile updated successfully!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to update profile', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (field) => (e) => {
+    setProfileData(prev => ({ ...prev, [field]: e.target.value }));
+  };
 
   return (
     <div className={styles.tab}>
@@ -239,23 +275,25 @@ export function ProfileTab() {
       <div className={styles.profileForm}>
         <div className={styles.photoUpload}>
           <div className={styles.photoCircle}>
-            {providerProfile?.name?.charAt(0) || 'P'}
+            {profileData.full_name?.charAt(0)?.toUpperCase() || 'P'}
           </div>
           <Button variant="ghost" size="sm">+ Upload Photo</Button>
         </div>
 
         <div className={styles.formGrid}>
-          <Input label="Full Name" defaultValue={providerProfile?.name || ''} />
-          <Input label="Email Address" type="email" defaultValue={providerProfile?.name || ''} />
-          <Input label="Phone Number" prefix="+92" defaultValue="" />
-          <Input label="Service Area" defaultValue={providerProfile?.sector || ''} />
+          <Input label="Full Name" value={profileData.full_name} onChange={handleChange('full_name')} />
+          <Input label="Email Address" type="email" value={profileData.email} onChange={handleChange('email')} />
+          <Input label="Phone Number" prefix="+92" value={profileData.phone} onChange={handleChange('phone')} />
+          <Input label="Service Area" value={profileData.location} onChange={handleChange('location')} />
           <div className={styles.fullWidth}>
-            <Input as="textarea" label="Bio / Skills" defaultValue="" />
+            <Input as="textarea" label="Bio / Skills" value={profileData.bio} onChange={handleChange('bio')} />
           </div>
         </div>
 
         <div className={styles.actions}>
-          <Button onClick={() => showToast('Profile updated successfully!', 'success')}>Save Changes</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </div>
     </div>

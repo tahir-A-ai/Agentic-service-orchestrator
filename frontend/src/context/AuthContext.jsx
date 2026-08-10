@@ -42,6 +42,8 @@ export function AuthProvider({ children }) {
         providerId: data.provider_id,
         service_type: data.service_type,
         location: data.location,
+        phone: data.phone,
+        bio: data.bio
       };
       localStorage.setItem('karigar_user', JSON.stringify(payload));
       setUser(payload);
@@ -74,13 +76,13 @@ export function AuthProvider({ children }) {
     showToast('Logged out successfully', 'info');
   }, [showToast]);
 
-  const providerLoggedIn = !!(user && user.role === 'provider');
-  const providerProfile = providerLoggedIn ? {
-    id: user.providerId,
-    name: user.full_name || user.email,
-    service: user.service_type || 'Service',
-    sector: user.location || 'Location',
-  } : null;
+  const updateUser = useCallback((newData) => {
+    setUser(prev => {
+      const updated = { ...prev, ...newData };
+      localStorage.setItem('karigar_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   // Global Auth Modal State
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -95,6 +97,16 @@ export function AuthProvider({ children }) {
     setAuthModalOpen(false);
   }, []);
 
+  const providerLoggedIn = !!(user && user.role === 'provider');
+  const providerProfile = providerLoggedIn ? {
+    id: user.providerId,
+    name: user.full_name,
+    sector: user.location,
+    email: user.email,
+    phone: user.phone,
+    bio: user.bio,
+  } : null;
+
   return (
     <AuthCtx.Provider value={{
       isAuthenticated: !!user,
@@ -102,6 +114,7 @@ export function AuthProvider({ children }) {
       login,
       signup,
       logout,
+      updateUser,
       providerLoggedIn,
       providerProfile,
       authModalOpen,

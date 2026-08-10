@@ -10,11 +10,11 @@
 .prefix {
   display: flex;
   align-items: center;
-  height: 52px;
+  height: 48px;
   padding: 0 var(--space-3);
   background: #1C2128;
   color: #8B949E;
-  font-size: 15px;
+  font-size: 14px;
   border: 1px solid #30363D;
   border-right: none;
   border-radius: 8px 0 0 8px;
@@ -25,31 +25,40 @@
   flex: 1;
 }
 
-.field {
-  width: 100%;
-  height: 52px;
-  padding: 16px 14px;
+.inputContainer {
+  position: relative;
   background: #1C2128;
-  color: #F0F6FC;
-  font-size: 15px;
   border: 1px solid #30363D;
   border-radius: 8px;
-  transition: all 200ms ease;
-  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  display: flex;
+  flex-direction: column;
 }
 
-.prefix + .fieldWrap .field {
+.prefix + .fieldWrap .inputContainer {
   border-radius: 0 8px 8px 0;
 }
 
-.field:focus {
+.inputContainer.inputFocused {
   border-color: #22C55E;
 }
 
-.field:not(:placeholder-shown),
-.field:focus,
-.floating {
-  padding: 22px 14px 10px;
+.inputContainer.inputError {
+  border-color: #F97316;
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 16px 14px;
+  font-size: 14px;
+  color: #F0F6FC;
+  background: transparent;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: normal;
 }
 
 .textarea {
@@ -57,51 +66,47 @@
   min-height: 80px;
   max-height: 160px;
   resize: vertical;
-  padding-top: var(--space-5);
-  line-height: 1.5;
+  padding-top: 16px;
 }
 
-/* ── Floating label ─────────────────── */
+.input:focus,
+.input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 
-.label {
+.inputLifted {
+  padding: 22px 14px 4px;
+}
+.textarea.inputLifted {
+  padding-top: 22px;
+}
+
+.floatLabel {
   position: absolute;
   left: 14px;
-  top: 16px;
-  font-size: 15px;
+  top: 14px;
+  font-size: 14px;
   color: #8B949E;
   pointer-events: none;
-  transition: 200ms ease;
-  transform-origin: left top;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.textarea ~ .label,
-.field:focus ~ .label,
-.field:not(:placeholder-shown) ~ .label,
-.floating {
-  transform: translateY(-8px) scale(0.75);
+.floatLabelLifted {
+  top: 6px;
+  font-size: 11px;
+  font-weight: 500;
   color: #8B949E;
 }
 
-/* ── Error state ────────────────────── */
-
-.hasError .field {
-  border-color: var(--accent-red);
+.inputContainer.inputFocused .floatLabelLifted {
+  color: #22C55E;
 }
 
-.hasError .field:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-}
-
-.error {
+.errorText {
   display: block;
-  width: 100%;
-  margin-top: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--accent-red);
-  padding-left: var(--space-4);
-}
-
-/* Make error appear below the full wrapper */
-.wrapper {
-  flex-wrap: wrap;
+  font-size: 11px;
+  color: #F97316;
+  margin: 4px 0 0 2px;
+  padding-left: 2px;
 }

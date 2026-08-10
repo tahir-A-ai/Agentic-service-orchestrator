@@ -1,9 +1,9 @@
 """Provider-specific routes and WebSocket handling."""
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime, timezone
-from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse
+from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse, UpdateProviderProfileRequest, UpdateProviderProfileResponse
 from app.services.database import get_db_session
-from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability
+from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability, update_provider_profile
 from app.services.auth import get_current_user_from_credentials
 from app.services.websockets import manager
 
@@ -73,3 +73,19 @@ async def toggle_availability(
     with get_db_session() as db:
         res = update_provider_availability(db, provider_id, request.is_available)
         return ProviderAvailabilityResponse(**res)
+
+
+@router.put(
+    "/{provider_id}/profile",
+    response_model=UpdateProviderProfileResponse,
+    summary="Update provider profile",
+)
+async def update_profile(
+    provider_id: int,
+    request: UpdateProviderProfileRequest,
+    current_user: dict = Depends(get_current_user_from_credentials)
+) -> UpdateProviderProfileResponse:
+    _verify_provider_access(current_user, provider_id)
+    with get_db_session() as db:
+        res = update_provider_profile(db, provider_id, request.dict(exclude_unset=True))
+        return UpdateProviderProfileResponse(**res)
