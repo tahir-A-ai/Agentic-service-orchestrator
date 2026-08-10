@@ -69,6 +69,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=True)
     role = Column(String(20), nullable=False, index=True)  # "customer" | "provider"
+    photo_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=True)
 

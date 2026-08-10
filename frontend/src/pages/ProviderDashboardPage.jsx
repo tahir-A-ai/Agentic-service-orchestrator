@@ -6,7 +6,7 @@ import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { getProviderJobs, toggleAvailability, updateProviderProfile } from '../api/provider';
+import { getProviderJobs, toggleAvailability, updateProviderProfile, uploadProviderPhoto } from '../api/provider';
 import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
 
@@ -224,9 +224,17 @@ export function ProfileTab() {
     email: providerProfile?.email || '',
     phone: providerProfile?.phone || '',
     location: providerProfile?.sector || '',
-    bio: providerProfile?.bio || ''
+    bio: providerProfile?.bio || '',
+    photo_url: providerProfile?.photo_url || ''
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [profileData.photo_url]);
 
   if (!isAuth) return null;
 
@@ -253,7 +261,8 @@ export function ProfileTab() {
         email: profileData.email,
         phone: profileData.phone,
         location: profileData.location,
-        bio: profileData.bio
+        bio: profileData.bio,
+        photo_url: profileData.photo_url
       });
       
       showToast('Profile updated successfully!', 'success');
@@ -261,6 +270,30 @@ export function ProfileTab() {
       showToast(err.message || 'Failed to update profile', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const res = await uploadProviderPhoto(providerProfile.id, file);
+      
+      // Update local state and context immediately
+      setProfileData(prev => ({ ...prev, photo_url: res.photo_url }));
+      updateUser({ photo_url: res.photo_url });
+      
+      showToast('Photo uploaded successfully!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to upload photo', 'error');
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -275,9 +308,32 @@ export function ProfileTab() {
       <div className={styles.profileForm}>
         <div className={styles.photoUpload}>
           <div className={styles.photoCircle}>
-            {profileData.full_name?.charAt(0)?.toUpperCase() || 'P'}
+            {profileData.photo_url && !imageError ? (
+              <img 
+                src={profileData.photo_url} 
+                alt="Profile" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              profileData.full_name?.charAt(0)?.toUpperCase() || 'P'
+            )}
           </div>
-          <Button variant="ghost" size="sm">+ Upload Photo</Button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handlePhotoUpload} 
+            accept="image/*" 
+            style={{ display: 'none' }} 
+          />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading...' : '+ Upload Photo'}
+          </Button>
         </div>
 
         <div className={styles.formGrid}>

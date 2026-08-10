@@ -144,6 +144,9 @@ class AuthResponse(BaseModel):
     provider_id: int | None = None
     service_type: str | None = None
     location: str | None = None
+    phone: str | None = None
+    bio: str | None = None
+    photo_url: str | None = None
 
 
 class PublicStatsResponse(BaseModel):
@@ -198,6 +201,7 @@ class UpdateProviderProfileResponse(BaseModel):
     phone: str | None
     location: str | None
     bio: str | None
+    photo_url: str | None
 
 
 class ServiceTypeOut(BaseModel):

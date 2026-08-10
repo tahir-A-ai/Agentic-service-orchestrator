@@ -50,3 +50,6 @@ pnpm-debug.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# User Uploads
+backend/uploads/

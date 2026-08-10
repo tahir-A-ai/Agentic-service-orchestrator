@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import AuthModal from '../auth/AuthModal';
 import styles from './Navbar.module.css';
 
-/* ── Inline SVG Icons ──────────────── */
 function UserIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -30,9 +29,14 @@ function DashboardIcon() {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, authModalOpen, authModalView, openAuth, closeAuth } = useAuth();
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.photo_url]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -97,7 +101,16 @@ export default function Navbar() {
                     </Link>
                   )}
                   <span className={styles.userPill}>
-                    <UserIcon />
+                    {user?.photo_url && !imageError ? (
+                      <img
+                        src={user.photo_url}
+                        alt={user?.full_name || 'User'}
+                        style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }}
+                        onError={() => setImageError(true)}
+                      />
+                    ) : (
+                      <UserIcon />
+                    )}
                     <span>{user?.full_name || user?.email}</span>
                   </span>
                   <button className={styles.logoutBtn} onClick={logout} title="Logout">

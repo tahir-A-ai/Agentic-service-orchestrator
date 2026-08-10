@@ -153,4 +153,7 @@ def login_user(db: Session, payload: dict) -> dict:
         "provider_id": provider_id,
         "service_type": service_type,
         "location": location,
+        "phone": user.phone,
+        "bio": provider.bio if provider else None,
+        "photo_url": user.photo_url,
     }

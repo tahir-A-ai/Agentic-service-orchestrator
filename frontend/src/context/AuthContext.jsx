@@ -43,7 +43,8 @@ export function AuthProvider({ children }) {
         service_type: data.service_type,
         location: data.location,
         phone: data.phone,
-        bio: data.bio
+        bio: data.bio,
+        photo_url: data.photo_url
       };
       localStorage.setItem('karigar_user', JSON.stringify(payload));
       setUser(payload);
@@ -105,6 +106,7 @@ export function AuthProvider({ children }) {
     email: user.email,
     phone: user.phone,
     bio: user.bio,
+    photo_url: user.photo_url,
   } : null;
 
   return (

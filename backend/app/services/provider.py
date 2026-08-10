@@ -97,6 +97,8 @@ def update_provider_profile(db: Session, provider_id: int, request_data: dict) -
         provider.location = request_data["location"]
     if "bio" in request_data and request_data["bio"] is not None:
         provider.bio = request_data["bio"]
+    if "photo_url" in request_data and request_data["photo_url"] is not None:
+        user.photo_url = request_data["photo_url"]
         
     db.commit()
     
@@ -106,5 +108,6 @@ def update_provider_profile(db: Session, provider_id: int, request_data: dict) -
         "email": user.email,
         "phone": user.phone,
         "location": provider.location,
-        "bio": provider.bio
+        "bio": provider.bio,
+        "photo_url": user.photo_url
     }

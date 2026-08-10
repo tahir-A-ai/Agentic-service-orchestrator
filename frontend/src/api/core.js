@@ -19,9 +19,18 @@ async function withTimeout(promise, ms) {
 }
 
 export async function request(method, path, body) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {};
   const opts = { method, headers, credentials: 'include' };
-  if (body) opts.body = JSON.stringify(body);
+  
+  if (body) {
+    if (body instanceof FormData) {
+      // Browser automatically sets Content-Type for FormData with boundary
+      opts.body = body;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+  }
 
   const res = await withTimeout(fetch(`${API_BASE}${path}`, opts), TIMEOUT_MS);
   const json = await res.json().catch(() => null);

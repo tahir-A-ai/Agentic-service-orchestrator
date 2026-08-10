@@ -14,6 +14,11 @@ export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeJobsCount, setActiveJobsCount] = useState(0);
   const [liveServiceType, setLiveServiceType] = useState(providerProfile?.service || 'Service');
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [providerProfile?.photo_url]);
 
   useEffect(() => {
     if (providerProfile?.id) {
@@ -136,7 +141,16 @@ export default function DashboardLayout() {
         <div className={styles.profileSection}>
           <div className={styles.profileInfo}>
             <div className={styles.avatar}>
-              {providerProfile?.name?.substring(0, 2).toUpperCase() || 'TM'}
+              {providerProfile?.photo_url && !imageError ? (
+                <img 
+                  src={providerProfile.photo_url} 
+                  alt={providerProfile.name || 'Profile'} 
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                providerProfile?.name?.substring(0, 2).toUpperCase() || 'TM'
+              )}
             </div>
             {!sidebarCollapsed && (
               <div className={styles.profileDetails}>

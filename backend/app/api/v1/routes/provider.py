@@ -1,5 +1,7 @@
 """Provider-specific routes and WebSocket handling."""
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from datetime import datetime, timezone
 from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse, UpdateProviderProfileRequest, UpdateProviderProfileResponse
 from app.services.database import get_db_session
@@ -89,3 +91,29 @@ async def update_profile(
     with get_db_session() as db:
         res = update_provider_profile(db, provider_id, request.dict(exclude_unset=True))
         return UpdateProviderProfileResponse(**res)
+
+@router.post(
+    "/{provider_id}/photo",
+    summary="Upload provider profile photo",
+)
+async def upload_photo(
+    provider_id: int,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user_from_credentials)
+):
+    _verify_provider_access(current_user, provider_id)
+    
+    # Generate unique filename
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = os.path.join("uploads", "avatars", "providers", filename)
+    
+    # Save file
+    with open(filepath, "wb") as buffer:
+        buffer.write(await file.read())
+        
+    photo_url = f"http://localhost:8000/uploads/avatars/providers/{filename}"
+    
+    with get_db_session() as db:
+        res = update_provider_profile(db, provider_id, {"photo_url": photo_url})
+        return {"photo_url": photo_url, "message": "Photo uploaded successfully."}

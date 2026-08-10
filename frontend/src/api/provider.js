@@ -19,3 +19,9 @@ export async function toggleAvailability(providerId, isAvailable) {
 export async function updateProviderProfile(providerId, profileData) {
   return request('PUT', `/api/v1/providers/${providerId}/profile`, profileData);
 }
+
+export async function uploadProviderPhoto(providerId, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request('POST', `/api/v1/providers/${providerId}/photo`, formData);
+}
