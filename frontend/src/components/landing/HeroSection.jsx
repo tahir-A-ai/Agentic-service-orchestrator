@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getPublicStats, getServiceTypes } from '../../api/stats';
 import { getIconComponent } from '../../constants/serviceIcons';
 import styles from './HeroSection.module.css';
 
 export default function HeroSection() {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     providers_registered: 0,
     bookings_completed: 0,
@@ -46,7 +52,18 @@ export default function HeroSection() {
       {/* CTA Cards */}
       <div className={styles.ctaRow}>
         {/* Customer Card */}
-        <Link to="/chat" className={[styles.ctaCard, styles.customerCard].join(' ')}>
+        <a
+          href="/chat"
+          onClick={(e) => {
+            e.preventDefault();
+            if (user?.role === 'provider') {
+              showToast('Providers cannot book services. Please log out to book as a customer.', 'error');
+            } else {
+              navigate('/chat');
+            }
+          }}
+          className={[styles.ctaCard, styles.customerCard].join(' ')}
+        >
           <div className={styles.ctaIcon}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -59,7 +76,7 @@ export default function HeroSection() {
           <span className={styles.ctaButton}>
             Chat Shuru Karein →
           </span>
-        </Link>
+        </a>
 
         {/* Provider Card */}
         <Link to="/provider/register" className={[styles.ctaCard, styles.providerCard].join(' ')}>

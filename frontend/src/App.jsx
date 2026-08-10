@@ -24,19 +24,19 @@ function App() {
 
               {/* Chat Flow */}
               <Route path="/chat" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['user']}>
                   <ChatPage />
                 </ProtectedRoute>
               } />
               <Route path="/chat/confirmed" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['user']}>
                   <ConfirmedPage />
                 </ProtectedRoute>
               } />
 
               {/* Protected Dashboard Routes */}
               <Route path="/provider/dashboard" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['provider']}>
                   <DashboardLayout />
                 </ProtectedRoute>
               }>

@@ -19,9 +19,22 @@ export function AuthProvider({ children }) {
     } catch { return null; }
   });
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, expectedRole) => {
     try {
       const data = await loginApi(email, password);
+      
+      // Enforce expected role if provided
+      if (expectedRole) {
+        const serverRole = data.role === 'customer' ? 'user' : data.role;
+        if (serverRole !== expectedRole) {
+          if (data.role === 'provider') {
+            throw new Error('Aap as a provider registered hain, Provider tab se login karein.');
+          } else {
+            throw new Error('Aap as a customer registered hain, User tab se login karein.');
+          }
+        }
+      }
+
       const payload = {
         email: data.email,
         full_name: data.full_name,
@@ -35,6 +48,10 @@ export function AuthProvider({ children }) {
       showToast(`Welcome back, ${data.full_name || data.email}!`, 'success');
       return payload;
     } catch (err) {
+      if (err.message && err.message.includes('registered hain')) {
+        showToast(err.message, 'error');
+        throw err;
+      }
       showToast('Login failed. Please check your credentials.', 'error');
       throw err;
     }

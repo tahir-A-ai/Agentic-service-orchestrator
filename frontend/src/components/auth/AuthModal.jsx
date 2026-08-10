@@ -201,7 +201,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
     setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 900));
-      const user = await login(loginEmail, loginPw);
+      const user = await login(loginEmail, loginPw, loginTab);
       if (user.role === 'provider') {
         onClose();
         navigate('/provider/dashboard');
@@ -210,7 +210,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'role-select'
         navigate('/chat');
       }
     } catch (err) {
-      setErrors({ form: err?.body?.detail?.message || 'Ghalat email ya password.' });
+      if (err.message && err.message.includes('registered hain')) {
+        setErrors({ form: err.message });
+      } else {
+        setErrors({ form: err?.body?.detail?.message || 'Ghalat email ya password.' });
+      }
     } finally {
       setLoading(false);
     }
