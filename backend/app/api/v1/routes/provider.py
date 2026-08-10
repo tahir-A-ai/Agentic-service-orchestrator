@@ -49,14 +49,19 @@ async def change_job_status(
 
     # Broadcast status change to the customer via WebSocket
     actual = res.get("actual_status", request.status)
-    await manager.broadcast_to_job(session_id, {
+    payload = {
         "type": "status_update",
         "status": actual,
         "provider_id": provider_id,
         "provider_name": res.get("provider_name", "Unknown"),
         "service_type": res.get("service_type", "Unknown"),
         "timestamp": datetime.now(timezone.utc).isoformat()
-    })
+    }
+    
+    if actual == "Cancelled":
+        payload["cancelled_by"] = "provider"
+        
+    await manager.broadcast_to_job(session_id, payload)
 
     return {"message": res["message"]}
 

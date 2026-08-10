@@ -9,6 +9,7 @@ from app.schemas import (
     ServiceRequest,
     CustomerConfirmRequest,
     CustomerConfirmResponse,
+    CancelBookingRequest,
 )
 from app.services.database import get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
@@ -94,6 +95,34 @@ async def confirm_completion_route(
 
     return CustomerConfirmResponse(**result)
 
+@router.post(
+    "/cancel-booking",
+    summary="Customer cancels the booking request",
+)
+async def cancel_booking_route(
+    request: CancelBookingRequest,
+    current_user: dict = Depends(get_current_user_from_credentials)
+):
+    with get_db_session() as db:
+        from app.models import BookingSession
+        session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
+        if not session:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Booking not found")
+        
+        session.status = "Cancelled"
+        db.commit()
+
+    # Notify provider if there is an active session
+    await manager.broadcast_to_job(request.session_id, {
+        "type": "status_update",
+        "status": "Cancelled",
+        "cancelled_by": "customer",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+
+    return {"message": "Booking cancelled successfully"}
+
 @router.websocket("/stream/booking/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
     token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
@@ -107,6 +136,27 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
         return
 
     await manager.connect(websocket, job_id)
+    
+    # Send current state to sync client on reconnect/reload
+    with get_db_session() as db:
+        from app.models import BookingSession, Provider
+        session = db.query(BookingSession).filter(BookingSession.id == job_id).first()
+        if session:
+            provider_name = None
+            service_type = None
+            if session.confirmed_provider_id:
+                provider = db.query(Provider).filter(Provider.id == session.confirmed_provider_id).first()
+                if provider:
+                    provider_name = provider.name
+                    service_type = provider.get_service_type_label
+                    
+            await websocket.send_json({
+                "type": "status_update",
+                "status": session.status,
+                "provider_name": provider_name,
+                "service_type": service_type
+            })
+
     try:
         while True:
             # Keep connection alive and detect disconnects

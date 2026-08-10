@@ -102,3 +102,6 @@ class CustomerConfirmRequest(BaseModel):
 class CustomerConfirmResponse(BaseModel):
     message: str
     new_average_rating: float
+
+class CancelBookingRequest(BaseModel):
+    session_id: str

@@ -72,7 +72,7 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
   // Full variant
   return (
     <div className={`${styles.card} ${borderClass}`.trim()}>
-      <div 
+      <div
         className={styles.header}
         onClick={() => setExpanded(!expanded)}
         role="button"
@@ -83,7 +83,7 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
           <Badge variant={statusColor}>{statusLabels[job.status]}</Badge>
         </div>
         <span className={styles.timeFull}>{timeDisplay}</span>
-        
+
         <div className={styles.serviceRow}>
           <span className={styles.servicePill}>{job.service_type}</span>
           <span className={styles.address}>
@@ -102,20 +102,20 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
             <p>Session ID: <span className={styles.metaValue}>{job.session_id}</span></p>
             <p>Notes: <span className={styles.metaValue}>{job.customer_notes || 'No notes available.'}</span></p>
           </div>
-          
+
           {!readOnly && (
             <div className={styles.actions}>
               {job.status === 'Pending_Acceptance' && (
                 <>
-                  <button 
-                    className={styles.acceptBtn} 
+                  <button
+                    className={styles.acceptBtn}
                     onClick={() => handleStatusChange('In_Progress')}
                     disabled={loading}
                   >
                     Accept Job
                   </button>
-                  <button 
-                    className={styles.declineBtn} 
+                  <button
+                    className={styles.declineBtn}
                     onClick={() => handleStatusChange('Cancelled')}
                     disabled={loading}
                   >
@@ -125,7 +125,7 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
               )}
               {job.status === 'In_Progress' && (
                 <>
-                  <button 
+                  <button
                     className={styles.completeBtn}
                     onClick={() => handleStatusChange('Completed')}
                     disabled={loading}
@@ -134,6 +134,17 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Mark as Completed
+                  </button>
+                  <button 
+                    className={styles.declineBtn} 
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to cancel this active job?")) {
+                        handleStatusChange('Cancelled');
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    Cancel Job
                   </button>
                   <button className={styles.callBtn}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

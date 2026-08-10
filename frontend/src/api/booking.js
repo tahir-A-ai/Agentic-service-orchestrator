@@ -19,3 +19,7 @@ export async function confirmBooking(sessionId, approvedProviderIds, exactAddres
 export async function confirmCompletion(sessionId, rating) {
   return request('POST', '/api/v1/confirm-completion', { session_id: sessionId, rating });
 }
+
+export async function cancelBooking(sessionId) {
+  return request('POST', '/api/v1/cancel-booking', { session_id: sessionId });
+}

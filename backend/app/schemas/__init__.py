@@ -17,6 +17,7 @@ from .booking import (
     ConfirmBookingResponse,
     CustomerConfirmRequest,
     CustomerConfirmResponse,
+    CancelBookingRequest,
 )
 from .service import ServiceTypeOut, ServiceTypesResponse, ActiveServicesResponse
 from .stats import PublicStatsResponse
@@ -44,4 +45,5 @@ __all__ = [
     "ServiceTypesResponse",
     "ActiveServicesResponse",
     "PublicStatsResponse",
+    "CancelBookingRequest",
 ]

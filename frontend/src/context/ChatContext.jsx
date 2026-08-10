@@ -25,7 +25,26 @@ export function ChatProvider({ children }) {
   const [sessionId, setSessionId] = useState(null);
   const [approvedIds, setApprovedIds] = useState([]);
   const [isThinking, setThinking] = useState(false);
-  const [confirmed, setConfirmed] = useState(null);
+  const [confirmed, setConfirmedState] = useState(() => {
+    const saved = localStorage.getItem('karigar_confirmed_booking');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+  
+  const setConfirmed = useCallback((data) => {
+    setConfirmedState(data);
+    if (data) {
+      localStorage.setItem('karigar_confirmed_booking', JSON.stringify(data));
+    } else {
+      localStorage.removeItem('karigar_confirmed_booking');
+    }
+  }, []);
   const [lastUserPrompt, setLastUserPrompt] = useState(null);
   const [excludedIds, setExcludedIds] = useState([]);
 
@@ -50,7 +69,8 @@ export function ChatProvider({ children }) {
     setSessionId(null);
     setApprovedIds([]);
     setThinking(false);
-    setConfirmed(null);
+    setConfirmedState(null);
+    localStorage.removeItem('karigar_confirmed_booking');
     // Note: Do NOT clear lastUserPrompt or excludedIds on reset, they are needed for the auto-fetch flow
   }, []);
 
