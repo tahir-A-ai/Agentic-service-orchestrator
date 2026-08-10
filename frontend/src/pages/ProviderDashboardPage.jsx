@@ -60,6 +60,9 @@ function useProviderJobs() {
 
       setJobs(newJobs);
     } catch (err) {
+      if (err.status === 401 || (err.message && err.message.toLowerCase().includes('login'))) {
+        return; // Ignore auth errors during logout transition
+      }
       showToast('Jobs fetch karne mein error: ' + err.message, 'error');
     } finally {
       setLoading(false);
