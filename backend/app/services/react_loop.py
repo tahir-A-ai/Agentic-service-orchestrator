@@ -175,6 +175,32 @@ async def _update_intent_state(agent, config, messages):
     })
 
 
+async def clear_session_checkpoint(session_id: str) -> None:
+    """
+    Delete the LangGraph thread checkpoint for a cancelled session.
+
+    When a customer cancels a booking, their old session's LangGraph state
+    must be wiped from the SQLite checkpointer. Otherwise, the next fresh
+    request (which sends session_id=None and gets a new UUID) may cause
+    a SQLite lock conflict because the old checkpointer state is still open.
+    """
+    try:
+        config = {"configurable": {"thread_id": session_id}}
+        async with AsyncSqliteSaver.from_conn_string(str(settings.DB_PATH)) as checkpointer:
+            await checkpointer.adelete_thread(config)
+        write_audit_log(
+            session_id,
+            "[ACTION]",
+            f"LangGraph checkpoint cleared for cancelled session {session_id}.",
+        )
+    except Exception as e:
+        write_audit_log(
+            session_id,
+            "[ACTION]",
+            f"Warning: Could not clear LangGraph checkpoint for session {session_id}: {e}",
+        )
+
+
 
 async def run_find_providers(
     user_prompt: str,

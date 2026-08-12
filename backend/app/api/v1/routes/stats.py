@@ -1,9 +1,10 @@
 """Platform statistics routes."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from app.schemas import PublicStatsResponse, ProviderStatsResponse, ActiveServicesResponse, ServiceTypesResponse
 from app.services.database import get_db_session
 from app.services.stats import get_public_stats, get_provider_stats, get_active_services, get_all_service_types
-from app.services.auth import get_current_user_from_credentials
+from app.services.auth import get_current_user_from_credentials, decode_access_token
+from app.services.websockets import provider_manager
 
 router = APIRouter(tags=["Stats"])
 
@@ -70,3 +71,42 @@ async def fetch_service_types() -> ServiceTypesResponse:
     with get_db_session() as db:
         services = get_all_service_types(db)
         return ServiceTypesResponse(service_types=services)
+
+
+@router.websocket("/stream/provider/{provider_id}")
+async def provider_stream(websocket: WebSocket, provider_id: int):
+    """
+    Persistent per-provider WebSocket for real-time dashboard stat pushes.
+
+    The frontend connects once on login and receives a 'stats_update' message
+    whenever a booking event changes the provider's metrics. No polling needed.
+    """
+    token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return
+    try:
+        payload = decode_access_token(token)
+        if payload.get("role") != "provider" or payload.get("provider_id") != provider_id:
+            await websocket.close(code=1008)
+            return
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
+    await provider_manager.connect(websocket, provider_id)
+
+    # Send current stats immediately on connect so the dashboard is up-to-date
+    try:
+        with get_db_session() as db:
+            stats = get_provider_stats(db, provider_id)
+        await websocket.send_json({"type": "stats_update", **stats})
+    except Exception:
+        pass
+
+    try:
+        while True:
+            # Keep connection alive; real updates come via push_stats() calls
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        provider_manager.disconnect(websocket, provider_id)

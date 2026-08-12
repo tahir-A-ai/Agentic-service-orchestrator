@@ -7,7 +7,7 @@ from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvai
 from app.services.database import get_db_session
 from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability, update_provider_profile
 from app.services.auth import get_current_user_from_credentials
-from app.services.websockets import manager
+from app.services.websockets import manager, provider_manager
 
 router = APIRouter(prefix="/providers", tags=["Provider"])
 
@@ -62,6 +62,12 @@ async def change_job_status(
         payload["cancelled_by"] = "provider"
         
     await manager.broadcast_to_job(session_id, payload)
+
+    # Push fresh stats to the provider's dashboard (event-driven, no polling)
+    with get_db_session() as db:
+        from app.services.stats import get_provider_stats
+        stats = get_provider_stats(db, provider_id)
+    await provider_manager.push_stats(provider_id, stats)
 
     return {"message": res["message"]}
 

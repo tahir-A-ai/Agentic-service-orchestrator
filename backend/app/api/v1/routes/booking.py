@@ -13,9 +13,10 @@ from app.schemas import (
 )
 from app.services.database import get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
+from app.services.react_loop import clear_session_checkpoint
+from app.services.websockets import manager, provider_manager
 from app.services.auth import get_current_user_from_credentials, decode_access_token
 from app.services.confirmation import confirm_completion
-from app.services.websockets import manager
 
 router = APIRouter(tags=["Booking"])
 
@@ -67,13 +68,24 @@ async def confirm_booking_route(request: ConfirmBookingRequest, current_user: di
         request.customer_notes
     )
 
-    return ConfirmBookingResponse(
+    response = ConfirmBookingResponse(
         session_id=result["session_id"],
         message=result["message"],
         booked=[ProviderDetail(**p) for p in result["booked"]],
         failed=result.get("failed", []),
         audit_log_path=result.get("audit_log_path"),
     )
+
+    # Push fresh stats to each newly assigned provider's dashboard
+    for p in result["booked"]:
+        pid = p.get("id")
+        if pid:
+            with get_db_session() as db:
+                from app.services.stats import get_provider_stats
+                stats = get_provider_stats(db, pid)
+            await provider_manager.push_stats(pid, stats)
+
+    return response
 
 @router.post(
     "/confirm-completion",
@@ -112,6 +124,9 @@ async def cancel_booking_route(
         
         session.status = "Cancelled"
         db.commit()
+
+    # Clear the LangGraph checkpoint so the next request starts cleanly
+    await clear_session_checkpoint(request.session_id)
 
     # Notify provider if there is an active session
     await manager.broadcast_to_job(request.session_id, {

@@ -1,46 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { getProviderStats } from '../../../api/provider';
+import { ProviderStatsProvider, useProviderStats } from '../../../context/ProviderStatsContext';
 import { getIconComponent } from '../../../constants/serviceIcons';
 import StatusToggle from './StatusToggle';
 import Badge from '../../ui/Badge';
 import styles from './DashboardLayout.module.css';
 
 export default function DashboardLayout() {
+  return (
+    <ProviderStatsProvider>
+      <DashboardLayoutInner />
+    </ProviderStatsProvider>
+  );
+}
+
+function DashboardLayoutInner() {
   const { providerProfile, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeJobsCount, setActiveJobsCount] = useState(0);
-  const [liveServiceType, setLiveServiceType] = useState(providerProfile?.service || 'Service');
   const [imageError, setImageError] = useState(false);
+  const { stats } = useProviderStats();
+  const activeJobsCount = stats.active_jobs;
+  const liveServiceType = stats.service_type || providerProfile?.service || 'Service';
 
-  useEffect(() => {
-    setImageError(false);
-  }, [providerProfile?.photo_url]);
-
-  useEffect(() => {
-    if (providerProfile?.id) {
-      getProviderStats(providerProfile.id)
-        .then(stats => {
-          setActiveJobsCount(stats.active_jobs);
-          if (stats.service_type) setLiveServiceType(stats.service_type);
-        })
-        .catch(console.error);
-      
-      // Simple poll every 15s to keep the badge somewhat live
-      const interval = setInterval(() => {
-        getProviderStats(providerProfile.id)
-          .then(stats => {
-            setActiveJobsCount(stats.active_jobs);
-            if (stats.service_type) setLiveServiceType(stats.service_type);
-          })
-          .catch(console.error);
-      }, 15000);
-      return () => clearInterval(interval);
-    }
-  }, [providerProfile?.id]);
 
   const handleLogout = () => {
     logout();

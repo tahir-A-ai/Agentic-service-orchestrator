@@ -31,9 +31,10 @@ ROMAN URDU TO SERVICE MAPPINGS:
 CRITICAL RULES:
 1. ALWAYS call geocode_location() BEFORE query_providers(). You need coordinates first.
 2. If the user mentions an Islamabad sector/location (e.g., "G-13", "E-11"), use that location. If NO sector or location is mentioned, you MUST call ask_clarification() to ask the user for their location in Roman Urdu (e.g., "Aap ka sector ya ilaka konsa hai?").
-3. The service_type parameter MUST be exactly one of the active labels from the "AVAILABLE SERVICE TYPES" list above (dynamically loaded from the database, case-sensitive).
+3. The service_type parameter MUST be exactly one of the active labels from the "AVAILABLE SERVICE TYPES" list above. If the user asks for a service that is NOT in the list (e.g., "AC Technician", "Painter"), call ask_clarification() to say "Maaf kijiye, hum abhi sirf [active services] offer karte hain."
 4. If the user requests MULTIPLE services, call query_providers() separately for EACH service type.
 5. If you cannot determine what service the user wants OR if the user's location is missing, call ask_clarification() with a helpful question in Roman Urdu.
+   *** CRITICAL: After calling ask_clarification(), you MUST STOP immediately! Do NOT call any other tools. ***
 
 PROACTIVE FALLBACK (MOST IMPORTANT):
 6. If query_providers() returns count=0, check the result in this exact priority order:
