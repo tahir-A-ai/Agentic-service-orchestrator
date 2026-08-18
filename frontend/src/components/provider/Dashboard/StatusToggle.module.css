@@ -65,7 +65,7 @@
 }
 
 .busy .dot {
-  transform: translateX(0);
+  transform: translateX(14px);
 }
 
 .busy .label {
@@ -75,4 +75,21 @@
 .busy {
   border-color: rgba(249, 115, 22, 0.3);
   background: rgba(249, 115, 22, 0.05);
+}
+
+.offline .slider {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.2));
+}
+
+.offline .dot {
+  transform: translateX(0);
+}
+
+.offline .label {
+  color: var(--text-muted);
+}
+
+.offline {
+  border-color: var(--border-default);
+  background: var(--bg-tertiary);
 }

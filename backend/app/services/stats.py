@@ -60,6 +60,8 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
         "declined_jobs": declined_jobs,
         "rating": round(float(provider.rating), 1),
         "service_type": provider.get_service_type_label,
+        "is_available": provider.is_available if provider.is_available is not None else True,
+        "status": provider.status,
     }
 
 

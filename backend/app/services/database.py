@@ -90,6 +90,7 @@ def query_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
+            .filter(Provider.is_available == True)
             .all()
         )
 
@@ -145,6 +146,7 @@ def query_all_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
+            .filter(Provider.is_available == True)
             .all()
         )
 

@@ -24,6 +24,8 @@ export function ProviderStatsProvider({ children }) {
     declined_jobs: 0,
     rating: 0.0,
     service_type: null,
+    is_available: true,
+    status: 'Active',
   });
   const [loading, setLoading] = useState(true);
   // Holds the job_cancelled payload when a customer cancels; null = no modal
@@ -32,6 +34,10 @@ export function ProviderStatsProvider({ children }) {
   const [jobsRefetchKey, setJobsRefetchKey] = useState(0);
 
   const clearCancellationEvent = useCallback(() => setCancellationEvent(null), []);
+
+  const updateAvailabilityLocal = useCallback((isAvailable) => {
+    setStats(prev => ({ ...prev, is_available: isAvailable }));
+  }, []);
 
   useEffect(() => {
     if (!providerProfile?.id) {
@@ -62,6 +68,8 @@ export function ProviderStatsProvider({ children }) {
             declined_jobs: data.declined_jobs ?? 0,
             rating: data.rating ?? 0.0,
             service_type: data.service_type ?? null,
+            is_available: data.is_available ?? true,
+            status: data.status ?? 'Active',
           });
           setLoading(false);
         } else if (data.type === 'job_cancelled') {
@@ -89,6 +97,7 @@ export function ProviderStatsProvider({ children }) {
       cancellationEvent,
       clearCancellationEvent,
       jobsRefetchKey,
+      updateAvailabilityLocal,
     }}>
       {children}
     </ProviderStatsCtx.Provider>

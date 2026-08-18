@@ -85,7 +85,14 @@ async def toggle_availability(
     _verify_provider_access(current_user, provider_id)
     with get_db_session() as db:
         res = update_provider_availability(db, provider_id, request.is_available)
-        return ProviderAvailabilityResponse(**res)
+        
+    # Push updated stats via WebSocket so all connected tabs/devices update immediately
+    with get_db_session() as db:
+        from app.services.stats import get_provider_stats
+        stats = get_provider_stats(db, provider_id)
+    await provider_manager.push_stats(provider_id, stats)
+
+    return ProviderAvailabilityResponse(**res)
 
 
 @router.put(
