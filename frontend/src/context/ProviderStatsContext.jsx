@@ -68,6 +68,9 @@ export function ProviderStatsProvider({ children }) {
           // Show the cancellation modal and trigger a jobs list refresh
           setCancellationEvent({ sessionId: data.session_id, cancelledBy: data.cancelled_by });
           setJobsRefetchKey(k => k + 1);
+        } else if (data.type === 'job_completed') {
+          // Trigger a jobs list refresh when customer finalizes review
+          setJobsRefetchKey(k => k + 1);
         }
       } catch (_) {}
     };

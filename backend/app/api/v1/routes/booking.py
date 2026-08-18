@@ -96,14 +96,32 @@ async def confirm_completion_route(
     request: CustomerConfirmRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    confirmed_provider_id = None
     with get_db_session() as db:
         result = confirm_completion(db, request.session_id, request.rating)
+        from app.models import BookingSession
+        session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
+        if session:
+            confirmed_provider_id = session.confirmed_provider_id
 
     await manager.broadcast_to_job(request.session_id, {
         "type": "status_update",
         "status": "Completed",
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
+
+    # Notify provider dashboard in real-time so completed stats increment and job moves to history
+    if confirmed_provider_id:
+        with get_db_session() as db:
+            from app.services.stats import get_provider_stats
+            stats = get_provider_stats(db, confirmed_provider_id)
+        await provider_manager.push_stats(confirmed_provider_id, stats)
+        await provider_manager.push_event(confirmed_provider_id, {
+            "type": "job_completed",
+            "session_id": request.session_id,
+            "rating": request.rating,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
 
     return CustomerConfirmResponse(**result)
 
