@@ -22,7 +22,7 @@ export default function ConfirmedPage() {
   // Initialize and redirect check
   useEffect(() => {
     if (!confirmed && !isNavigatingRef.current) {
-      navigate('/');
+      navigate('/chat', { replace: true });
     } else if (confirmed?.booked && confirmed.booked.length > 0) {
       setLiveProvider(confirmed.booked[0]);
     }
@@ -52,10 +52,12 @@ export default function ConfirmedPage() {
           if (data.status === 'Pending_Completion') {
             setShowRatingModal(true);
           } else if (data.status === 'Completed') {
-            // If already marked as Completed on the server when loaded, clean cache
-            showToast('Yeh booking complete ho chuki hai.', 'info');
-            reset();
-            navigate('/chat');
+            if (!showRatingModal && !isNavigatingRef.current) {
+              isNavigatingRef.current = true;
+              showToast('Yeh booking complete ho chuki hai.', 'info');
+              reset();
+              navigate('/chat', { replace: true });
+            }
           } else if (data.status === 'Cancelled') {
             if (data.cancelled_by !== 'customer') {
               showToast('Provider declined or cancelled the request. Searching again...', 'error');
@@ -66,12 +68,15 @@ export default function ConfirmedPage() {
                   addExcludedId(providerId);
                 }
                 reset();
-                navigate('/chat', { state: { autoFetch: lastUserPrompt } });
+                navigate('/chat', { state: { autoFetch: lastUserPrompt }, replace: true });
               }, 3000);
             } else {
-              showToast('Yeh booking cancel ho chuki hai.', 'info');
-              reset();
-              navigate('/chat');
+              if (!isNavigatingRef.current) {
+                isNavigatingRef.current = true;
+                showToast('Yeh booking cancel ho chuki hai.', 'info');
+                reset();
+                navigate('/chat', { state: { customerCancelled: true }, replace: true });
+              }
             }
           }
         }
@@ -83,31 +88,32 @@ export default function ConfirmedPage() {
     return () => {
       ws.close();
     };
-  }, [confirmed?.session_id]);
+  }, [confirmed?.session_id, showRatingModal, lastUserPrompt, addExcludedId, reset, navigate, showToast]);
 
   if (!confirmed || !liveProvider) return null;
 
   const handleNewBooking = () => {
     isNavigatingRef.current = true;
     reset();
-    navigate('/chat');
+    navigate('/chat', { replace: true });
   };
 
   const handleCancelRequest = async () => {
     if (!window.confirm("Are you sure you want to cancel this request?")) return;
     
     setIsCancelling(true);
+    isNavigatingRef.current = true;
     try {
       await cancelBooking(confirmed.session_id);
-      showToast('Redirecting to chat...', 'info');
+      showToast('Request cancel ho gayi. Chat par redirect ho rahe hain...', 'info');
       setTimeout(() => {
-        isNavigatingRef.current = true;
         reset();
-        navigate('/chat', { state: { customerCancelled: true } });
-      }, 1500);
+        navigate('/chat', { state: { customerCancelled: true }, replace: true });
+      }, 1000);
     } catch (err) {
       showToast('Failed to cancel: ' + err.message, 'error');
       setIsCancelling(false);
+      isNavigatingRef.current = false;
     }
   };
 
@@ -158,24 +164,24 @@ export default function ConfirmedPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-          {status !== 'Cancelled' && status !== 'Completed' && status !== 'Pending_Completion' && (
-            <button onClick={handleCancelRequest} className={styles.newBtn} style={{ backgroundColor: 'var(--bg-card)', color: '#ef4444', border: '1px solid #ef4444' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className={styles.actionRow}>
+          {status !== 'Cancelled' && status !== 'Completed' && status !== 'Pending_Completion' ? (
+            <button onClick={handleCancelRequest} className={`${styles.btn} ${styles.cancelBtn}`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
               Cancel Request
             </button>
+          ) : (
+            <button onClick={handleNewBooking} className={`${styles.btn} ${styles.newBookingBtn}`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 1 0 2.13-5.88L2 9"></path>
+              </svg>
+              Start New Booking
+            </button>
           )}
-          
-          <button onClick={handleNewBooking} className={styles.newBtn} style={{ flex: 1 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 2v6h-6"></path>
-              <path d="M3 12a9 9 0 1 0 2.13-5.88L2 9"></path>
-            </svg>
-            New Booking
-          </button>
         </div>
 
         <RatingModal
@@ -183,14 +189,14 @@ export default function ConfirmedPage() {
           sessionId={confirmed.session_id}
           providerName={liveProvider.name}
           onComplete={() => {
+            isNavigatingRef.current = true;
             setShowRatingModal(false);
             setStatus('Completed');
             showToast('Shukriya! Aapki rating submit ho gayi.', 'success');
             setTimeout(() => {
-              isNavigatingRef.current = true;
               reset();
-              navigate('/chat');
-            }, 2500);
+              navigate('/chat', { replace: true });
+            }, 1800);
           }}
         />
       </div>

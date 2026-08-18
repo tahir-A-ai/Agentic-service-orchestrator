@@ -24,7 +24,7 @@ export default function BookingReceipt({ provider }) {
       </div>
 
       <div className={styles.details}>
-        <span className={styles.detailItem}>⭐ {provider.rating} Rating</span>
+        <span className={styles.detailItem}>⭐ {provider.rating != null && !isNaN(Number(provider.rating)) ? Number(provider.rating).toFixed(1) : (provider.rating || '5.0')} Rating</span>
         <span className={styles.detailItem}>📌 {provider.location || 'G-13'}</span>
       </div>
 

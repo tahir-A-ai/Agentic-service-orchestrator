@@ -9,6 +9,9 @@ export default function LiveProviderCard({ provider, status }) {
 
   // Fake ETA generation based on distance for realism
   const etaRange = provider.distance_km ? `${Math.ceil(provider.distance_km * 5 + 10)}-${Math.ceil(provider.distance_km * 5 + 25)} min` : '30-45 min';
+  const formattedRating = provider.rating != null && !isNaN(Number(provider.rating))
+    ? Number(provider.rating).toFixed(1)
+    : '4.5';
 
   const getInitials = (name) => {
     if (!name) return 'PR';
@@ -71,7 +74,7 @@ export default function LiveProviderCard({ provider, status }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#EAB308" stroke="#EAB308" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
-          <span className={styles.infoTextBold}>{provider.rating || '4.5'}</span>
+          <span className={styles.infoTextBold}>{formattedRating}</span>
         </div>
 
         <div className={styles.infoItem}>

@@ -62,7 +62,7 @@ export default function AddressModal({ isOpen, onClose, onSubmit, isSubmitting }
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting || !address.trim()} className={styles.submitBtn}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               {isSubmitting ? 'Confirming...' : 'Confirm Booking'}
