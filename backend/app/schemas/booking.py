@@ -98,6 +98,7 @@ class ConfirmBookingResponse(BaseModel):
 class CustomerConfirmRequest(BaseModel):
     session_id: str = Field(...)
     rating: int = Field(..., ge=1, le=5)
+    review_text: str | None = Field(None, max_length=1000, description="Optional written review from the customer.")
 
 class CustomerConfirmResponse(BaseModel):
     message: str
