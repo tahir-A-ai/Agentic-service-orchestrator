@@ -18,6 +18,7 @@ class BookingSession(Base):
     exact_address = Column(String(255), nullable=True)
     customer_notes = Column(Text, nullable=True)
     customer_rating = Column(Integer, nullable=True)
+    customer_review = Column(Text, nullable=True)
     customer_confirmed_at = Column(DateTime, nullable=True)
     cancelled_by = Column(SAEnum('customer', 'provider', name='cancelled_by_enum'), nullable=True)
 
