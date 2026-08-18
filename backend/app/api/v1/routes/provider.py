@@ -3,7 +3,7 @@ import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from datetime import datetime, timezone
-from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse, UpdateProviderProfileRequest, UpdateProviderProfileResponse
+from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse, UpdateProviderProfileRequest, UpdateProviderProfileResponse, ProviderReview, ProviderReviewsResponse
 from app.services.database import get_db_session
 from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability, update_provider_profile
 from app.services.auth import get_current_user_from_credentials
@@ -135,3 +135,67 @@ async def upload_photo(
     with get_db_session() as db:
         res = update_provider_profile(db, provider_id, {"photo_url": photo_url})
         return {"photo_url": photo_url, "message": "Photo uploaded successfully."}
+
+
+@router.get(
+    "/{provider_id}/reviews",
+    response_model=ProviderReviewsResponse,
+    summary="Get paginated reviews for a provider (public)",
+)
+async def get_provider_reviews(
+    provider_id: int,
+    page: int = 1,
+    limit: int = 10,
+):
+    """Returns paginated customer reviews for a provider. No auth required — customers can read before booking."""
+    from app.models import BookingSession, User
+    from sqlalchemy import func
+
+    page = max(1, page)
+    limit = min(limit, 20)  # Cap at 20 per request for safety
+    offset = (page - 1) * limit
+
+    with get_db_session() as db:
+        # Total count of completed, rated sessions for this provider
+        total_count = (
+            db.query(func.count(BookingSession.id))
+            .filter(
+                BookingSession.confirmed_provider_id == provider_id,
+                BookingSession.status == "Completed",
+                BookingSession.customer_rating.isnot(None),
+            )
+            .scalar() or 0
+        )
+
+        # Paginated sessions with customer info (join users for customer name)
+        rows = (
+            db.query(BookingSession, User)
+            .join(User, BookingSession.customer_id == User.id)
+            .filter(
+                BookingSession.confirmed_provider_id == provider_id,
+                BookingSession.status == "Completed",
+                BookingSession.customer_rating.isnot(None),
+            )
+            .order_by(BookingSession.customer_confirmed_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        reviews = [
+            ProviderReview(
+                rating=session.customer_rating,
+                review_text=session.customer_review,
+                customer_name=user.full_name.split()[0] if user.full_name else "Customer",  # first name only
+                created_at=session.customer_confirmed_at.isoformat() if session.customer_confirmed_at else "",
+            )
+            for session, user in rows
+        ]
+
+    has_more = (offset + len(reviews)) < total_count
+
+    return ProviderReviewsResponse(
+        reviews=reviews,
+        total_count=total_count,
+        has_more=has_more,
+    )
