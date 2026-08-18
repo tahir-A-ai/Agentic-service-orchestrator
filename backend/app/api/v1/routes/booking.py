@@ -98,7 +98,7 @@ async def confirm_completion_route(
 ):
     confirmed_provider_id = None
     with get_db_session() as db:
-        result = confirm_completion(db, request.session_id, request.rating)
+        result = confirm_completion(db, request.session_id, request.rating, request.review_text)
         from app.models import BookingSession
         session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
         if session:
