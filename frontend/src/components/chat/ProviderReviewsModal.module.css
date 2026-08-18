@@ -25,6 +25,7 @@
   box-shadow: 0 32px 64px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.04);
   animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  outline: none;
 }
 
 /* ── Header ──────────────────────────── */
@@ -163,6 +164,55 @@
   border-radius: 6px;
   animation: pulse 1.5s ease-in-out infinite;
   animation-delay: 0.3s;
+}
+
+/* ── Error State ─────────────────────── */
+
+.errorState {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.errorIcon {
+  color: #EF4444;
+}
+
+.errorTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #F87171;
+  margin: 0;
+}
+
+.errorSubtitle {
+  font-size: 0.85rem;
+  color: #9CA3AF;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.retryBtn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #F87171;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retryBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #FFFFFF;
 }
 
 /* ── Empty State ─────────────────────── */

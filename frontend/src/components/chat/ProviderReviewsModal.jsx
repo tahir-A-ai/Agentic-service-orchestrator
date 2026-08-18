@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchProviderReviews } from '../../api/provider';
 import styles from './ProviderReviewsModal.module.css';
 
@@ -19,29 +19,103 @@ export default function ProviderReviewsModal({ providerId, providerName, provide
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [error, setError] = useState(null);
+
+  const modalRef = useRef(null);
+  const previousActiveElement = useRef(null);
 
   const loadPage = useCallback(async (pageNum, append = false) => {
     try {
+      if (!append) setError(null);
       const data = await fetchProviderReviews(providerId, pageNum);
       setReviews(prev => append ? [...prev, ...data.reviews] : data.reviews);
       setTotalCount(data.total_count);
       setHasMore(data.has_more);
+      return true;
     } catch (err) {
       console.error('Failed to load reviews:', err);
+      if (!append) {
+        setError('Reviews load nahi ho sakay. Internet connection check karein.');
+      }
+      return false;
     }
   }, [providerId]);
 
+  const handleInitialRetry = () => {
+    setLoading(true);
+    setError(null);
+    loadPage(1, false).finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     setLoading(true);
+    setError(null);
     loadPage(1, false).finally(() => setLoading(false));
   }, [loadPage]);
+
+  // Focus trap, Escape key close, and focus restoration
+  useEffect(() => {
+    previousActiveElement.current = document.activeElement;
+
+    const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusableElements = modalRef.current?.querySelectorAll(focusableSelector);
+    if (focusableElements && focusableElements.length > 0) {
+      focusableElements[0].focus();
+    } else {
+      modalRef.current?.focus();
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusables = Array.from(modalRef.current.querySelectorAll(focusableSelector)).filter(
+          (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'
+        );
+
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement.current && typeof previousActiveElement.current.focus === 'function') {
+        previousActiveElement.current.focus();
+      }
+    };
+  }, [onClose]);
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;
     setLoadingMore(true);
-    await loadPage(nextPage, true);
-    setPage(nextPage);
-    setLoadingMore(false);
+    try {
+      const success = await loadPage(nextPage, true);
+      if (success) {
+        setPage(nextPage);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const toggleExpand = (idx) => {
@@ -74,12 +148,20 @@ export default function ProviderReviewsModal({ providerId, providerName, provide
   );
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label={`${providerName} ke reviews`}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div
+        ref={modalRef}
+        className={styles.modal}
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reviews-modal-title"
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerInfo}>
-            <h2 className={styles.title}>{providerName}</h2>
+            <h2 id="reviews-modal-title" className={styles.title}>{providerName}</h2>
             <div className={styles.headerMeta}>
               <span className={styles.avgRating}>
                 <svg width="16" height="16" viewBox="0 0 24 24" className={styles.avgStarSvg}>
@@ -109,6 +191,19 @@ export default function ProviderReviewsModal({ providerId, providerName, provide
                   <div className={styles.skeletonLineShort} />
                 </div>
               ))}
+            </div>
+          ) : error ? (
+            <div className={styles.errorState}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={styles.errorIcon}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className={styles.errorTitle}>Reviews load nahi ho sakay</p>
+              <p className={styles.errorSubtitle}>{error}</p>
+              <button className={styles.retryBtn} onClick={handleInitialRetry}>
+                Dobara Try Karein
+              </button>
             </div>
           ) : reviews.length === 0 ? (
             <div className={styles.empty}>

@@ -6,7 +6,7 @@ import math
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 from app.models import Base, LocationCache, Provider, ServiceType
@@ -25,10 +25,15 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def init_db() -> None:
     """
-    Create all tables if they do not exist.
+    Create all tables if they do not exist and backfill defaults.
     Called once during the FastAPI lifespan startup event.
     """
     Base.metadata.create_all(bind=engine)
+    with get_db_session() as session:
+        session.query(Provider).filter(Provider.is_available.is_(None)).update(
+            {"is_available": True}, synchronize_session=False
+        )
+        session.commit()
 
 
 @contextmanager
@@ -90,7 +95,7 @@ def query_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
-            .filter(Provider.is_available == True)
+            .filter(or_(Provider.is_available == True, Provider.is_available.is_(None)))
             .all()
         )
 
@@ -146,7 +151,7 @@ def query_all_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
-            .filter(Provider.is_available == True)
+            .filter(or_(Provider.is_available == True, Provider.is_available.is_(None)))
             .all()
         )
 
@@ -222,7 +227,7 @@ def query_busy_providers(
 
 def commit_booking(provider_id: int) -> bool:
     """
-    Atomically mark a provider as 'Busy' ONLY if they are still 'Active'.
+    Atomically mark a provider as 'Busy' ONLY if they are still 'Active' and 'is_available'.
 
     Uses a single conditional UPDATE instead of a read-then-write pattern.
     This is the only safe approach under SQLite's concurrency model — two
@@ -230,12 +235,16 @@ def commit_booking(provider_id: int) -> bool:
 
     Returns:
         True  — booking claimed successfully (rowcount == 1).
-        False — provider was already taken by a concurrent request (rowcount == 0).
+        False — provider was already taken by a concurrent request or went offline (rowcount == 0).
     """
     with get_db_session() as session:
         rows_affected = (
             session.query(Provider)
-            .filter(Provider.id == provider_id, Provider.status == "Active")
+            .filter(
+                Provider.id == provider_id,
+                Provider.status == "Active",
+                or_(Provider.is_available == True, Provider.is_available.is_(None)),
+            )
             .update({"status": "Busy"}, synchronize_session=False)
         )
         session.commit()

@@ -152,7 +152,7 @@ async def get_provider_reviews(
     from sqlalchemy import func
 
     page = max(1, page)
-    limit = min(limit, 20)  # Cap at 20 per request for safety
+    limit = max(1, min(limit, 20))
     offset = (page - 1) * limit
 
     with get_db_session() as db:
@@ -167,10 +167,10 @@ async def get_provider_reviews(
             .scalar() or 0
         )
 
-        # Paginated sessions with customer info (join users for customer name)
+        # Paginated sessions with customer info (outer join users so reviews with null customer_id are included)
         rows = (
             db.query(BookingSession, User)
-            .join(User, BookingSession.customer_id == User.id)
+            .outerjoin(User, BookingSession.customer_id == User.id)
             .filter(
                 BookingSession.confirmed_provider_id == provider_id,
                 BookingSession.status == "Completed",
@@ -186,7 +186,7 @@ async def get_provider_reviews(
             ProviderReview(
                 rating=session.customer_rating,
                 review_text=session.customer_review,
-                customer_name=user.full_name.split()[0] if user.full_name else "Customer",  # first name only
+                customer_name=user.full_name.split()[0] if (user and user.full_name) else "Customer",  # first name only
                 created_at=session.customer_confirmed_at.isoformat() if session.customer_confirmed_at else "",
             )
             for session, user in rows

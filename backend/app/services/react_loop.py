@@ -439,7 +439,7 @@ async def run_confirm_booking(
         
         with get_db_session() as session:
             provider = session.query(Provider).filter(Provider.id == provider_id).first()
-            if provider and provider.status == "Active" and provider.is_available:
+            if provider and provider.status == "Active" and (provider.is_available or provider.is_available is None):
                 booking_session = session.query(BookingSession).filter(BookingSession.id == session_id).first()
                 booking_session.status = "Pending_Acceptance"
                 booking_session.confirmed_provider_id = provider_id

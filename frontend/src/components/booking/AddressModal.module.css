@@ -152,10 +152,15 @@
   justify-content: center;
 }
 
-.cancelBtn:hover {
+.cancelBtn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
   color: #FFFFFF;
+}
+
+.cancelBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .submitBtn {

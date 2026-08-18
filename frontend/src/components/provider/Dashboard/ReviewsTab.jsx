@@ -75,30 +75,49 @@ export default function ReviewsTab() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadPage = useCallback(async (pageNum, append = false) => {
-    if (!providerProfile?.id) return;
+    if (!providerProfile?.id) return false;
     try {
+      if (!append) setError(null);
       const data = await fetchProviderReviews(providerProfile.id, pageNum);
       setReviews(prev => append ? [...prev, ...data.reviews] : data.reviews);
       setTotalCount(data.total_count);
       setHasMore(data.has_more);
+      return true;
     } catch (err) {
       console.error('Failed to load reviews:', err);
+      if (!append) {
+        setError('Reviews load nahi ho sakay. Dobara koshish karein.');
+      }
+      return false;
     }
   }, [providerProfile?.id]);
 
+  const handleInitialRetry = () => {
+    setLoading(true);
+    setError(null);
+    loadPage(1, false).finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     setLoading(true);
+    setError(null);
     loadPage(1, false).finally(() => setLoading(false));
   }, [loadPage]);
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;
     setLoadingMore(true);
-    await loadPage(nextPage, true);
-    setPage(nextPage);
-    setLoadingMore(false);
+    try {
+      const success = await loadPage(nextPage, true);
+      if (success) {
+        setPage(nextPage);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   // Compute average from loaded reviews for header (backend already has per-provider rolling avg but let's show count)
@@ -107,7 +126,7 @@ export default function ReviewsTab() {
       <div className={styles.tabHeader}>
         <h1 className={styles.tabTitle}>Customer Reviews</h1>
         <p className={styles.tabSubtitle}>
-          {!loading && totalCount > 0
+          {!loading && !error && totalCount > 0
             ? `${totalCount} customer ne apna tajurba share kiya`
             : 'Aapke kaam ke baare mein customers ki raaye'}
         </p>
@@ -122,6 +141,23 @@ export default function ReviewsTab() {
               <div className={styles.skeletonLineShort} />
             </div>
           ))}
+        </div>
+      ) : error ? (
+        <div className={styles.emptyState}>
+          <div className={styles.errorIconWrap}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h3 className={styles.emptyTitle}>Reviews load nahi ho sakay</h3>
+          <p className={styles.emptySubtitle}>
+            {error}
+          </p>
+          <button className={styles.retryBtn} onClick={handleInitialRetry}>
+            Dobara Try Karein
+          </button>
         </div>
       ) : reviews.length === 0 ? (
         <div className={styles.emptyState}>

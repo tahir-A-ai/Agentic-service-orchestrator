@@ -9,6 +9,9 @@ import styles from './BookingReceipt.module.css';
 export default function BookingReceipt({ provider }) {
   // Mock ETA for demo
   const eta = '30-45 mins';
+  const formattedRating = provider.rating != null && !isNaN(Number(provider.rating))
+    ? Number(provider.rating).toFixed(1)
+    : (provider.rating || '5.0');
 
   return (
     <div className={styles.card}>
@@ -24,7 +27,7 @@ export default function BookingReceipt({ provider }) {
       </div>
 
       <div className={styles.details}>
-        <span className={styles.detailItem}>⭐ {provider.rating != null && !isNaN(Number(provider.rating)) ? Number(provider.rating).toFixed(1) : (provider.rating || '5.0')} Rating</span>
+        <span className={styles.detailItem}>⭐ {formattedRating} Rating</span>
         <span className={styles.detailItem}>📌 {provider.location || 'G-13'}</span>
       </div>
 
