@@ -32,6 +32,7 @@ class ProviderJob(BaseModel):
     service_type: str
     exact_address: str | None = None
     customer_notes: str | None = None
+    cancelled_by: str | None = None
 
 
 class ProviderJobsResponse(BaseModel):

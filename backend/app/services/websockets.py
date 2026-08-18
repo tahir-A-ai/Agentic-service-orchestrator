@@ -60,5 +60,15 @@ class ProviderConnectionManager:
             except Exception:
                 self.disconnect(ws, provider_id)
 
+    async def push_event(self, provider_id: int, event: dict):
+        """Push any arbitrary typed event to all dashboard sockets for this provider."""
+        if provider_id not in self.active_connections:
+            return
+        for ws in list(self.active_connections[provider_id]):
+            try:
+                await ws.send_json(event)
+            except Exception:
+                self.disconnect(ws, provider_id)
+
 
 provider_manager = ProviderConnectionManager()

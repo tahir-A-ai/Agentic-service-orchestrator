@@ -1,0 +1,94 @@
+/* CancellationModal.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 200ms ease;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: var(--radius-xl, 16px);
+  padding: 2.25rem 2.5rem;
+  max-width: 440px;
+  width: calc(100% - 2rem);
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.15);
+  animation: slideUp 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.iconWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: #EF4444;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem;
+}
+
+.body {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.sessionId {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 1.5rem;
+}
+
+.sessionId span {
+  color: var(--text-secondary, #9ca3af);
+  font-family: monospace;
+}
+
+.ackBtn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: #EF4444;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: var(--radius-full, 9999px);
+  cursor: pointer;
+  transition: background 200ms ease, transform 100ms ease;
+}
+
+.ackBtn:hover {
+  background: #DC2626;
+}
+
+.ackBtn:active {
+  transform: scale(0.98);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

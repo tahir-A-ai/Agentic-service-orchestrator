@@ -115,6 +115,7 @@ async def cancel_booking_route(
     request: CancelBookingRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    confirmed_provider_id = None
     with get_db_session() as db:
         from app.models import BookingSession
         session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
@@ -123,18 +124,35 @@ async def cancel_booking_route(
             raise HTTPException(status_code=404, detail="Booking not found")
         
         session.status = "Cancelled"
+        session.cancelled_by = "customer"
+        confirmed_provider_id = session.confirmed_provider_id
         db.commit()
 
     # Clear the LangGraph checkpoint so the next request starts cleanly
     await clear_session_checkpoint(request.session_id)
 
-    # Notify provider if there is an active session
+    # Notify the customer WebSocket (ConfirmedPage) about the cancellation
     await manager.broadcast_to_job(request.session_id, {
         "type": "status_update",
         "status": "Cancelled",
         "cancelled_by": "customer",
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
+
+    # Notify the provider dashboard via their persistent WS stream
+    # This triggers the cancellation modal on the provider's screen immediately
+    if confirmed_provider_id:
+        await provider_manager.push_event(confirmed_provider_id, {
+            "type": "job_cancelled",
+            "cancelled_by": "customer",
+            "session_id": request.session_id,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        # Also push updated stats so active badge decrements
+        with get_db_session() as db:
+            from app.services.stats import get_provider_stats
+            stats = get_provider_stats(db, confirmed_provider_id)
+        await provider_manager.push_stats(confirmed_provider_id, stats)
 
     return {"message": "Booking cancelled successfully"}
 

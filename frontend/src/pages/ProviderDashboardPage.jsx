@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProviderStats } from '../context/ProviderStatsContext';
 import StatsRow from '../components/provider/Dashboard/StatsRow';
 import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
@@ -36,8 +37,9 @@ const playPing = () => {
 
 /**
  * Custom hook to fetch dynamic provider jobs.
+ * Accepts an optional externalRefetchKey: when it changes, triggers a refetch.
  */
-function useProviderJobs() {
+function useProviderJobs(externalRefetchKey = 0) {
   const { providerProfile } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ function useProviderJobs() {
 
   useEffect(() => {
     fetchJobs();
-  }, [fetchJobs]);
+  }, [fetchJobs, externalRefetchKey]);
 
   return {
     allJobs: jobs,
@@ -101,7 +103,8 @@ function useRequireAuth() {
 
 export function OverviewTab() {
   const isAuth = useRequireAuth();
-  const { recentJobs, activeJobs, loading, refetch } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { recentJobs, activeJobs, loading, refetch } = useProviderJobs(jobsRefetchKey);
   
   if (!isAuth) return null;
 
@@ -129,7 +132,8 @@ export function OverviewTab() {
 
 export function ActiveJobsTab() {
   const isAuth = useRequireAuth();
-  const { activeJobs, loading, refetch } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { activeJobs, loading, refetch } = useProviderJobs(jobsRefetchKey);
 
   if (!isAuth) return null;
 

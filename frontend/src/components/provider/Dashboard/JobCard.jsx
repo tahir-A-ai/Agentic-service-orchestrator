@@ -26,11 +26,17 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
     'Cancelled': 'red',
   };
 
+  // Distinguish customer-cancelled from provider-cancelled
+  const getCancelledLabel = () => {
+    if (job.status !== 'Cancelled') return null;
+    return job.cancelled_by === 'customer' ? 'Cancelled by Customer' : 'Cancelled by Provider';
+  };
+
   const statusLabels = {
     'Pending_Acceptance': 'New',
     'In_Progress': 'In Progress',
     'Completed': 'Completed',
-    'Cancelled': 'Cancelled',
+    'Cancelled': getCancelledLabel() || 'Cancelled',
   };
 
   const statusColor = statusColors[job.status] || 'muted';

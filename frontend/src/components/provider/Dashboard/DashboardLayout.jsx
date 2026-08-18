@@ -5,6 +5,7 @@ import { ProviderStatsProvider, useProviderStats } from '../../../context/Provid
 import { getIconComponent } from '../../../constants/serviceIcons';
 import StatusToggle from './StatusToggle';
 import Badge from '../../ui/Badge';
+import CancellationModal from './CancellationModal';
 import styles from './DashboardLayout.module.css';
 
 export default function DashboardLayout() {
@@ -21,10 +22,9 @@ function DashboardLayoutInner() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { stats } = useProviderStats();
+  const { stats, cancellationEvent, clearCancellationEvent } = useProviderStats();
   const activeJobsCount = stats.active_jobs;
   const liveServiceType = stats.service_type || providerProfile?.service || 'Service';
-
 
   const handleLogout = () => {
     logout();
@@ -101,6 +101,14 @@ function DashboardLayoutInner() {
 
   return (
     <div className={styles.layout}>
+      {/* Customer-cancelled job modal — shown in real-time via WebSocket */}
+      {cancellationEvent && (
+        <CancellationModal
+          sessionId={cancellationEvent.sessionId}
+          onAcknowledge={clearCancellationEvent}
+        />
+      )}
+
       {/* Mobile Header */}
       <div className={styles.mobileHeader}>
         <button

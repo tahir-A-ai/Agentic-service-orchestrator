@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const ProviderStatsCtx = createContext(null);
@@ -11,9 +11,10 @@ export function useProviderStats() {
 
 /**
  * Owns a single persistent WebSocket connection to /api/v1/stream/provider/{id}.
- * The backend pushes a stats_update message on connect and again on every
- * booking event — no polling needed.
- * Provides: { stats, loading }
+ * The backend pushes:
+ *   - stats_update  — on connect and on booking events (badge counter)
+ *   - job_cancelled — when a customer cancels a confirmed job (triggers modal)
+ * Provides: { stats, loading, cancellationEvent, clearCancellationEvent, jobsRefetchKey }
  */
 export function ProviderStatsProvider({ children }) {
   const { providerProfile } = useAuth();
@@ -25,6 +26,12 @@ export function ProviderStatsProvider({ children }) {
     service_type: null,
   });
   const [loading, setLoading] = useState(true);
+  // Holds the job_cancelled payload when a customer cancels; null = no modal
+  const [cancellationEvent, setCancellationEvent] = useState(null);
+  // Incremented each time a job_cancelled arrives so dependent components can refetch
+  const [jobsRefetchKey, setJobsRefetchKey] = useState(0);
+
+  const clearCancellationEvent = useCallback(() => setCancellationEvent(null), []);
 
   useEffect(() => {
     if (!providerProfile?.id) {
@@ -52,19 +59,29 @@ export function ProviderStatsProvider({ children }) {
             service_type: data.service_type ?? null,
           });
           setLoading(false);
+        } else if (data.type === 'job_cancelled') {
+          // Show the cancellation modal and trigger a jobs list refresh
+          setCancellationEvent({ sessionId: data.session_id, cancelledBy: data.cancelled_by });
+          setJobsRefetchKey(k => k + 1);
         }
       } catch (_) {}
     };
 
     ws.onerror = () => {
-      setLoading(false); // dashboard still renders, just without live updates
+      setLoading(false);
     };
 
     return () => ws.close();
   }, [providerProfile?.id]);
 
   return (
-    <ProviderStatsCtx.Provider value={{ stats, loading }}>
+    <ProviderStatsCtx.Provider value={{
+      stats,
+      loading,
+      cancellationEvent,
+      clearCancellationEvent,
+      jobsRefetchKey,
+    }}>
       {children}
     </ProviderStatsCtx.Provider>
   );
