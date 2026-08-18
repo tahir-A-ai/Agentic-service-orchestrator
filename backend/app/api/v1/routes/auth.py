@@ -1,8 +1,7 @@
-"""Authentication routes."""
-from fastapi import APIRouter, Response, Request
-from app.schemas import SignupRequest, LoginRequest, AuthResponse
+from fastapi import APIRouter, Response, Request, Depends
+from app.schemas import SignupRequest, LoginRequest, AuthResponse, UserMeResponse
 from app.services.database import get_db_session
-from app.services.auth import signup_user, login_user
+from app.services.auth import signup_user, login_user, get_current_user_from_credentials, get_current_user_profile
 from app.core.config import settings
 from app.core.limiter import limiter
 
@@ -43,6 +42,17 @@ async def login(request: Request, payload: LoginRequest, response: Response) -> 
             max_age=86400  # 1 day
         )
         return AuthResponse(**res)
+
+@router.get(
+    "/me",
+    response_model=UserMeResponse,
+    summary="Get current logged in user details",
+)
+async def get_me(current_user: dict = Depends(get_current_user_from_credentials)) -> UserMeResponse:
+    """Validate token and fetch current user profile."""
+    with get_db_session() as db:
+        res = get_current_user_profile(db, current_user)
+        return UserMeResponse(**res)
 
 @router.post("/logout", summary="Logout user")
 async def logout(response: Response):

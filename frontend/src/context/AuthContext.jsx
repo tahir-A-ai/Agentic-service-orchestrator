@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useState } from 'react';
-import { loginApi, signupApi, logoutApi } from '../api/auth';
+import { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import { loginApi, signupApi, logoutApi, getMeApi } from '../api/auth';
 import { useToast } from './ToastContext';
 
 const AuthCtx = createContext(null);
@@ -15,9 +15,80 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('karigar_user');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      // If token expiration timestamp has passed, immediately clear stale session
+      if (parsed.expiresAt && Date.now() >= parsed.expiresAt) {
+        localStorage.removeItem('karigar_user');
+        return null;
+      }
+      return parsed;
     } catch { return null; }
   });
+
+  // Verify session on mount and handle token expiration lifecycle
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. If user is stored, verify with server /auth/me
+    if (user) {
+      getMeApi()
+        .then((meData) => {
+          if (!isMounted) return;
+          setUser((prev) => {
+            if (!prev) return null;
+            const updated = {
+              ...prev,
+              full_name: meData.full_name ?? prev.full_name,
+              role: meData.role ?? prev.role,
+              providerId: meData.provider_id ?? prev.providerId,
+              service_type: meData.service_type ?? prev.service_type,
+              location: meData.location ?? prev.location,
+              phone: meData.phone ?? prev.phone,
+              bio: meData.bio ?? prev.bio,
+              photo_url: meData.photo_url ?? prev.photo_url,
+            };
+            localStorage.setItem('karigar_user', JSON.stringify(updated));
+            return updated;
+          });
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          // Cookie expired or invalid on server — clear local state
+          localStorage.removeItem('karigar_user');
+          setUser(null);
+        });
+    }
+
+    // 2. Set timer for remaining token lifetime
+    let timer = null;
+    if (user?.expiresAt) {
+      const msRemaining = user.expiresAt - Date.now();
+      if (msRemaining <= 0) {
+        localStorage.removeItem('karigar_user');
+        setUser(null);
+      } else {
+        timer = setTimeout(() => {
+          localStorage.removeItem('karigar_user');
+          setUser(null);
+          showToast('Session expire ho gaya. Dobara login karein.', 'info');
+        }, msRemaining);
+      }
+    }
+
+    // 3. Listen for 401 unauthorized events from any API call
+    const handleUnauthorized = () => {
+      localStorage.removeItem('karigar_user');
+      setUser(null);
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
+    return () => {
+      isMounted = false;
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [user?.expiresAt, showToast]);
 
   const login = useCallback(async (email, password, expectedRole) => {
     try {
@@ -35,6 +106,7 @@ export function AuthProvider({ children }) {
         }
       }
 
+      const expiresAt = Date.now() + (data.expires_in || 86400) * 1000;
       const payload = {
         email: data.email,
         full_name: data.full_name,
@@ -44,7 +116,8 @@ export function AuthProvider({ children }) {
         location: data.location,
         phone: data.phone,
         bio: data.bio,
-        photo_url: data.photo_url
+        photo_url: data.photo_url,
+        expiresAt,
       };
       localStorage.setItem('karigar_user', JSON.stringify(payload));
       setUser(payload);

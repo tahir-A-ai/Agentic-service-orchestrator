@@ -1,4 +1,4 @@
-from .auth import SignupRequest, LoginRequest, AuthResponse
+from .auth import SignupRequest, LoginRequest, AuthResponse, UserMeResponse
 from .provider import (
     ProviderDetail,
     ProviderStatsResponse,
@@ -26,6 +26,7 @@ __all__ = [
     "SignupRequest",
     "LoginRequest",
     "AuthResponse",
+    "UserMeResponse",
     "ProviderDetail",
     "ProviderStatsResponse",
     "ProviderJob",

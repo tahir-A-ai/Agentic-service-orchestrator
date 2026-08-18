@@ -26,6 +26,7 @@ class LoginRequest(BaseModel):
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    expires_in: int = 86400
     role: str
     email: str
     full_name: str | None = None
@@ -33,5 +34,18 @@ class AuthResponse(BaseModel):
     service_type: str | None = None
     location: str | None = None
     phone: str | None = None
+    bio: str | None = None
+    photo_url: str | None = None
+
+
+class UserMeResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str | None = None
+    role: str
+    phone: str | None = None
+    provider_id: int | None = None
+    service_type: str | None = None
+    location: str | None = None
     bio: str | None = None
     photo_url: str | None = None
