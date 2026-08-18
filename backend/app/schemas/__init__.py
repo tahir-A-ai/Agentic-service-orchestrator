@@ -9,6 +9,8 @@ from .provider import (
     ProviderAvailabilityResponse,
     UpdateProviderProfileRequest,
     UpdateProviderProfileResponse,
+    ProviderReview,
+    ProviderReviewsResponse,
 )
 from .booking import (
     ServiceRequest,
@@ -36,6 +38,8 @@ __all__ = [
     "ProviderAvailabilityResponse",
     "UpdateProviderProfileRequest",
     "UpdateProviderProfileResponse",
+    "ProviderReview",
+    "ProviderReviewsResponse",
     "ServiceRequest",
     "FindProvidersResponse",
     "ConfirmBookingRequest",
