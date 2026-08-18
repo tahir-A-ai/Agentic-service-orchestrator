@@ -81,7 +81,7 @@ async def provider_stream(websocket: WebSocket, provider_id: int):
     The frontend connects once on login and receives a 'stats_update' message
     whenever a booking event changes the provider's metrics. No polling needed.
     """
-    token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
+    token = websocket.cookies.get("access_token")
     if not token:
         await websocket.close(code=1008)
         return
@@ -96,17 +96,19 @@ async def provider_stream(websocket: WebSocket, provider_id: int):
 
     await provider_manager.connect(websocket, provider_id)
 
-    # Send current stats immediately on connect so the dashboard is up-to-date
-    try:
-        with get_db_session() as db:
-            stats = get_provider_stats(db, provider_id)
-        await websocket.send_json({"type": "stats_update", **stats})
-    except Exception:
-        pass
+    # 1. Read state and release DB session before network I/O
+    initial_stats = None
+    with get_db_session() as db:
+        initial_stats = get_provider_stats(db, provider_id)
 
+    # 2. Send initial state and maintain connection inside protected lifecycle
     try:
+        if initial_stats:
+            await websocket.send_json({"type": "stats_update", **initial_stats})
         while True:
             # Keep connection alive; real updates come via push_stats() calls
             await websocket.receive_text()
     except WebSocketDisconnect:
+        pass
+    finally:
         provider_manager.disconnect(websocket, provider_id)

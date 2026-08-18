@@ -45,12 +45,19 @@ function useProviderJobs(externalRefetchKey = 0) {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const prevPendingCountRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const fetchJobs = useCallback(async () => {
     if (!providerProfile?.id) return;
+    const currentRequestId = ++requestIdRef.current;
+
     try {
       setLoading(true);
       const data = await getProviderJobs(providerProfile.id);
+      
+      // If a newer request was dispatched before this one resolved, ignore stale result
+      if (currentRequestId !== requestIdRef.current) return;
+
       const newJobs = data.jobs || [];
       
       const newPendingCount = newJobs.filter(j => j.status === 'Pending_Acceptance').length;
@@ -62,12 +69,15 @@ function useProviderJobs(externalRefetchKey = 0) {
 
       setJobs(newJobs);
     } catch (err) {
+      if (currentRequestId !== requestIdRef.current) return;
       if (err.status === 401 || (err.message && err.message.toLowerCase().includes('login'))) {
         return; // Ignore auth errors during logout transition
       }
       showToast('Jobs fetch karne mein error: ' + err.message, 'error');
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [providerProfile, showToast]);
 
@@ -162,7 +172,8 @@ export function ActiveJobsTab() {
 
 export function CompletedJobsTab() {
   const isAuth = useRequireAuth();
-  const { completedJobs, loading } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { completedJobs, loading } = useProviderJobs(jobsRefetchKey);
 
   if (!isAuth) return null;
 
@@ -190,7 +201,8 @@ export function CompletedJobsTab() {
 
 export function DeclinedJobsTab() {
   const isAuth = useRequireAuth();
-  const { allJobs, loading } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { allJobs, loading } = useProviderJobs(jobsRefetchKey);
   
   if (!isAuth) return null;
 

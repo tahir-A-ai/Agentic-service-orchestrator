@@ -39,12 +39,17 @@ export function ProviderStatsProvider({ children }) {
       return;
     }
 
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('access_token='))
-      ?.split('=')[1];
+    // Derive the WebSocket base from the same env var used by core.js.
+    // Replacing http→ws / https→wss ensures the correct scheme in every
+    // environment and avoids browser mixed-content blocks in production.
+    const httpBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+    const wsBase = httpBase.replace(/^http/, 'ws');
 
-    const wsUrl = `ws://localhost:8000/api/v1/stream/provider/${providerProfile.id}${token ? `?token=${token}` : ''}`;
+    // Do NOT read the token from document.cookie — the access_token cookie
+    // may be HttpOnly (JS-inaccessible). The browser automatically includes
+    // same-origin cookies in the WebSocket upgrade request, so the backend
+    // receives it via websocket.cookies without any manual forwarding.
+    const wsUrl = `${wsBase}/api/v1/stream/provider/${providerProfile.id}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

@@ -117,15 +117,50 @@ async def cancel_booking_route(
 ):
     confirmed_provider_id = None
     with get_db_session() as db:
-        from app.models import BookingSession
+        from app.models import BookingSession, Provider
+        from fastapi import HTTPException
+
         session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
         if not session:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Booking not found")
         
+        # State transition validation: cannot cancel terminal or finalizing bookings
+        if session.status in ("Completed", "Pending_Completion"):
+            raise HTTPException(
+                status_code=400,
+                detail="Yeh booking pehle hi complete ho chuki hai, cancel nahi ki ja sakti."
+            )
+        if session.status == "Cancelled":
+            raise HTTPException(
+                status_code=400,
+                detail="Yeh booking pehle hi cancel ho chuki hai."
+            )
+
+        # Ownership validation: verify that the user cancelling owns the booking session
+        user_id = current_user.get("user_id") if isinstance(current_user, dict) else None
+        if user_id is None or session.customer_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Aap is booking ko cancel karne ke majaz nahi hain."
+            )
         session.status = "Cancelled"
         session.cancelled_by = "customer"
         confirmed_provider_id = session.confirmed_provider_id
+
+        # If a provider was assigned and has no other active jobs, restore availability
+        if confirmed_provider_id:
+            provider = db.query(Provider).filter(Provider.id == confirmed_provider_id).first()
+            if provider:
+                active_jobs = (
+                    db.query(BookingSession)
+                    .filter(BookingSession.confirmed_provider_id == provider.id)
+                    .filter(BookingSession.status.in_(["In_Progress", "Pending_Completion"]))
+                    .filter(BookingSession.id != session.id)
+                    .count()
+                )
+                if active_jobs == 0 and provider.status == "Busy":
+                    provider.status = "Active"
+
         db.commit()
 
     # Clear the LangGraph checkpoint so the next request starts cleanly
@@ -158,7 +193,7 @@ async def cancel_booking_route(
 
 @router.websocket("/stream/booking/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
-    token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
+    token = websocket.cookies.get("access_token")
     if not token:
         await websocket.close(code=1008)
         return
@@ -170,7 +205,8 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
 
     await manager.connect(websocket, job_id)
     
-    # Send current state to sync client on reconnect/reload
+    # 1. Fetch current state and release DB session before performing network I/O
+    initial_payload = None
     with get_db_session() as db:
         from app.models import BookingSession, Provider
         session = db.query(BookingSession).filter(BookingSession.id == job_id).first()
@@ -183,16 +219,21 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
                     provider_name = provider.name
                     service_type = provider.get_service_type_label
                     
-            await websocket.send_json({
+            initial_payload = {
                 "type": "status_update",
                 "status": session.status,
                 "provider_name": provider_name,
                 "service_type": service_type
-            })
+            }
 
+    # 2. Send initial state and maintain connection inside protected lifecycle
     try:
+        if initial_payload:
+            await websocket.send_json(initial_payload)
         while True:
             # Keep connection alive and detect disconnects
             data = await websocket.receive_text()
     except WebSocketDisconnect:
+        pass
+    finally:
         manager.disconnect(websocket, job_id)

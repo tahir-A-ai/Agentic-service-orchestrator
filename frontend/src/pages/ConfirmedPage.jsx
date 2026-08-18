@@ -51,10 +51,14 @@ export default function ConfirmedPage() {
 
           if (data.status === 'Pending_Completion') {
             setShowRatingModal(true);
+          } else if (data.status === 'Completed') {
+            // If already marked as Completed on the server when loaded, clean cache
+            showToast('Yeh booking complete ho chuki hai.', 'info');
+            reset();
+            navigate('/chat');
           } else if (data.status === 'Cancelled') {
             if (data.cancelled_by !== 'customer') {
               showToast('Provider declined or cancelled the request. Searching again...', 'error');
-              // Show auto-redirect after a short delay so they can see the "Declined" state
               setTimeout(() => {
                 isNavigatingRef.current = true;
                 const providerId = data.provider_id || confirmed?.booked?.[0]?.id;
@@ -64,6 +68,10 @@ export default function ConfirmedPage() {
                 reset();
                 navigate('/chat', { state: { autoFetch: lastUserPrompt } });
               }, 3000);
+            } else {
+              showToast('Yeh booking cancel ho chuki hai.', 'info');
+              reset();
+              navigate('/chat');
             }
           }
         }
@@ -151,13 +159,15 @@ export default function ConfirmedPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-          <button onClick={handleCancelRequest} className={styles.newBtn} style={{ backgroundColor: 'var(--bg-card)', color: '#ef4444', border: '1px solid #ef4444' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-            Cancel Request
-          </button>
+          {status !== 'Cancelled' && status !== 'Completed' && status !== 'Pending_Completion' && (
+            <button onClick={handleCancelRequest} className={styles.newBtn} style={{ backgroundColor: 'var(--bg-card)', color: '#ef4444', border: '1px solid #ef4444' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              Cancel Request
+            </button>
+          )}
           
           <button onClick={handleNewBooking} className={styles.newBtn} style={{ flex: 1 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,6 +185,12 @@ export default function ConfirmedPage() {
           onComplete={() => {
             setShowRatingModal(false);
             setStatus('Completed');
+            showToast('Shukriya! Aapki rating submit ho gayi.', 'success');
+            setTimeout(() => {
+              isNavigatingRef.current = true;
+              reset();
+              navigate('/chat');
+            }, 2500);
           }}
         />
       </div>

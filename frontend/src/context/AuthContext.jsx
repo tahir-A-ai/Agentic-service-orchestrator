@@ -18,7 +18,10 @@ export function AuthProvider({ children }) {
       if (!saved) return null;
       const parsed = JSON.parse(saved);
       // If token expiration timestamp has passed, immediately clear stale session
-      if (parsed.expiresAt && Date.now() >= parsed.expiresAt) {
+      if (
+        typeof parsed.expiresAt !== 'number' ||
+        Date.now() >= parsed.expiresAt
+      ) {
         localStorage.removeItem('karigar_user');
         return null;
       }
@@ -52,11 +55,12 @@ export function AuthProvider({ children }) {
             return updated;
           });
         })
-        .catch(() => {
+        .catch((err) => {
           if (!isMounted) return;
-          // Cookie expired or invalid on server — clear local state
-          localStorage.removeItem('karigar_user');
-          setUser(null);
+          if (err?.status === 401) {
+            localStorage.removeItem('karigar_user');
+            setUser(null);
+          }
         });
     }
 

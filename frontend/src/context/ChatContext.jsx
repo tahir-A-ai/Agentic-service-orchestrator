@@ -29,8 +29,15 @@ export function ChatProvider({ children }) {
     const saved = localStorage.getItem('karigar_confirmed_booking');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Expiry check: recovery cache is valid for 24 hours maximum
+        if (!parsed.expiresAt || typeof parsed.expiresAt !== 'number' || Date.now() >= parsed.expiresAt) {
+          localStorage.removeItem('karigar_confirmed_booking');
+          return null;
+        }
+        return parsed;
       } catch (e) {
+        localStorage.removeItem('karigar_confirmed_booking');
         return null;
       }
     }
@@ -40,7 +47,11 @@ export function ChatProvider({ children }) {
   const setConfirmed = useCallback((data) => {
     setConfirmedState(data);
     if (data) {
-      localStorage.setItem('karigar_confirmed_booking', JSON.stringify(data));
+      const payload = {
+        ...data,
+        expiresAt: data.expiresAt || (Date.now() + 24 * 60 * 60 * 1000), // 24 hours TTL
+      };
+      localStorage.setItem('karigar_confirmed_booking', JSON.stringify(payload));
     } else {
       localStorage.removeItem('karigar_confirmed_booking');
     }

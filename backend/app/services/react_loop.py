@@ -185,9 +185,8 @@ async def clear_session_checkpoint(session_id: str) -> None:
     a SQLite lock conflict because the old checkpointer state is still open.
     """
     try:
-        config = {"configurable": {"thread_id": session_id}}
         async with AsyncSqliteSaver.from_conn_string(str(settings.DB_PATH)) as checkpointer:
-            await checkpointer.adelete_thread(config)
+            await checkpointer.adelete_thread(session_id)
         write_audit_log(
             session_id,
             "[ACTION]",
