@@ -7,7 +7,7 @@ class ServiceRequest(BaseModel):
 
     user_prompt: str = Field(
         ...,
-        min_length=3,
+        min_length=1,
         max_length=500,
         description="The user's service request in Roman Urdu or English.",
         examples=["G-13 mein AC wala bhej do, ghar ka AC theek nahi ho raha"],
