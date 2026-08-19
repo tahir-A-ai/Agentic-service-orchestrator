@@ -19,7 +19,7 @@ export default function LiveProviderCard({ provider, status }) {
   };
 
   return (
-    <div className={`${styles.card} ${isInProgress ? styles.cardActiveBorder : ''}`}>
+    <div className={styles.card}>
       <div className={styles.header}>
         <div className={styles.providerInfo}>
           <div className={`${styles.avatar} ${isInProgress ? styles.avatarGreen : styles.avatarDark}`}>

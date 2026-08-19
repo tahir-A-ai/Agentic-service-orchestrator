@@ -48,13 +48,6 @@
 
 /* ── Full Variant Styles ──────────────── */
 
-.borderblue { border-left: 3px solid var(--accent-blue); }
-.borderorange { border-left: 3px solid var(--accent-orange); }
-.bordergold { border-left: 3px solid var(--accent-gold, #EAB308); }
-.bordergreen { border-left: 3px solid var(--accent-green); }
-.borderred { border-left: 3px solid var(--accent-red); }
-.bordermuted { border-left: 3px solid var(--border-default); }
-
 .header {
   padding: var(--space-4);
   cursor: pointer;

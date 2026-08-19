@@ -135,53 +135,54 @@ export default function ConfirmedPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+        <div className={styles.mainCard}>
+          <TrackingHeader status={status} />
 
-        <TrackingHeader status={status} />
+          <LiveProviderCard provider={liveProvider} status={status} />
 
-        <LiveProviderCard provider={liveProvider} status={status} />
+          {/* Failed Providers Warning */}
+          {confirmed.failed && confirmed.failed.length > 0 && (
+            <div className={styles.warningBox}>
+              <span className={styles.warningIcon}>⚠</span>
+              <div className={styles.warningText}>
+                <strong>Kuch providers busy ho gaye.</strong>
+                <p>Inke liye aap dobara try kar sakte hain.</p>
+              </div>
+            </div>
+          )}
 
-        {/* Failed Providers Warning */}
-        {confirmed.failed && confirmed.failed.length > 0 && (
-          <div className={styles.warningBox}>
-            <span className={styles.warningIcon}>⚠</span>
-            <div className={styles.warningText}>
-              <strong>Kuch providers busy ho gaye.</strong>
-              <p>Inke liye aap dobara try kar sakte hain.</p>
+          <div className={styles.footer}>
+            <div className={styles.footerCol}>
+              <span className={styles.footerLabel}>Booking ID</span>
+              <span className={styles.footerValue}>{shortId}</span>
+            </div>
+            <div className={`${styles.footerCol} ${styles.footerColRight}`}>
+              <span className={styles.footerLabel}>{status === 'Pending_Acceptance' ? 'Last Checked' : 'ETA'}</span>
+              <span className={status === 'Pending_Acceptance' ? styles.footerValue : styles.footerValueGreen}>
+                {status === 'Pending_Acceptance' ? 'Just now' : '30-45 min'}
+              </span>
             </div>
           </div>
-        )}
 
-        <div className={styles.footer}>
-          <div className={styles.footerCol}>
-            <span className={styles.footerLabel}>Booking ID</span>
-            <span className={styles.footerValue}>{shortId}</span>
+          <div className={styles.actionRow}>
+            {status !== 'Cancelled' && status !== 'Completed' && status !== 'Pending_Completion' ? (
+              <button onClick={handleCancelRequest} className={`${styles.btn} ${styles.cancelBtn}`}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancel Request
+              </button>
+            ) : (
+              <button onClick={handleNewBooking} className={`${styles.btn} ${styles.newBookingBtn}`}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2v6h-6"></path>
+                  <path d="M3 12a9 9 0 1 0 2.13-5.88L2 9"></path>
+                </svg>
+                Start New Booking
+              </button>
+            )}
           </div>
-          <div className={`${styles.footerCol} ${styles.footerColRight}`}>
-            <span className={styles.footerLabel}>{status === 'Pending_Acceptance' ? 'Last Checked' : 'ETA'}</span>
-            <span className={status === 'Pending_Acceptance' ? styles.footerValue : styles.footerValueGreen}>
-              {status === 'Pending_Acceptance' ? 'Just now' : '30-45 min'}
-            </span>
-          </div>
-        </div>
-
-        <div className={styles.actionRow}>
-          {status !== 'Cancelled' && status !== 'Completed' && status !== 'Pending_Completion' ? (
-            <button onClick={handleCancelRequest} className={`${styles.btn} ${styles.cancelBtn}`}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-              Cancel Request
-            </button>
-          ) : (
-            <button onClick={handleNewBooking} className={`${styles.btn} ${styles.newBookingBtn}`}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2v6h-6"></path>
-                <path d="M3 12a9 9 0 1 0 2.13-5.88L2 9"></path>
-              </svg>
-              Start New Booking
-            </button>
-          )}
         </div>
 
         <RatingModal

@@ -75,11 +75,9 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
     );
   }
 
-  const borderClass = job.status === 'Completed' ? '' : (styles[`border${statusColor}`] || '');
-
   // Full variant
   return (
-    <div className={`${styles.card} ${borderClass}`.trim()}>
+    <div className={styles.card}>
       <div
         className={styles.header}
         onClick={() => setExpanded(!expanded)}
