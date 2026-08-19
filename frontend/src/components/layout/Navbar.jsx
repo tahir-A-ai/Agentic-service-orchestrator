@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from '../auth/AuthModal';
+import CustomerRoleNoticeModal from '../auth/CustomerRoleNoticeModal';
 import styles from './Navbar.module.css';
 
 function UserIcon() {
@@ -30,6 +31,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showCustomerNoticeModal, setShowCustomerNoticeModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, authModalOpen, authModalView, openAuth, closeAuth } = useAuth();
@@ -89,7 +91,22 @@ export default function Navbar() {
             >
               How It Works
             </a>
-            <Link to="/provider/register" className={styles.link}>For Providers</Link>
+            <a
+              href="/provider/register"
+              className={styles.link}
+              onClick={(e) => {
+                e.preventDefault();
+                if (user?.role === 'customer') {
+                  setShowCustomerNoticeModal(true);
+                } else if (user?.role === 'provider') {
+                  navigate('/provider/dashboard');
+                } else {
+                  navigate('/provider/register');
+                }
+              }}
+            >
+              For Providers
+            </a>
 
             {/* Auth Actions */}
             <div className={styles.navActions}>
@@ -141,6 +158,10 @@ export default function Navbar() {
       </nav>
 
       <AuthModal isOpen={authModalOpen} onClose={closeAuth} initialView={authModalView} />
+      <CustomerRoleNoticeModal
+        isOpen={showCustomerNoticeModal}
+        onClose={() => setShowCustomerNoticeModal(false)}
+      />
     </>
   );
 }

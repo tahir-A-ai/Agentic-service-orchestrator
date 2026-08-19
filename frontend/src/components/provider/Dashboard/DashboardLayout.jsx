@@ -168,7 +168,7 @@ function DashboardLayoutInner() {
             )}
           </div>
           <div className={styles.toggleWrap}>
-            <StatusToggle />
+            <StatusToggle collapsed={sidebarCollapsed} />
           </div>
         </div>
 

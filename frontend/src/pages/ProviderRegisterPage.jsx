@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import RegistrationWizard from '../components/provider/Registration/RegistrationWizard';
+import CustomerRoleNoticeModal from '../components/auth/CustomerRoleNoticeModal';
 import styles from './ProviderRegisterPage.module.css';
 
 export default function ProviderRegisterPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [showNotice, setShowNotice] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === 'provider') {
+      navigate('/provider/dashboard', { replace: true });
+    } else if (user?.role === 'customer') {
+      setShowNotice(true);
+    }
+  }, [user, navigate]);
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -16,6 +32,14 @@ export default function ProviderRegisterPage() {
           <RegistrationWizard />
         </div>
       </div>
+
+      <CustomerRoleNoticeModal
+        isOpen={showNotice}
+        onClose={() => {
+          setShowNotice(false);
+          navigate('/');
+        }}
+      />
     </div>
   );
 }

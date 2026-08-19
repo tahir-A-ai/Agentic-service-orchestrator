@@ -5,7 +5,7 @@ import { toggleAvailability } from '../../../api/provider';
 import { useToast } from '../../../context/ToastContext';
 import styles from './StatusToggle.module.css';
 
-export default function StatusToggle() {
+export default function StatusToggle({ collapsed = false }) {
   const { providerProfile } = useAuth();
   const { stats, updateAvailabilityLocal } = useProviderStats();
   const { showToast } = useToast();
@@ -47,20 +47,24 @@ export default function StatusToggle() {
       className={[
         styles.toggle,
         statusClass,
+        collapsed ? styles.collapsedToggle : '',
       ]
         .filter(Boolean)
         .join(' ')}
       onClick={handleToggle}
       disabled={loading}
       aria-pressed={isAvailable}
-      title={!isAvailable ? 'Click to go Available' : (isBusy ? 'In a job (Busy)' : 'Click to go Offline')}
+      aria-label={`Status: ${statusLabel}`}
+      title={`Status: ${statusLabel} (${!isAvailable ? 'Click to go Available' : (isBusy ? 'In a job (Busy)' : 'Click to go Offline')})`}
     >
       <div className={styles.slider}>
         <span className={styles.dot} />
       </div>
-      <span className={styles.label}>
-        {statusLabel}
-      </span>
+      {!collapsed && (
+        <span className={styles.label}>
+          {statusLabel}
+        </span>
+      )}
     </button>
   );
 }
