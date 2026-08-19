@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import { getConversation, syncConversation } from '../api/chat';
+import { deriveTitle } from '../hooks/useChatSync';
 
 /* ── Types (in JSDoc for vanilla JS) ──────────── */
 
@@ -20,52 +22,86 @@ export function newId() {
   return Math.random().toString(36).slice(2, 11);
 }
 
+// ── Minimal localStorage usage
+// Only the active chat UUID is stored here (36 bytes).
+// All message content lives in the DB + React state only.
+
+const ACTIVE_CHAT_KEY = 'karigar_active_chat_id';
+
+function getActiveChatId() {
+  try { return localStorage.getItem(ACTIVE_CHAT_KEY); } catch { return null; }
+}
+function setActiveChatId(id) {
+  try {
+    if (id) localStorage.setItem(ACTIVE_CHAT_KEY, id);
+    else localStorage.removeItem(ACTIVE_CHAT_KEY);
+  } catch { /* quota — skip */ }
+}
+
+// ── Provider
 export function ChatProvider({ children }) {
   const [messages, setMessages] = useState([]);
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionIdState] = useState(null);
   const [approvedIds, setApprovedIds] = useState([]);
   const [isThinking, setThinking] = useState(false);
+  const [lastUserPrompt, setLastUserPrompt] = useState(null);
+  const [excludedIds, setExcludedIds] = useState([]);
+
+  // confirmed booking — tiny payload, kept in localStorage (24 h TTL)
   const [confirmed, setConfirmedState] = useState(() => {
-    const saved = localStorage.getItem('karigar_confirmed_booking');
-    if (saved) {
+    const raw = localStorage.getItem('karigar_confirmed_booking');
+    if (raw) {
       try {
-        const parsed = JSON.parse(saved);
-        // Expiry check: recovery cache is valid for 24 hours maximum
-        if (!parsed.expiresAt || typeof parsed.expiresAt !== 'number' || Date.now() >= parsed.expiresAt) {
+        const parsed = JSON.parse(raw);
+        if (!parsed.expiresAt || Date.now() >= parsed.expiresAt) {
           localStorage.removeItem('karigar_confirmed_booking');
           return null;
         }
         return parsed;
-      } catch (e) {
+      } catch {
         localStorage.removeItem('karigar_confirmed_booking');
-        return null;
       }
     }
     return null;
   });
-  
-  const setConfirmed = useCallback((data) => {
-    setConfirmedState(data);
-    if (data) {
-      const payload = {
-        ...data,
-        expiresAt: data.expiresAt || (Date.now() + 24 * 60 * 60 * 1000), // 24 hours TTL
-      };
-      localStorage.setItem('karigar_confirmed_booking', JSON.stringify(payload));
-    } else {
-      localStorage.removeItem('karigar_confirmed_booking');
+
+  // ── setSessionId: also persist the active chat UUID 
+  const setSessionId = useCallback((id) => {
+    setSessionIdState(id);
+    setActiveChatId(id);
+  }, []);
+
+  // ── loadConversation: rehydrate state from DB
+  // Called on mount (resume after reload) or when user clicks a sidebar entry.
+
+  const loadConversation = useCallback(async (id) => {
+    try {
+      const data = await getConversation(id);
+      setMessages(data.messages || []);
+      setSessionIdState(data.id);
+      setActiveChatId(data.id);
+      // Reset ephemeral state
+      setApprovedIds([]);
+      setThinking(false);
+      setExcludedIds([]);
+    } catch {
+      // Conversation not found or auth error — start fresh
+      setActiveChatId(null);
     }
   }, []);
-  const [lastUserPrompt, setLastUserPrompt] = useState(null);
-  const [excludedIds, setExcludedIds] = useState([]);
+
+  // ── addMessage
+  const addMessage = useCallback((msg) => {
+    setMessages((prev) => [...prev, msg]);
+  }, []);
+
+  // ── excludedIds
 
   const addExcludedId = useCallback((id) => {
     setExcludedIds((prev) => [...prev, id]);
   }, []);
 
-  const addMessage = useCallback((msg) => {
-    setMessages((prev) => [...prev, msg]);
-  }, []);
+  // ── approvedIds
 
   const toggleApproved = useCallback((id) => {
     setApprovedIds((prev) =>
@@ -75,22 +111,51 @@ export function ChatProvider({ children }) {
 
   const clearApproved = useCallback(() => setApprovedIds([]), []);
 
+  // ── confirmed booking
+
+  const setConfirmed = useCallback((data) => {
+    setConfirmedState(data);
+    if (data) {
+      const payload = {
+        ...data,
+        expiresAt: data.expiresAt || (Date.now() + 24 * 60 * 60 * 1000),
+      };
+      localStorage.setItem('karigar_confirmed_booking', JSON.stringify(payload));
+    } else {
+      localStorage.removeItem('karigar_confirmed_booking');
+    }
+  }, []);
+
+  // ── Reset
+
   const reset = useCallback(() => {
     setMessages([]);
-    setSessionId(null);
+    setSessionIdState(null);
     setApprovedIds([]);
     setThinking(false);
     setConfirmedState(null);
-    localStorage.removeItem('karigar_confirmed_booking');
-    // Note: Do NOT clear lastUserPrompt or excludedIds on reset, they are needed for the auto-fetch flow
-  }, []);
-
-  // Hard reset is used when user clicks "New Booking" to completely clear everything
-  const hardReset = useCallback(() => {
-    reset();
+    setActiveChatId(null);
     setLastUserPrompt(null);
     setExcludedIds([]);
-  }, [reset]);
+    localStorage.removeItem('karigar_confirmed_booking');
+  }, []);
+
+  // hardReset: flush current chat to DB first, then wipe everything.
+  // The sync is best-effort — if it fails we still reset.
+  const hardReset = useCallback(
+    (currentSessionId, currentMessages) => {
+      if (currentSessionId && currentMessages && currentMessages.length > 0) {
+        syncConversation(currentSessionId, {
+          title: deriveTitle(currentMessages),
+          messages: currentMessages,
+        }).catch(() => { });
+      }
+      reset();
+      setLastUserPrompt(null);
+      setExcludedIds([]);
+    },
+    [reset],
+  );
 
   return (
     <ChatCtx.Provider
@@ -112,6 +177,8 @@ export function ChatProvider({ children }) {
         addExcludedId,
         reset,
         hardReset,
+        loadConversation,
+        getActiveChatId,
       }}
     >
       {children}

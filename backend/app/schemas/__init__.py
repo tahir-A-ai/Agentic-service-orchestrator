@@ -23,6 +23,13 @@ from .booking import (
 )
 from .service import ServiceTypeOut, ServiceTypesResponse, ActiveServicesResponse
 from .stats import PublicStatsResponse
+from .chat import (
+    ChatMessage,
+    ConversationSyncRequest,
+    ConversationListItem,
+    ConversationDetail,
+    ConversationListResponse,
+)
 
 __all__ = [
     "SignupRequest",
@@ -51,4 +58,9 @@ __all__ = [
     "ActiveServicesResponse",
     "PublicStatsResponse",
     "CancelBookingRequest",
+    "ChatMessage",
+    "ConversationSyncRequest",
+    "ConversationListItem",
+    "ConversationDetail",
+    "ConversationListResponse",
 ]

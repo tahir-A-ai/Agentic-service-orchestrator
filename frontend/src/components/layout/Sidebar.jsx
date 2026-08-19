@@ -1,16 +1,113 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { listConversations, deleteConversation } from '../../api/chat';
 import styles from './Sidebar.module.css';
 
+function TrashIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
+
+function relativeTime(dateStr) {
+  // Backend stores UTC datetimes without a 'Z' suffix.
+  // Without it, new Date() treats the string as local time — append 'Z' to force UTC parsing.
+  const normalized = dateStr && !dateStr.endsWith('Z') && !dateStr.includes('+') ? dateStr + 'Z' : dateStr;
+  const diff = Date.now() - new Date(normalized).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Abhi';
+  if (mins < 60) return `${mins}m pehle`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h pehle`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Kal';
+  if (days < 7) return `${days} din pehle`;
+  return new Date(normalized).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
+}
+
+
 /**
- * Chat sidebar for history and new chat.
+ * Chat sidebar — Recent Chats list + New Chat button.
  */
 export default function Sidebar({ isOpen, onClose }) {
-  const { reset } = useChat();
+  const { messages, sessionId, hardReset, reset, loadConversation } = useChat();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [conversations, setConversations] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const userName = user?.full_name || user?.email || 'Guest User';
   const initial = userName.substring(0, 2).toUpperCase();
+
+  // ── Fetch sidebar list
+
+  const fetchConversations = useCallback(async (p = 1, append = false) => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = await listConversations(p);
+      setConversations((prev) =>
+        append ? [...prev, ...(data.conversations || [])] : (data.conversations || []),
+      );
+      setHasMore(data.has_more ?? false);
+      setPage(p);
+    } catch {
+      // non-fatal — sidebar just shows empty
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchConversations(1);
+  }, [fetchConversations]);
+
+  const handleNewChat = () => {
+    hardReset(sessionId, messages);
+    navigate('/chat');
+    if (window.innerWidth <= 768) {
+      onClose?.();
+    }
+    // Refresh list after a tick so new empty session shows
+    setTimeout(() => fetchConversations(1), 300);
+  };
+
+  const handleSelectConversation = async (id) => {
+    await loadConversation(id);
+    navigate('/chat');
+    if (window.innerWidth <= 768) {
+      onClose?.();
+    }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    setDeletingId(id);
+    try {
+      await deleteConversation(id);
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (sessionId === id) {
+        reset();
+      }
+    } catch {
+      // non-fatal
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleLoadMore = () => fetchConversations(page + 1, true);
 
   return (
     <>
@@ -23,16 +120,55 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <aside className={[styles.sidebar, isOpen ? styles.sidebarOpen : ''].filter(Boolean).join(' ')}>
         <div className={styles.header}>
-          <button className={styles.newBtn} onClick={() => { reset(); }}>
+          <button className={styles.newBtn} onClick={handleNewChat}>
             + New Chat
           </button>
         </div>
 
         <div className={styles.history}>
-          <h3 className={styles.historyTitle}>Recent Bookings</h3>
-          <p className={styles.itemPreview} style={{ padding: '0 12px' }}>
-            No recent bookings.
-          </p>
+          <h3 className={styles.historyTitle}>Recent Chats</h3>
+
+          {loading && conversations.length === 0 ? (
+            <p className={styles.emptyMsg}>Loading...</p>
+          ) : conversations.length === 0 ? (
+            <p className={styles.emptyMsg}>Koi previous chat nahi.</p>
+          ) : (
+            <div className={styles.list}>
+              {conversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  className={[
+                    styles.historyItem,
+                    conv.id === sessionId ? styles.historyItemActive : '',
+                  ].filter(Boolean).join(' ')}
+                  onClick={() => handleSelectConversation(conv.id)}
+                  title={conv.title}
+                >
+                  <div className={styles.itemHeader}>
+                    <span className={styles.itemTitle}>{conv.title}</span>
+                    <span className={styles.itemTime}>{relativeTime(conv.created_at || conv.updated_at)}</span>
+                  </div>
+
+                  {/* Delete button — shown on hover via CSS */}
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={(e) => handleDelete(e, conv.id)}
+                    disabled={deletingId === conv.id}
+                    aria-label={`Delete: ${conv.title}`}
+                    title="Delete chat"
+                  >
+                    <TrashIcon />
+                  </button>
+                </button>
+              ))}
+
+              {hasMore && (
+                <button className={styles.loadMore} onClick={handleLoadMore} disabled={loading}>
+                  {loading ? 'Loading...' : 'Load more'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className={styles.footer}>

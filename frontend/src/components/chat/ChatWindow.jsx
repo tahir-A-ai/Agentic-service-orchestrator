@@ -82,9 +82,7 @@ export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
               {/* Text content */}
               {msg.content && (
                 <MessageBubble role={msg.role}>
-                  <div className={msg.type === 'clarification' ? styles.clarification : ''}>
-                    {msg.content}
-                  </div>
+                  {msg.content}
                 </MessageBubble>
               )}
 

@@ -181,12 +181,6 @@
   transform: translateY(-1px);
 }
 
-/* Clarification highlight */
-.clarification {
-  border-left: 3px solid var(--accent-orange);
-  padding-left: var(--space-3);
-  margin-left: calc(-1 * var(--space-3));
-}
 
 @media (max-width: 768px) {
   .header {
