@@ -17,7 +17,7 @@ class Provider(Base):
     rating = Column(Float, nullable=False, default=5.0)
     rating_count = Column(Integer, nullable=False, default=0)
     status = Column(String(20), nullable=False, default="Active")
-    is_available = Column(Boolean, nullable=False, default=True)
+    is_available = Column(Boolean, nullable=False, default=True, server_default="1")
     experience_years = Column(Integer, nullable=True)
     bio = Column(Text, nullable=True)
     

@@ -32,6 +32,7 @@ class ProviderJob(BaseModel):
     service_type: str
     exact_address: str | None = None
     customer_notes: str | None = None
+    cancelled_by: str | None = None
 
 
 class ProviderJobsResponse(BaseModel):
@@ -68,3 +69,18 @@ class UpdateProviderProfileResponse(BaseModel):
     location: str | None
     bio: str | None
     photo_url: str | None
+
+
+class ProviderReview(BaseModel):
+    """A single customer review for a provider."""
+    rating: int
+    review_text: str | None = None
+    customer_name: str
+    created_at: str  # ISO timestamp
+
+
+class ProviderReviewsResponse(BaseModel):
+    """Paginated list of provider reviews."""
+    reviews: list[ProviderReview]
+    total_count: int
+    has_more: bool

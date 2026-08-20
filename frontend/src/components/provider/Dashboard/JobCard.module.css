@@ -48,12 +48,6 @@
 
 /* ── Full Variant Styles ──────────────── */
 
-.borderblue { border-left: 3px solid var(--accent-blue); }
-.borderorange { border-left: 3px solid var(--accent-orange); }
-.bordergreen { border-left: 3px solid var(--accent-green); }
-.borderred { border-left: 3px solid var(--accent-red); }
-.bordermuted { border-left: 3px solid var(--border-default); }
-
 .header {
   padding: var(--space-4);
   cursor: pointer;
@@ -230,6 +224,38 @@
 
 .declineBtn:hover {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.awaitingBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.awaitingText {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--accent-gold, #EAB308);
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.hourglassIcon {
+  flex-shrink: 0;
+  color: var(--accent-gold, #EAB308);
+  animation: pulseSlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @media (max-width: 600px) {

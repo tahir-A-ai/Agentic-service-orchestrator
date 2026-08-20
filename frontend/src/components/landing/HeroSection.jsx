@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getPublicStats, getServiceTypes } from '../../api/stats';
 import { getIconComponent } from '../../constants/serviceIcons';
+import CustomerRoleNoticeModal from '../auth/CustomerRoleNoticeModal';
 import styles from './HeroSection.module.css';
 
 export default function HeroSection() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [showCustomerNoticeModal, setShowCustomerNoticeModal] = useState(false);
 
   const [stats, setStats] = useState({
     providers_registered: 0,
@@ -30,6 +32,17 @@ export default function HeroSection() {
       })
       .catch((err) => console.error("Failed to fetch service types:", err));
   }, []);
+
+  const handleProviderCardClick = (e) => {
+    e.preventDefault();
+    if (user?.role === 'customer') {
+      setShowCustomerNoticeModal(true);
+    } else if (user?.role === 'provider') {
+      navigate('/provider/dashboard');
+    } else {
+      navigate('/provider/register');
+    }
+  };
 
   return (
     <main className={styles.hero}>
@@ -79,7 +92,11 @@ export default function HeroSection() {
         </a>
 
         {/* Provider Card */}
-        <Link to="/provider/register" className={[styles.ctaCard, styles.providerCard].join(' ')}>
+        <a
+          href="/provider/register"
+          onClick={handleProviderCardClick}
+          className={[styles.ctaCard, styles.providerCard].join(' ')}
+        >
           <div className={[styles.ctaIcon, styles.blueIcon].join(' ')}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
@@ -90,10 +107,15 @@ export default function HeroSection() {
             Register karein aur apne area mein kaam pao
           </p>
           <span className={[styles.ctaButton, styles.blueBtn].join(' ')}>
-            Register Karein →
+            {user?.role === 'provider' ? 'Dashboard Jayein →' : 'Register Karein →'}
           </span>
-        </Link>
+        </a>
       </div>
+
+      <CustomerRoleNoticeModal
+        isOpen={showCustomerNoticeModal}
+        onClose={() => setShowCustomerNoticeModal(false)}
+      />
 
       {/* Service Pills */}
       {services.length > 0 && (

@@ -1,4 +1,4 @@
-from .auth import SignupRequest, LoginRequest, AuthResponse
+from .auth import SignupRequest, LoginRequest, AuthResponse, UserMeResponse
 from .provider import (
     ProviderDetail,
     ProviderStatsResponse,
@@ -9,6 +9,8 @@ from .provider import (
     ProviderAvailabilityResponse,
     UpdateProviderProfileRequest,
     UpdateProviderProfileResponse,
+    ProviderReview,
+    ProviderReviewsResponse,
 )
 from .booking import (
     ServiceRequest,
@@ -17,14 +19,23 @@ from .booking import (
     ConfirmBookingResponse,
     CustomerConfirmRequest,
     CustomerConfirmResponse,
+    CancelBookingRequest,
 )
 from .service import ServiceTypeOut, ServiceTypesResponse, ActiveServicesResponse
 from .stats import PublicStatsResponse
+from .chat import (
+    ChatMessage,
+    ConversationSyncRequest,
+    ConversationListItem,
+    ConversationDetail,
+    ConversationListResponse,
+)
 
 __all__ = [
     "SignupRequest",
     "LoginRequest",
     "AuthResponse",
+    "UserMeResponse",
     "ProviderDetail",
     "ProviderStatsResponse",
     "ProviderJob",
@@ -34,6 +45,8 @@ __all__ = [
     "ProviderAvailabilityResponse",
     "UpdateProviderProfileRequest",
     "UpdateProviderProfileResponse",
+    "ProviderReview",
+    "ProviderReviewsResponse",
     "ServiceRequest",
     "FindProvidersResponse",
     "ConfirmBookingRequest",
@@ -44,4 +57,10 @@ __all__ = [
     "ServiceTypesResponse",
     "ActiveServicesResponse",
     "PublicStatsResponse",
+    "CancelBookingRequest",
+    "ChatMessage",
+    "ConversationSyncRequest",
+    "ConversationListItem",
+    "ConversationDetail",
+    "ConversationListResponse",
 ]

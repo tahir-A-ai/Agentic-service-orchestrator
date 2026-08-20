@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    """Application settings loaded from environment variables and .env file."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
 
     GROQ_API_KEY: str | None = Field(default=None)
-    GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile")
+    GROQ_MODEL: str = Field(default="openai/gpt-oss-120b")
 
 
     NOMINATIM_BASE_URL: str = "https://nominatim.openstreetmap.org/search"

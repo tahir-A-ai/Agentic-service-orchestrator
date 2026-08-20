@@ -47,7 +47,7 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
 
     active_jobs = db.query(func.count(BookingSession.id)).filter(
         BookingSession.confirmed_provider_id == provider_id,
-        BookingSession.status.in_(["Pending_Acceptance", "In_Progress"])
+        BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion"])
     ).scalar() or 0
 
     declined_jobs = db.query(func.count(SessionDecline.id)).filter(
@@ -60,6 +60,8 @@ def get_provider_stats(db: Session, provider_id: int) -> dict:
         "declined_jobs": declined_jobs,
         "rating": round(float(provider.rating), 1),
         "service_type": provider.get_service_type_label,
+        "is_available": provider.is_available if provider.is_available is not None else True,
+        "status": provider.status,
     }
 
 

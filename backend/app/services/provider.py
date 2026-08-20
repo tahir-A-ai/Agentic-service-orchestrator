@@ -25,7 +25,8 @@ def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
             "created_at": s.created_at.isoformat() + "Z",
             "service_type": service_type,
             "exact_address": s.exact_address,
-            "customer_notes": s.customer_notes
+            "customer_notes": s.customer_notes,
+            "cancelled_by": s.cancelled_by,
         })
     return jobs
 
@@ -60,6 +61,7 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
         )
         if in_progress_count == 0:
             provider.status = "Active"
+        session.cancelled_by = "provider"
     db.commit()
     return {
         "message": "Job status updated.",

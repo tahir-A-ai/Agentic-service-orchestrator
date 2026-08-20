@@ -11,3 +11,7 @@ export async function signupApi(payload) {
 export async function logoutApi() {
   return request('POST', '/api/v1/auth/logout');
 }
+
+export async function getMeApi() {
+  return request('GET', '/api/v1/auth/me');
+}

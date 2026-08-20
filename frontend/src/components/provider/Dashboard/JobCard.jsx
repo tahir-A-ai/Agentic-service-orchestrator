@@ -22,15 +22,23 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
   const statusColors = {
     'Pending_Acceptance': 'blue',
     'In_Progress': 'orange',
+    'Pending_Completion': 'gold',
     'Completed': 'green',
     'Cancelled': 'red',
+  };
+
+  // Distinguish customer-cancelled from provider-cancelled
+  const getCancelledLabel = () => {
+    if (job.status !== 'Cancelled') return null;
+    return job.cancelled_by === 'customer' ? 'Cancelled by Customer' : 'Cancelled by Provider';
   };
 
   const statusLabels = {
     'Pending_Acceptance': 'New',
     'In_Progress': 'In Progress',
+    'Pending_Completion': 'Awaiting Customer Review',
     'Completed': 'Completed',
-    'Cancelled': 'Cancelled',
+    'Cancelled': getCancelledLabel() || 'Cancelled',
   };
 
   const statusColor = statusColors[job.status] || 'muted';
@@ -67,12 +75,10 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
     );
   }
 
-  const borderClass = job.status === 'Completed' ? '' : (styles[`border${statusColor}`] || '');
-
   // Full variant
   return (
-    <div className={`${styles.card} ${borderClass}`.trim()}>
-      <div 
+    <div className={styles.card}>
+      <div
         className={styles.header}
         onClick={() => setExpanded(!expanded)}
         role="button"
@@ -83,7 +89,7 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
           <Badge variant={statusColor}>{statusLabels[job.status]}</Badge>
         </div>
         <span className={styles.timeFull}>{timeDisplay}</span>
-        
+
         <div className={styles.serviceRow}>
           <span className={styles.servicePill}>{job.service_type}</span>
           <span className={styles.address}>
@@ -102,20 +108,20 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
             <p>Session ID: <span className={styles.metaValue}>{job.session_id}</span></p>
             <p>Notes: <span className={styles.metaValue}>{job.customer_notes || 'No notes available.'}</span></p>
           </div>
-          
+
           {!readOnly && (
             <div className={styles.actions}>
               {job.status === 'Pending_Acceptance' && (
                 <>
-                  <button 
-                    className={styles.acceptBtn} 
+                  <button
+                    className={styles.acceptBtn}
                     onClick={() => handleStatusChange('In_Progress')}
                     disabled={loading}
                   >
                     Accept Job
                   </button>
-                  <button 
-                    className={styles.declineBtn} 
+                  <button
+                    className={styles.declineBtn}
                     onClick={() => handleStatusChange('Cancelled')}
                     disabled={loading}
                   >
@@ -125,7 +131,7 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
               )}
               {job.status === 'In_Progress' && (
                 <>
-                  <button 
+                  <button
                     className={styles.completeBtn}
                     onClick={() => handleStatusChange('Completed')}
                     disabled={loading}
@@ -135,6 +141,17 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
                     </svg>
                     Mark as Completed
                   </button>
+                  <button 
+                    className={styles.declineBtn} 
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to cancel this active job?")) {
+                        handleStatusChange('Cancelled');
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    Cancel Job
+                  </button>
                   <button className={styles.callBtn}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -142,6 +159,23 @@ export default function JobCard({ job, variant = 'full', readOnly = false, onAct
                     Call
                   </button>
                 </>
+              )}
+              {job.status === 'Pending_Completion' && (
+                <div className={styles.awaitingBox}>
+                  <div className={styles.awaitingText}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.hourglassIcon}>
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 14 14" />
+                    </svg>
+                    <span>Kaam complete ho gaya hai — Customer review ka intezar hai.</span>
+                  </div>
+                  <button className={styles.callBtn}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                    Call
+                  </button>
+                </div>
               )}
             </div>
           )}

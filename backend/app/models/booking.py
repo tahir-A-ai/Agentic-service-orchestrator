@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 
@@ -18,7 +18,9 @@ class BookingSession(Base):
     exact_address = Column(String(255), nullable=True)
     customer_notes = Column(Text, nullable=True)
     customer_rating = Column(Integer, nullable=True)
+    customer_review = Column(Text, nullable=True)
     customer_confirmed_at = Column(DateTime, nullable=True)
+    cancelled_by = Column(SAEnum('customer', 'provider', name='cancelled_by_enum'), nullable=True)
 
     def __repr__(self) -> str:
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"

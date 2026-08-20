@@ -1,18 +1,27 @@
 .page {
   min-height: 100vh;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 4rem 1rem;
-  background: #0B0C10; /* Very dark background as per design */
+  padding: 3rem 1rem;
+  background: #0B0C10;
 }
 
 .container {
   width: 100%;
   max-width: 500px;
-  animation: fadeIn 500ms ease;
+  animation: fadeIn 400ms ease;
+}
+
+.mainCard {
+  background: linear-gradient(175deg, #141720 0%, #0F1117 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
+  gap: 0.85rem;
 }
 
 @keyframes fadeIn {
@@ -21,25 +30,25 @@
 }
 
 .warningBox {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
+  padding: 0.85rem 1rem;
+  background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #EF4444;
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: center;
 }
 
 .warningIcon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 .warningText strong {
   display: block;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
 }
 
 .warningText p {
@@ -49,11 +58,10 @@
 }
 
 .footer {
-  margin-top: 1rem;
-  background: #111216;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background: #1B1E28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -71,41 +79,65 @@
 
 .footerLabel {
   font-size: 0.75rem;
-  color: #4B5563;
+  color: #6B7280;
 }
 
 .footerValue {
   font-size: 0.875rem;
-  color: #9CA3AF;
-  font-weight: 500;
+  color: #D1D5DB;
+  font-weight: 600;
 }
 
 .footerValueGreen {
   font-size: 0.875rem;
   color: #22C55E;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.newBtn {
-  margin-top: 1rem;
-  background: transparent;
-  color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 12px;
-  width: 100%;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
+.actionRow {
   display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.btn {
+  flex: 1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.newBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+.cancelBtn {
+  background: rgba(239, 68, 68, 0.06);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.cancelBtn:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #EF4444;
+}
+
+.newBookingBtn {
+  background: rgba(255, 255, 255, 0.04);
+  color: #E5E7EB;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.newBookingBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
 /* ── Session Info ────────────────────── */
@@ -115,8 +147,4 @@
   color: var(--text-muted);
   font-family: monospace;
   margin-bottom: var(--space-6);
-}
-
-.newBtn {
-  margin-top: var(--space-2);
 }

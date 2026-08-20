@@ -1,46 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { getProviderStats } from '../../../api/provider';
+import { ProviderStatsProvider, useProviderStats } from '../../../context/ProviderStatsContext';
 import { getIconComponent } from '../../../constants/serviceIcons';
 import StatusToggle from './StatusToggle';
 import Badge from '../../ui/Badge';
+import CancellationModal from './CancellationModal';
 import styles from './DashboardLayout.module.css';
 
 export default function DashboardLayout() {
+  return (
+    <ProviderStatsProvider>
+      <DashboardLayoutInner />
+    </ProviderStatsProvider>
+  );
+}
+
+function DashboardLayoutInner() {
   const { providerProfile, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeJobsCount, setActiveJobsCount] = useState(0);
-  const [liveServiceType, setLiveServiceType] = useState(providerProfile?.service || 'Service');
   const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    setImageError(false);
-  }, [providerProfile?.photo_url]);
-
-  useEffect(() => {
-    if (providerProfile?.id) {
-      getProviderStats(providerProfile.id)
-        .then(stats => {
-          setActiveJobsCount(stats.active_jobs);
-          if (stats.service_type) setLiveServiceType(stats.service_type);
-        })
-        .catch(console.error);
-      
-      // Simple poll every 15s to keep the badge somewhat live
-      const interval = setInterval(() => {
-        getProviderStats(providerProfile.id)
-          .then(stats => {
-            setActiveJobsCount(stats.active_jobs);
-            if (stats.service_type) setLiveServiceType(stats.service_type);
-          })
-          .catch(console.error);
-      }, 15000);
-      return () => clearInterval(interval);
-    }
-  }, [providerProfile?.id]);
+  const { stats, cancellationEvent, clearCancellationEvent } = useProviderStats();
+  const activeJobsCount = stats.active_jobs;
+  const liveServiceType = stats.service_type || providerProfile?.service || 'Service';
 
   const handleLogout = () => {
     logout();
@@ -82,6 +66,15 @@ export default function DashboardLayout() {
       )
     },
     { 
+      path: '/provider/dashboard/reviews', 
+      label: 'Reviews', 
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      )
+    },
+    { 
       path: '/provider/dashboard/declined', 
       label: 'Declined', 
       icon: (
@@ -117,6 +110,14 @@ export default function DashboardLayout() {
 
   return (
     <div className={styles.layout}>
+      {/* Customer-cancelled job modal — shown in real-time via WebSocket */}
+      {cancellationEvent && (
+        <CancellationModal
+          sessionId={cancellationEvent.sessionId}
+          onAcknowledge={clearCancellationEvent}
+        />
+      )}
+
       {/* Mobile Header */}
       <div className={styles.mobileHeader}>
         <button
@@ -167,7 +168,7 @@ export default function DashboardLayout() {
             )}
           </div>
           <div className={styles.toggleWrap}>
-            <StatusToggle />
+            <StatusToggle collapsed={sidebarCollapsed} />
           </div>
         </div>
 

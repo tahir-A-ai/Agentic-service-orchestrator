@@ -147,6 +147,7 @@ def login_user(db: Session, payload: dict) -> dict:
     return {
         "access_token": token,
         "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         "role": user.role,
         "email": user.email,
         "full_name": user.full_name,
@@ -154,6 +155,35 @@ def login_user(db: Session, payload: dict) -> dict:
         "service_type": service_type,
         "location": location,
         "phone": user.phone,
+        "bio": provider.bio if provider else None,
+        "photo_url": user.photo_url,
+    }
+
+
+def get_current_user_profile(db: Session, user_payload: dict) -> dict:
+    """Fetch current user and provider profile from DB using validated token payload."""
+    user_id = user_payload.get("user_id")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "USER_NOT_FOUND", "message": "User mojood nahi hai."}
+        )
+
+    provider = db.query(Provider).filter(Provider.user_id == user.id).first()
+    provider_id = provider.id if provider else None
+    service_type = provider.get_service_type_label if provider else None
+    location = provider.location if provider else None
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "phone": user.phone,
+        "provider_id": provider_id,
+        "service_type": service_type,
+        "location": location,
         "bio": provider.bio if provider else None,
         "photo_url": user.photo_url,
     }

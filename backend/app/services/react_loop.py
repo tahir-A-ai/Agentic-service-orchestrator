@@ -175,6 +175,31 @@ async def _update_intent_state(agent, config, messages):
     })
 
 
+async def clear_session_checkpoint(session_id: str) -> None:
+    """
+    Delete the LangGraph thread checkpoint for a cancelled session.
+
+    When a customer cancels a booking, their old session's LangGraph state
+    must be wiped from the SQLite checkpointer. Otherwise, the next fresh
+    request (which sends session_id=None and gets a new UUID) may cause
+    a SQLite lock conflict because the old checkpointer state is still open.
+    """
+    try:
+        async with AsyncSqliteSaver.from_conn_string(str(settings.DB_PATH)) as checkpointer:
+            await checkpointer.adelete_thread(session_id)
+        write_audit_log(
+            session_id,
+            "[ACTION]",
+            f"LangGraph checkpoint cleared for cancelled session {session_id}.",
+        )
+    except Exception as e:
+        write_audit_log(
+            session_id,
+            "[ACTION]",
+            f"Warning: Could not clear LangGraph checkpoint for session {session_id}: {e}",
+        )
+
+
 
 async def run_find_providers(
     user_prompt: str,
@@ -290,6 +315,21 @@ async def run_find_providers(
         )
     else:
         status = "pending_confirmation"
+
+        # ── Safety net: if LLM claims providers exist but candidates is empty,
+        # it is hallucinating. Override with a truthful "no providers" message.
+        if not candidates and final_message and (
+            "nazdeeki providers available hain" in final_message
+            or "providers available hain" in final_message
+        ):
+            final_message = "Is waqt koi aur provider available nahi hai, thodi der baad try karein."
+            write_audit_log(
+                session_id,
+                "[DECISION]",
+                "SAFETY NET: LLM claimed providers existed but candidates dict is empty. "
+                "Overriding hallucinated message with honest 'no providers' response.",
+            )
+
         write_audit_log(
             session_id,
             "[DECISION]",
@@ -336,6 +376,7 @@ async def run_find_providers(
         "clarification_question": clarification_question,
         "react_iterations": iteration_count,
     }
+
 
 
 
@@ -414,7 +455,7 @@ async def run_confirm_booking(
         
         with get_db_session() as session:
             provider = session.query(Provider).filter(Provider.id == provider_id).first()
-            if provider and provider.status == "Active" and provider.is_available:
+            if provider and provider.status == "Active" and (provider.is_available or provider.is_available is None):
                 booking_session = session.query(BookingSession).filter(BookingSession.id == session_id).first()
                 booking_session.status = "Pending_Acceptance"
                 booking_session.confirmed_provider_id = provider_id

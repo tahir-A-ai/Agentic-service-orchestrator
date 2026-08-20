@@ -34,7 +34,12 @@ export async function request(method, path, body) {
 
   const res = await withTimeout(fetch(`${API_BASE}${path}`, opts), TIMEOUT_MS);
   const json = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, json);
+  if (!res.ok) {
+    if (res.status === 401 && path !== '/api/v1/auth/login') {
+      window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: json }));
+    }
+    throw new ApiError(res.status, json);
+  }
   return json;
 }
 

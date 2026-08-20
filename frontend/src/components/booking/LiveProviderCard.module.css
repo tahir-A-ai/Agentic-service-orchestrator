@@ -1,15 +1,9 @@
 .card {
-  background: #111216;
-  /* slightly darker than header */
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: #1B1E28;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
   padding: 1.25rem;
-  margin-bottom: 1rem;
-  transition: all 0.3s ease;
-}
-
-.cardActiveBorder {
-  border-top: 4px solid #22C55E;
+  transition: all 0.2s ease;
 }
 
 .header {

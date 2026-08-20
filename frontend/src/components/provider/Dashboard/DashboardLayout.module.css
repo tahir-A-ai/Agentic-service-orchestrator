@@ -105,6 +105,11 @@
   justify-content: flex-start;
 }
 
+.collapsed .toggleWrap {
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
 /* ── Navigation ──────────────────────── */
 
 .nav {

@@ -7,7 +7,7 @@ class ServiceRequest(BaseModel):
 
     user_prompt: str = Field(
         ...,
-        min_length=3,
+        min_length=1,
         max_length=500,
         description="The user's service request in Roman Urdu or English.",
         examples=["G-13 mein AC wala bhej do, ghar ka AC theek nahi ho raha"],
@@ -98,7 +98,11 @@ class ConfirmBookingResponse(BaseModel):
 class CustomerConfirmRequest(BaseModel):
     session_id: str = Field(...)
     rating: int = Field(..., ge=1, le=5)
+    review_text: str | None = Field(None, max_length=1000, description="Optional written review from the customer.")
 
 class CustomerConfirmResponse(BaseModel):
     message: str
     new_average_rating: float
+
+class CancelBookingRequest(BaseModel):
+    session_id: str

@@ -6,7 +6,7 @@ import math
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 from app.models import Base, LocationCache, Provider, ServiceType
@@ -25,10 +25,37 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def init_db() -> None:
     """
-    Create all tables if they do not exist.
-    Called once during the FastAPI lifespan startup event.
+    Create all tables if they do not exist, run non-destructive schema migrations,
+    and backfill defaults. Called once during FastAPI lifespan startup.
     """
     Base.metadata.create_all(bind=engine)
+
+    # Lightweight SQLite schema migration for existing databases
+    with engine.connect() as conn:
+        try:
+            from sqlalchemy import text
+            # Ensure booking_sessions has all expected columns
+            result = conn.execute(text("PRAGMA table_info(booking_sessions)")).fetchall()
+            existing_cols = {row[1] for row in result}
+            
+            if "customer_review" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_review TEXT"))
+            if "customer_rating" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_rating INTEGER"))
+            if "customer_confirmed_at" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_confirmed_at DATETIME"))
+            if "cancelled_by" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN cancelled_by VARCHAR(20)"))
+            conn.commit()
+        except Exception:
+            pass
+
+    with get_db_session() as session:
+        session.query(Provider).filter(Provider.is_available.is_(None)).update(
+            {"is_available": True}, synchronize_session=False
+        )
+        session.commit()
+
 
 
 @contextmanager
@@ -90,6 +117,7 @@ def query_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
+            .filter(or_(Provider.is_available.is_(True), Provider.is_available.is_(None)))
             .all()
         )
 
@@ -145,6 +173,7 @@ def query_all_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
+            .filter(or_(Provider.is_available.is_(True), Provider.is_available.is_(None)))
             .all()
         )
 
@@ -220,7 +249,7 @@ def query_busy_providers(
 
 def commit_booking(provider_id: int) -> bool:
     """
-    Atomically mark a provider as 'Busy' ONLY if they are still 'Active'.
+    Atomically mark a provider as 'Busy' ONLY if they are still 'Active' and 'is_available'.
 
     Uses a single conditional UPDATE instead of a read-then-write pattern.
     This is the only safe approach under SQLite's concurrency model — two
@@ -228,12 +257,16 @@ def commit_booking(provider_id: int) -> bool:
 
     Returns:
         True  — booking claimed successfully (rowcount == 1).
-        False — provider was already taken by a concurrent request (rowcount == 0).
+        False — provider was already taken by a concurrent request or went offline (rowcount == 0).
     """
     with get_db_session() as session:
         rows_affected = (
             session.query(Provider)
-            .filter(Provider.id == provider_id, Provider.status == "Active")
+            .filter(
+                Provider.id == provider_id,
+                Provider.status == "Active",
+                or_(Provider.is_available.is_(True), Provider.is_available.is_(None)),
+            )
             .update({"status": "Busy"}, synchronize_session=False)
         )
         session.commit()

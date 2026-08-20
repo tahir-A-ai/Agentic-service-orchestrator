@@ -25,3 +25,7 @@ export async function uploadProviderPhoto(providerId, file) {
   formData.append('file', file);
   return request('POST', `/api/v1/providers/${providerId}/photo`, formData);
 }
+
+export async function fetchProviderReviews(providerId, page = 1) {
+  return request('GET', `/api/v1/providers/${providerId}/reviews?page=${page}&limit=10`);
+}

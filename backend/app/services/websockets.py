@@ -28,3 +28,47 @@ class ConnectionManager:
                     self.disconnect(connection, job_id)
 
 manager = ConnectionManager()
+
+
+class ProviderConnectionManager:
+    """Per-provider WebSocket registry for dashboard stat pushes."""
+
+    def __init__(self):
+        self.active_connections: Dict[int, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, provider_id: int):
+        await websocket.accept()
+        if provider_id not in self.active_connections:
+            self.active_connections[provider_id] = []
+        self.active_connections[provider_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, provider_id: int):
+        if provider_id in self.active_connections:
+            if websocket in self.active_connections[provider_id]:
+                self.active_connections[provider_id].remove(websocket)
+            if not self.active_connections[provider_id]:
+                del self.active_connections[provider_id]
+
+    async def push_stats(self, provider_id: int, stats: dict):
+        """Push a stats_update payload to all dashboard sockets for this provider."""
+        if provider_id not in self.active_connections:
+            return
+        payload = {"type": "stats_update", **stats}
+        for ws in list(self.active_connections[provider_id]):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                self.disconnect(ws, provider_id)
+
+    async def push_event(self, provider_id: int, event: dict):
+        """Push any arbitrary typed event to all dashboard sockets for this provider."""
+        if provider_id not in self.active_connections:
+            return
+        for ws in list(self.active_connections[provider_id]):
+            try:
+                await ws.send_json(event)
+            except Exception:
+                self.disconnect(ws, provider_id)
+
+
+provider_manager = ProviderConnectionManager()

@@ -1,14 +1,40 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProviderStats } from '../context/ProviderStatsContext';
 import StatsRow from '../components/provider/Dashboard/StatsRow';
 import JobCard from '../components/provider/Dashboard/JobCard';
 import EmptyState from '../components/ui/EmptyState';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import Pagination from '../components/ui/Pagination';
 import { getProviderJobs, toggleAvailability, updateProviderProfile, uploadProviderPhoto } from '../api/provider';
 import { useToast } from '../context/ToastContext';
 import styles from './ProviderDashboardPage.module.css';
+
+const PAGE_SIZE = 10;
+
+function usePaginationState() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawPage = parseInt(searchParams.get('page') || '1', 10);
+  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
+  const setPage = useCallback((newPage) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newPage <= 1) {
+        next.delete('page');
+      } else {
+        next.set('page', String(newPage));
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  return [page, setPage];
+}
+
+
 
 const playPing = () => {
   try {
@@ -36,19 +62,31 @@ const playPing = () => {
 
 /**
  * Custom hook to fetch dynamic provider jobs.
+ * Accepts an optional externalRefetchKey: when it changes, triggers a refetch.
  */
-function useProviderJobs() {
+function useProviderJobs(externalRefetchKey = 0) {
   const { providerProfile } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const prevPendingCountRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const fetchJobs = useCallback(async () => {
-    if (!providerProfile?.id) return;
+    if (!providerProfile?.id) {
+      setJobs([]);
+      setLoading(false);
+      return;
+    }
+    const currentRequestId = ++requestIdRef.current;
+
     try {
       setLoading(true);
       const data = await getProviderJobs(providerProfile.id);
+      
+      // If a newer request was dispatched before this one resolved, ignore stale result
+      if (currentRequestId !== requestIdRef.current) return;
+
       const newJobs = data.jobs || [];
       
       const newPendingCount = newJobs.filter(j => j.status === 'Pending_Acceptance').length;
@@ -60,18 +98,22 @@ function useProviderJobs() {
 
       setJobs(newJobs);
     } catch (err) {
+      if (currentRequestId !== requestIdRef.current) return;
       if (err.status === 401 || (err.message && err.message.toLowerCase().includes('login'))) {
         return; // Ignore auth errors during logout transition
       }
       showToast('Jobs fetch karne mein error: ' + err.message, 'error');
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, [providerProfile, showToast]);
+  }, [providerProfile?.id, showToast]);
+
 
   useEffect(() => {
     fetchJobs();
-  }, [fetchJobs]);
+  }, [fetchJobs, externalRefetchKey]);
 
   return {
     allJobs: jobs,
@@ -101,9 +143,15 @@ function useRequireAuth() {
 
 export function OverviewTab() {
   const isAuth = useRequireAuth();
-  const { recentJobs, activeJobs, loading, refetch } = useProviderJobs();
-  
+  const { jobsRefetchKey } = useProviderStats();
+  const { recentJobs, loading, refetch } = useProviderJobs(jobsRefetchKey);
+  const [page, setPage] = usePaginationState();
+
   if (!isAuth) return null;
+
+  const totalPages = Math.ceil(recentJobs.length / PAGE_SIZE);
+  const validPage = Math.min(page, Math.max(1, totalPages));
+  const paginatedJobs = recentJobs.slice((validPage - 1) * PAGE_SIZE, validPage * PAGE_SIZE);
 
   return (
     <div className={styles.tab}>
@@ -115,11 +163,24 @@ export function OverviewTab() {
       {loading ? (
         <p>Loading...</p>
       ) : recentJobs.length > 0 ? (
-        <div className={styles.jobList}>
-          {recentJobs.slice(0, 5).map(job => (
-            <JobCard key={job.session_id || job.id} job={job} variant="compact" onActionComplete={refetch} />
-          ))}
-        </div>
+        <>
+          <div className={styles.jobList}>
+            {paginatedJobs.map((job) => (
+              <JobCard
+                key={job.session_id || job.id}
+                job={job}
+                variant="compact"
+                onActionComplete={refetch}
+              />
+            ))}
+          </div>
+          <Pagination
+            currentPage={validPage}
+            totalItems={recentJobs.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
       ) : (
         <EmptyState title="Koi naya kaam nahi hai" />
       )}
@@ -129,27 +190,41 @@ export function OverviewTab() {
 
 export function ActiveJobsTab() {
   const isAuth = useRequireAuth();
-  const { activeJobs, loading, refetch } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { activeJobs, loading, refetch } = useProviderJobs(jobsRefetchKey);
+  const [page, setPage] = usePaginationState();
 
   if (!isAuth) return null;
+
+  const totalPages = Math.ceil(activeJobs.length / PAGE_SIZE);
+  const validPage = Math.min(page, Math.max(1, totalPages));
+  const paginatedJobs = activeJobs.slice((validPage - 1) * PAGE_SIZE, validPage * PAGE_SIZE);
 
   return (
     <div className={styles.tab}>
       <h1 className={styles.title}>Active Jobs</h1>
       <p className={styles.subtitle}>Jobs that need your attention</p>
-      
+
       {loading ? (
         <p>Loading...</p>
       ) : activeJobs.length > 0 ? (
-        <div className={styles.jobList}>
-          {activeJobs.map(job => (
-            <JobCard key={job.session_id} job={job} onActionComplete={refetch} />
-          ))}
-        </div>
+        <>
+          <div className={styles.jobList}>
+            {paginatedJobs.map((job) => (
+              <JobCard key={job.session_id} job={job} onActionComplete={refetch} />
+            ))}
+          </div>
+          <Pagination
+            currentPage={validPage}
+            totalItems={activeJobs.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
       ) : (
-        <EmptyState 
-          title="Koi active job nahi hai" 
-          subtitle="Jab naya kaam aayega toh yahan show hoga." 
+        <EmptyState
+          title="Koi active job nahi hai"
+          subtitle="Jab naya kaam aayega toh yahan show hoga."
         />
       )}
     </div>
@@ -158,9 +233,15 @@ export function ActiveJobsTab() {
 
 export function CompletedJobsTab() {
   const isAuth = useRequireAuth();
-  const { completedJobs, loading } = useProviderJobs();
+  const { jobsRefetchKey } = useProviderStats();
+  const { completedJobs, loading } = useProviderJobs(jobsRefetchKey);
+  const [page, setPage] = usePaginationState();
 
   if (!isAuth) return null;
+
+  const totalPages = Math.ceil(completedJobs.length / PAGE_SIZE);
+  const validPage = Math.min(page, Math.max(1, totalPages));
+  const paginatedJobs = completedJobs.slice((validPage - 1) * PAGE_SIZE, validPage * PAGE_SIZE);
 
   return (
     <div className={styles.tab}>
@@ -169,15 +250,23 @@ export function CompletedJobsTab() {
       {loading ? (
         <p>Loading...</p>
       ) : completedJobs.length > 0 ? (
-        <div className={styles.jobList}>
-          {completedJobs.map(job => (
-            <JobCard key={job.session_id} job={job} readOnly />
-          ))}
-        </div>
+        <>
+          <div className={styles.jobList}>
+            {paginatedJobs.map((job) => (
+              <JobCard key={job.session_id} job={job} readOnly />
+            ))}
+          </div>
+          <Pagination
+            currentPage={validPage}
+            totalItems={completedJobs.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
       ) : (
-        <EmptyState 
-          title="History khali hai" 
-          subtitle="Aapne abhi tak koi kaam complete nahi kiya." 
+        <EmptyState
+          title="History khali hai"
+          subtitle="Aapne abhi tak koi kaam complete nahi kiya."
         />
       )}
     </div>
@@ -186,12 +275,17 @@ export function CompletedJobsTab() {
 
 export function DeclinedJobsTab() {
   const isAuth = useRequireAuth();
-  const { allJobs, loading } = useProviderJobs();
-  
+  const { jobsRefetchKey } = useProviderStats();
+  const { allJobs, loading } = useProviderJobs(jobsRefetchKey);
+  const [page, setPage] = usePaginationState();
+
   if (!isAuth) return null;
 
   // Filter declined jobs client-side since API returns all jobs
-  const declinedJobs = allJobs.filter(j => j.status === 'Declined' || j.status === 'Cancelled');
+  const declinedJobs = allJobs.filter((j) => j.status === 'Declined' || j.status === 'Cancelled');
+  const totalPages = Math.ceil(declinedJobs.length / PAGE_SIZE);
+  const validPage = Math.min(page, Math.max(1, totalPages));
+  const paginatedJobs = declinedJobs.slice((validPage - 1) * PAGE_SIZE, validPage * PAGE_SIZE);
 
   return (
     <div className={styles.tab}>
@@ -200,25 +294,34 @@ export function DeclinedJobsTab() {
       {loading ? (
         <p>Loading...</p>
       ) : declinedJobs.length > 0 ? (
-        <div className={styles.jobList}>
-          {declinedJobs.map(job => (
-            <JobCard key={job.session_id} job={job} readOnly />
-          ))}
-        </div>
+        <>
+          <div className={styles.jobList}>
+            {paginatedJobs.map((job) => (
+              <JobCard key={job.session_id} job={job} readOnly />
+            ))}
+          </div>
+          <Pagination
+            currentPage={validPage}
+            totalItems={declinedJobs.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
       ) : (
-        <EmptyState 
-          title="Koi declined job nahi hai" 
-          subtitle="Aapne koi job decline nahi ki." 
+        <EmptyState
+          title="Koi declined job nahi hai"
+          subtitle="Aapne koi job decline nahi ki."
         />
       )}
     </div>
   );
 }
 
+
+
 export function ProfileTab() {
   const { providerProfile, updateUser } = useAuth();
   const isAuth = useRequireAuth();
-  const [isAvailable, setIsAvailable] = useState(true);
   const { showToast } = useToast();
   
   // Profile state
@@ -241,17 +344,6 @@ export function ProfileTab() {
 
   if (!isAuth) return null;
 
-  const handleToggle = async () => {
-    try {
-      const newStatus = !isAvailable;
-      setIsAvailable(newStatus);
-      await toggleAvailability(providerProfile.id, newStatus);
-      showToast(`Status updated to ${newStatus ? 'Available' : 'Offline'}`, 'success');
-    } catch (err) {
-      setIsAvailable(!isAvailable); // revert
-      showToast('Failed to update status', 'error');
-    }
-  };
   
   const handleSave = async () => {
     try {

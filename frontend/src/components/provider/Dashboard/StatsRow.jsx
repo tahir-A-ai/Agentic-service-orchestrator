@@ -1,22 +1,8 @@
-import { useState, useEffect } from 'react';
-import { getProviderStats } from '../../../api/provider';
-import { useAuth } from '../../../context/AuthContext';
+import { useProviderStats } from '../../../context/ProviderStatsContext';
 import styles from './StatsRow.module.css';
 
 export default function StatsRow() {
-  const { providerProfile } = useAuth();
-  const [stats, setStats] = useState({ active_jobs: 0, completed_jobs: 0, declined_jobs: 0, rating: 0.0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!providerProfile?.id) { setLoading(false); return; }
-    let cancelled = false;
-    getProviderStats(providerProfile.id)
-      .then(data => { if (!cancelled) setStats(data); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [providerProfile?.id]);
+  const { stats, loading } = useProviderStats();
 
   const displayStats = {
     activeJobs: stats.active_jobs,

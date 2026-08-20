@@ -16,6 +16,12 @@ export async function confirmBooking(sessionId, approvedProviderIds, exactAddres
   });
 }
 
-export async function confirmCompletion(sessionId, rating) {
-  return request('POST', '/api/v1/confirm-completion', { session_id: sessionId, rating });
+export async function confirmCompletion(sessionId, rating, reviewText = null) {
+  const payload = { session_id: sessionId, rating };
+  if (reviewText && reviewText.trim()) payload.review_text = reviewText.trim();
+  return request('POST', '/api/v1/confirm-completion', payload);
+}
+
+export async function cancelBooking(sessionId) {
+  return request('POST', '/api/v1/cancel-booking', { session_id: sessionId });
 }

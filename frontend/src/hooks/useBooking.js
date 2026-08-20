@@ -17,6 +17,7 @@ export default function useBooking() {
     setThinking,
     setConfirmed,
     clearApproved,
+    lockCandidateMessages,
     setLastUserPrompt,
   } = useChat();
 
@@ -27,10 +28,12 @@ export default function useBooking() {
    * Adds user message, shows thinking state, processes response.
    */
   const findProviders = useCallback(
-    async (prompt, excludedIds = []) => {
+    async (prompt, excludedIdsList = [], options = {}) => {
       // Add user message to chat and store prompt
       setLastUserPrompt(prompt);
-      addMessage({ id: newId(), role: 'user', type: 'text', content: prompt });
+      if (!options.skipUserMessage) {
+        addMessage({ id: newId(), role: 'user', type: 'text', content: prompt });
+      }
       setThinking(true);
 
       // Ensure at least 800ms thinking state for UX
@@ -38,7 +41,7 @@ export default function useBooking() {
 
       try {
         const [data] = await Promise.all([
-          bookService(prompt, sessionId, excludedIds),
+          bookService(prompt, sessionId, excludedIdsList),
           minDelay,
         ]);
 
@@ -81,8 +84,9 @@ export default function useBooking() {
         setThinking(false);
       }
     },
-    [sessionId, addMessage, setSessionId, setThinking, showToast],
+    [sessionId, addMessage, setSessionId, setThinking, showToast, setLastUserPrompt],
   );
+
 
   /**
    * Phase 2 — Confirm booking with approved provider IDs.
@@ -96,6 +100,7 @@ export default function useBooking() {
       const data = await confirmBooking(sessionId, approvedIds, exactAddress, customerNotes);
       setConfirmed(data);
       clearApproved();
+      lockCandidateMessages();
       return data;
     } catch (err) {
       showToast(getErrorMessage(err), 'error');
@@ -103,7 +108,8 @@ export default function useBooking() {
     } finally {
       setThinking(false);
     }
-  }, [sessionId, approvedIds, setThinking, setConfirmed, clearApproved, showToast]);
+  }, [sessionId, approvedIds, setThinking, setConfirmed, clearApproved, lockCandidateMessages, showToast]);
+
 
   return { findProviders, confirm };
 }

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import BookingSession, Provider
 
 
-def confirm_completion(db: Session, session_id: str, rating: int) -> dict:
+def confirm_completion(db: Session, session_id: str, rating: int, review_text: str | None = None) -> dict:
     """Customer confirms the job is done and submits a star rating."""
     session = db.query(BookingSession).filter(BookingSession.id == session_id).first()
     if not session:
@@ -27,6 +27,7 @@ def confirm_completion(db: Session, session_id: str, rating: int) -> dict:
     # 1. Update Session
     session.status = "Completed"
     session.customer_rating = rating
+    session.customer_review = review_text  # Optional written review
     session.customer_confirmed_at = datetime.now(timezone.utc)
 
     # 2. Update Provider Rating (Rolling Average)
@@ -38,10 +39,11 @@ def confirm_completion(db: Session, session_id: str, rating: int) -> dict:
     active_jobs = (
         db.query(BookingSession)
         .filter(BookingSession.confirmed_provider_id == provider.id)
-        .filter(BookingSession.status.in_(["In_Progress", "Pending_Completion"]))
+        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion"]))
         .filter(BookingSession.id != session_id)
         .count()
     )
+
     if active_jobs == 0:
         provider.status = "Active"
 
