@@ -59,15 +59,16 @@ async def list_conversations(
         total = q.count()
         rows = q.offset((page - 1) * limit).limit(limit).all()
 
-    items = [
-        ConversationListItem(
-            id=r.id,
-            title=r.title,
-            created_at=r.created_at,
-            updated_at=r.updated_at,
-        )
-        for r in rows
-    ]
+        items = [
+            ConversationListItem(
+                id=r.id,
+                title=r.title,
+                created_at=r.created_at,
+                updated_at=r.updated_at,
+            )
+            for r in rows
+        ]
+
     return ConversationListResponse(
         conversations=items,
         has_more=(page * limit) < total,
@@ -96,16 +97,16 @@ async def get_conversation(
             raise HTTPException(status_code=404, detail={"message": "Conversation nahi mili."})
 
         messages_raw = row.get_messages()
+        messages = [ChatMessage(**m) for m in messages_raw]
+        return ConversationDetail(
+            id=row.id,
+            title=row.title,
+            messages=messages,
+            booking_session_id=row.booking_session_id,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+        )
 
-    messages = [ChatMessage(**m) for m in messages_raw]
-    return ConversationDetail(
-        id=row.id,
-        title=row.title,
-        messages=messages,
-        booking_session_id=row.booking_session_id,
-        created_at=row.created_at,
-        updated_at=row.updated_at,
-    )
 
 
 @router.post("/{conversation_id}/sync", status_code=200)
