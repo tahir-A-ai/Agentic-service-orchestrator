@@ -151,9 +151,10 @@ async def get_provider_reviews(
     from app.models import BookingSession, User
     from sqlalchemy import func
 
-    page = max(1, page)
-    limit = max(1, min(limit, 20))
+    page = max(1, min(page, 1000))
+    limit = max(1, min(limit, 50))
     offset = (page - 1) * limit
+
 
     with get_db_session() as db:
         # Total count of completed, rated sessions for this provider
