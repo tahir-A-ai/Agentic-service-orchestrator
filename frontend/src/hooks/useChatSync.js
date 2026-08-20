@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useChat } from '../context/ChatContext';
 import { syncConversation, beaconSync } from '../api/chat';
 import { useAuth } from '../context/AuthContext';
+import { deriveTitle } from '../utils/chat';
 
 /**
  * useChatSync — transparent background sync hook.
  *
  * Mount this once inside ChatPage. It watches isThinking and fires a DB
  * sync whenever the agent finishes responding (isThinking: true → false).
- * Also registers a beforeunload listener that uses sendBeacon so partial
+ * Also registers beforeunload / pagehide listeners that use sendBeacon so partial
  * state is preserved even if the user closes the tab mid-conversation.
  *
  * This hook produces ZERO UI — it's purely a side-effect.
@@ -21,17 +22,24 @@ export default function useChatSync() {
   const messagesRef = useRef(messages);
   const sessionIdRef = useRef(sessionId);
 
-  // Keep refs current so beforeunload closure always sees latest data
+  // Keep refs current so unload closures always see latest data
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
-  // ── Trigger: isThinking flips false
+  // ── Trigger: isThinking flips false OR message count changes
+  const prevMsgCountRef = useRef(messages.length);
+
   useEffect(() => {
     const wasThinking = prevThinkingRef.current;
     prevThinkingRef.current = isThinking;
 
-    // Only sync on the transition true → false (agent finished responding)
-    if (!wasThinking || isThinking) return;
+    const prevCount = prevMsgCountRef.current;
+    prevMsgCountRef.current = messages.length;
+
+    const thinkingFinished = wasThinking && !isThinking;
+    const msgAddedWhenIdle = messages.length > prevCount && !isThinking;
+
+    if (!thinkingFinished && !msgAddedWhenIdle) return;
     if (!sessionId || !user) return;
     if (messages.length === 0) return;
 
@@ -41,7 +49,8 @@ export default function useChatSync() {
     });
   }, [isThinking, sessionId, messages, user]);
 
-  // ── Trigger: beforeunload (tab close / navigation away)
+
+  // ── Trigger: beforeunload / pagehide (tab close / navigation away)
   useEffect(() => {
     function handleUnload() {
       const sid = sessionIdRef.current;
@@ -51,22 +60,12 @@ export default function useChatSync() {
     }
 
     window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+    };
   }, [user]);
 }
 
-/**
- * Derive a conversation title from the message array.
- * Uses the first user message longer than 5 characters.
- */
-export function deriveTitle(messages) {
-  for (const msg of messages) {
-    if (msg.role === 'user') {
-      const content = (msg.content || '').trim();
-      if (content.length > 5) return content.slice(0, 100);
-    }
-  }
-  // Fallback to any user message
-  const firstUser = messages.find((m) => m.role === 'user');
-  return firstUser ? (firstUser.content || 'New Chat').slice(0, 100) : 'New Chat';
-}
