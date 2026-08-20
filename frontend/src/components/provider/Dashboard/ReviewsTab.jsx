@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { fetchProviderReviews } from '../../../api/provider';
+import Pagination from '../../ui/Pagination';
 import styles from './ReviewsTab.module.css';
+
 
 function StarDisplay({ rating }) {
   return (
@@ -69,61 +72,55 @@ function ReviewCard({ review }) {
 
 export default function ReviewsTab() {
   const { providerProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawPage = parseInt(searchParams.get('page') || '1', 10);
+  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
   const [reviews, setReviews] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadPage = useCallback(async (pageNum, append = false) => {
+  const loadPage = useCallback(async (pageNum) => {
     if (!providerProfile?.id) return false;
     try {
-      if (!append) setError(null);
+      setError(null);
       const data = await fetchProviderReviews(providerProfile.id, pageNum);
-      setReviews(prev => append ? [...prev, ...data.reviews] : data.reviews);
-      setTotalCount(data.total_count);
-      setHasMore(data.has_more);
+      setReviews(data.reviews || []);
+      setTotalCount(data.total_count || 0);
       return true;
     } catch (err) {
       console.error('Failed to load reviews:', err);
-      if (!append) {
-        setError('Reviews load nahi ho sakay. Dobara koshish karein.');
-      }
+      setError('Reviews load nahi ho sakay. Dobara koshish karein.');
       return false;
     }
   }, [providerProfile?.id]);
 
-  const handleInitialRetry = () => {
-    setLoading(true);
-    setError(null);
-    setPage(1);
-    loadPage(1, false).finally(() => setLoading(false));
-  };
-
   useEffect(() => {
     setLoading(true);
     setError(null);
-    setPage(1);
-    loadPage(1, false).finally(() => setLoading(false));
-  }, [loadPage]);
+    loadPage(page).finally(() => setLoading(false));
+  }, [loadPage, page]);
 
-
-  const handleLoadMore = async () => {
-    const nextPage = page + 1;
-    setLoadingMore(true);
-    try {
-      const success = await loadPage(nextPage, true);
-      if (success) {
-        setPage(nextPage);
+  const handlePageChange = (newPage) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newPage <= 1) {
+        next.delete('page');
+      } else {
+        next.set('page', String(newPage));
       }
-    } finally {
-      setLoadingMore(false);
-    }
+      return next;
+    }, { replace: true });
   };
 
-  // Compute average from loaded reviews for header (backend already has per-provider rolling avg but let's show count)
+  const handleInitialRetry = () => {
+    setLoading(true);
+    setError(null);
+    loadPage(page).finally(() => setLoading(false));
+  };
+
+
   return (
     <div className={styles.tab}>
       <div className={styles.tabHeader}>
@@ -175,27 +172,23 @@ export default function ReviewsTab() {
           </p>
         </div>
       ) : (
-        <div className={styles.reviewGrid}>
-          {reviews.map((review, idx) => (
-            <ReviewCard key={idx} review={review} />
-          ))}
+        <>
+          <div className={styles.reviewGrid}>
+            {reviews.map((review, idx) => (
+              <ReviewCard key={review.id || idx} review={review} />
+            ))}
+          </div>
 
-          {hasMore && (
-            <button
-              className={styles.loadMoreBtn}
-              onClick={handleLoadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore ? (
-                <span className={styles.loadingInner}>
-                  <span className={styles.spinner} />
-                  Load ho raha hai...
-                </span>
-              ) : `Aur dekhein (${totalCount - reviews.length} baki)`}
-            </button>
-          )}
-        </div>
+          <Pagination
+            currentPage={page}
+            totalItems={totalCount}
+            pageSize={10}
+            onPageChange={handlePageChange}
+            disabled={loading}
+          />
+        </>
       )}
     </div>
   );
 }
+
