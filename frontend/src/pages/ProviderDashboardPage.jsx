@@ -233,9 +233,7 @@ export function DeclinedJobsTab() {
 
 export function ProfileTab() {
   const { providerProfile, updateUser } = useAuth();
-  const { stats, updateAvailabilityLocal } = useProviderStats();
   const isAuth = useRequireAuth();
-  const isAvailable = stats.is_available ?? true;
   const { showToast } = useToast();
   
   // Profile state
@@ -258,17 +256,6 @@ export function ProfileTab() {
 
   if (!isAuth) return null;
 
-  const handleToggle = async () => {
-    const nextVal = !isAvailable;
-    try {
-      if (updateAvailabilityLocal) updateAvailabilityLocal(nextVal);
-      await toggleAvailability(providerProfile.id, nextVal);
-      showToast(`Status updated to ${nextVal ? 'Available' : 'Offline'}`, 'success');
-    } catch (err) {
-      if (updateAvailabilityLocal) updateAvailabilityLocal(isAvailable); // revert
-      showToast('Failed to update status: ' + err.message, 'error');
-    }
-  };
   
   const handleSave = async () => {
     try {

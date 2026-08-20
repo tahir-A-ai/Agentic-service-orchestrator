@@ -135,22 +135,28 @@ export default function Sidebar({ isOpen, onClose }) {
           ) : (
             <div className={styles.list}>
               {conversations.map((conv) => (
-                <button
+                <div
                   key={conv.id}
                   className={[
                     styles.historyItem,
                     conv.id === sessionId ? styles.historyItemActive : '',
                   ].filter(Boolean).join(' ')}
-                  onClick={() => handleSelectConversation(conv.id)}
-                  title={conv.title}
                 >
-                  <div className={styles.itemHeader}>
-                    <span className={styles.itemTitle}>{conv.title}</span>
-                    <span className={styles.itemTime}>{relativeTime(conv.created_at || conv.updated_at)}</span>
-                  </div>
-
-                  {/* Delete button — shown on hover via CSS */}
                   <button
+                    type="button"
+                    className={styles.itemMainBtn}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    title={conv.title}
+                  >
+                    <div className={styles.itemHeader}>
+                      <span className={styles.itemTitle}>{conv.title}</span>
+                      <span className={styles.itemTime}>{relativeTime(conv.created_at || conv.updated_at)}</span>
+                    </div>
+                  </button>
+
+                  {/* Delete button — shown on hover / focus via CSS */}
+                  <button
+                    type="button"
                     className={styles.deleteBtn}
                     onClick={(e) => handleDelete(e, conv.id)}
                     disabled={deletingId === conv.id}
@@ -159,8 +165,9 @@ export default function Sidebar({ isOpen, onClose }) {
                   >
                     <TrashIcon />
                   </button>
-                </button>
+                </div>
               ))}
+
 
               {hasMore && (
                 <button className={styles.loadMore} onClick={handleLoadMore} disabled={loading}>

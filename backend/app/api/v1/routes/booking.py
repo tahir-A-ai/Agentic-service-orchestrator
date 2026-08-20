@@ -216,35 +216,49 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
         await websocket.close(code=1008)
         return
     try:
-        decode_access_token(token)
+        user_payload = decode_access_token(token)
+        user_id = user_payload.get("user_id")
     except Exception:
         await websocket.close(code=1008)
         return
 
-    await manager.connect(websocket, job_id)
-    
-    # 1. Fetch current state and release DB session before performing network I/O
+    # 1. Authorize: verify the session exists and caller is customer or assigned provider
     initial_payload = None
     with get_db_session() as db:
         from app.models import BookingSession, Provider
         session = db.query(BookingSession).filter(BookingSession.id == job_id).first()
-        if session:
-            provider_name = None
-            service_type = None
-            if session.confirmed_provider_id:
-                provider = db.query(Provider).filter(Provider.id == session.confirmed_provider_id).first()
-                if provider:
-                    provider_name = provider.name
-                    service_type = provider.get_service_type_label
-                    
-            initial_payload = {
-                "type": "status_update",
-                "status": session.status,
-                "provider_name": provider_name,
-                "service_type": service_type
-            }
+        if not session:
+            await websocket.close(code=1008)
+            return
 
-    # 2. Send initial state and maintain connection inside protected lifecycle
+        is_customer = (session.customer_id == user_id)
+        is_provider = False
+        provider_name = None
+        service_type = None
+
+        if session.confirmed_provider_id:
+            provider = db.query(Provider).filter(Provider.id == session.confirmed_provider_id).first()
+            if provider:
+                provider_name = provider.name
+                service_type = provider.get_service_type_label
+                if provider.user_id == user_id:
+                    is_provider = True
+
+        if not (is_customer or is_provider):
+            await websocket.close(code=1008)
+            return
+
+        initial_payload = {
+            "type": "status_update",
+            "status": session.status,
+            "provider_name": provider_name,
+            "service_type": service_type,
+        }
+
+    # 2. Connect only after successful authorization
+    await manager.connect(websocket, job_id)
+
+    # 3. Send initial state and maintain connection inside protected lifecycle
     try:
         if initial_payload:
             await websocket.send_json(initial_payload)
@@ -255,3 +269,4 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
         pass
     finally:
         manager.disconnect(websocket, job_id)
+

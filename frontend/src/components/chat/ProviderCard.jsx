@@ -30,11 +30,12 @@ export default function ProviderCard({
         tabIndex={0}
         onClick={() => onToggle?.(provider.id)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
             e.preventDefault();
             onToggle?.(provider.id);
           }
         }}
+
         aria-pressed={selected}
         aria-label={`${provider.name}, ${serviceType}, rating ${formattedRating}`}
       >

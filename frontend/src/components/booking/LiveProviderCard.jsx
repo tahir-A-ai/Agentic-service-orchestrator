@@ -11,7 +11,8 @@ export default function LiveProviderCard({ provider, status }) {
   const etaRange = provider.distance_km ? `${Math.ceil(provider.distance_km * 5 + 10)}-${Math.ceil(provider.distance_km * 5 + 25)} min` : '30-45 min';
   const formattedRating = provider.rating != null && !isNaN(Number(provider.rating))
     ? Number(provider.rating).toFixed(1)
-    : '4.5';
+    : 'Not rated yet';
+
 
   const getInitials = (name) => {
     if (!name) return 'PR';

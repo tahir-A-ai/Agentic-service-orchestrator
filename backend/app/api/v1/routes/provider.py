@@ -182,15 +182,19 @@ async def get_provider_reviews(
             .all()
         )
 
-        reviews = [
-            ProviderReview(
-                rating=session.customer_rating,
-                review_text=session.customer_review,
-                customer_name=user.full_name.split()[0] if (user and user.full_name) else "Customer",  # first name only
-                created_at=session.customer_confirmed_at.isoformat() if session.customer_confirmed_at else "",
+        reviews = []
+        for session, user in rows:
+            parts = user.full_name.strip().split() if (user and user.full_name) else []
+            customer_first_name = parts[0] if parts else "Customer"
+            reviews.append(
+                ProviderReview(
+                    rating=session.customer_rating,
+                    review_text=session.customer_review,
+                    customer_name=customer_first_name,
+                    created_at=session.customer_confirmed_at.isoformat() if session.customer_confirmed_at else "",
+                )
             )
-            for session, user in rows
-        ]
+
 
     has_more = (offset + len(reviews)) < total_count
 

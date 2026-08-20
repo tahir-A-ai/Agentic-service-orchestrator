@@ -98,14 +98,17 @@ export default function ReviewsTab() {
   const handleInitialRetry = () => {
     setLoading(true);
     setError(null);
+    setPage(1);
     loadPage(1, false).finally(() => setLoading(false));
   };
 
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setPage(1);
     loadPage(1, false).finally(() => setLoading(false));
   }, [loadPage]);
+
 
   const handleLoadMore = async () => {
     const nextPage = page + 1;

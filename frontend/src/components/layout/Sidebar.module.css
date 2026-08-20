@@ -68,17 +68,18 @@
 
 .historyItem {
   width: 100%;
-  text-align: left;
-  padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.03);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   transition: all 200ms ease;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.historyItem:hover {
+.historyItem:hover,
+.historyItem:focus-within {
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--border-default);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
@@ -90,17 +91,28 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
-.historyItemActive:hover {
+.historyItemActive:hover,
+.historyItemActive:focus-within {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.22);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.itemMainBtn {
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3);
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-md);
 }
 
 .itemHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-1);
   gap: var(--space-2);
   padding-right: 22px; /* space for delete btn */
 }
@@ -131,7 +143,7 @@
   text-overflow: ellipsis;
 }
 
-/* Delete button — hidden until parent hovered */
+/* Delete button — hidden until parent hovered or focused */
 .deleteBtn {
   position: absolute;
   top: 50%;
@@ -145,9 +157,13 @@
   display: flex;
   align-items: center;
   transition: opacity 150ms ease, color 150ms ease;
+  border: none;
+  cursor: pointer;
 }
 
-.historyItem:hover .deleteBtn {
+.historyItem:hover .deleteBtn,
+.historyItem:focus-within .deleteBtn,
+.deleteBtn:focus-visible {
   opacity: 1;
 }
 
@@ -159,6 +175,7 @@
   opacity: 0.3;
   cursor: not-allowed;
 }
+
 
 .emptyMsg {
   font-size: var(--text-xs);

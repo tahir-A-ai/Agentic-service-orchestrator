@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState, useRef } from 'react';
 import { getConversation, syncConversation } from '../api/chat';
 import { deriveTitle } from '../hooks/useChatSync';
 
@@ -46,6 +46,7 @@ export function ChatProvider({ children }) {
   const [isThinking, setThinking] = useState(false);
   const [lastUserPrompt, setLastUserPrompt] = useState(null);
   const [excludedIds, setExcludedIds] = useState([]);
+  const latestLoadIdRef = useRef(null);
 
   // confirmed booking — tiny payload, kept in localStorage (24 h TTL)
   const [confirmed, setConfirmedState] = useState(() => {
@@ -75,8 +76,11 @@ export function ChatProvider({ children }) {
   // Called on mount (resume after reload) or when user clicks a sidebar entry.
 
   const loadConversation = useCallback(async (id) => {
+    latestLoadIdRef.current = id;
     try {
       const data = await getConversation(id);
+      // Guard against race conditions if user switched to another chat while request was in-flight
+      if (latestLoadIdRef.current !== id) return;
       setMessages(data.messages || []);
       setSessionIdState(data.id);
       setActiveChatId(data.id);
@@ -85,10 +89,13 @@ export function ChatProvider({ children }) {
       setThinking(false);
       setExcludedIds([]);
     } catch {
-      // Conversation not found or auth error — start fresh
-      setActiveChatId(null);
+      if (latestLoadIdRef.current === id) {
+        // Conversation not found or auth error — start fresh
+        setActiveChatId(null);
+      }
     }
   }, []);
+
 
   // ── addMessage
   const addMessage = useCallback((msg) => {

@@ -25,15 +25,37 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def init_db() -> None:
     """
-    Create all tables if they do not exist and backfill defaults.
-    Called once during the FastAPI lifespan startup event.
+    Create all tables if they do not exist, run non-destructive schema migrations,
+    and backfill defaults. Called once during FastAPI lifespan startup.
     """
     Base.metadata.create_all(bind=engine)
+
+    # Lightweight SQLite schema migration for existing databases
+    with engine.connect() as conn:
+        try:
+            from sqlalchemy import text
+            # Ensure booking_sessions has all expected columns
+            result = conn.execute(text("PRAGMA table_info(booking_sessions)")).fetchall()
+            existing_cols = {row[1] for row in result}
+            
+            if "customer_review" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_review TEXT"))
+            if "customer_rating" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_rating INTEGER"))
+            if "customer_confirmed_at" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_confirmed_at DATETIME"))
+            if "cancelled_by" not in existing_cols and len(existing_cols) > 0:
+                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN cancelled_by VARCHAR(20)"))
+            conn.commit()
+        except Exception:
+            pass
+
     with get_db_session() as session:
         session.query(Provider).filter(Provider.is_available.is_(None)).update(
             {"is_available": True}, synchronize_session=False
         )
         session.commit()
+
 
 
 @contextmanager
@@ -95,7 +117,7 @@ def query_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
-            .filter(or_(Provider.is_available == True, Provider.is_available.is_(None)))
+            .filter(or_(Provider.is_available.is_(True), Provider.is_available.is_(None)))
             .all()
         )
 
@@ -151,7 +173,7 @@ def query_all_active_providers(
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
-            .filter(or_(Provider.is_available == True, Provider.is_available.is_(None)))
+            .filter(or_(Provider.is_available.is_(True), Provider.is_available.is_(None)))
             .all()
         )
 
@@ -243,7 +265,7 @@ def commit_booking(provider_id: int) -> bool:
             .filter(
                 Provider.id == provider_id,
                 Provider.status == "Active",
-                or_(Provider.is_available == True, Provider.is_available.is_(None)),
+                or_(Provider.is_available.is_(True), Provider.is_available.is_(None)),
             )
             .update({"status": "Busy"}, synchronize_session=False)
         )

@@ -11,7 +11,8 @@ export default function BookingReceipt({ provider }) {
   const eta = '30-45 mins';
   const formattedRating = provider.rating != null && !isNaN(Number(provider.rating))
     ? Number(provider.rating).toFixed(1)
-    : (provider.rating || '5.0');
+    : 'Not rated yet';
+
 
   return (
     <div className={styles.card}>

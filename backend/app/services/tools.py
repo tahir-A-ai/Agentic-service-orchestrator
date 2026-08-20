@@ -172,6 +172,9 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
         return {
             "providers": [],
             "count": 0,
+            "busy_count": 0,
+            "excluded_count": 0,
+            "total_count": 0,
             "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}",
         }
 
@@ -281,6 +284,9 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
         return {
             "providers": [],
             "count": 0,
+            "busy_count": 0,
+            "excluded_count": 0,
+            "total_count": 0,
             "error": f"Invalid service_type '{service_type}'. Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}",
         }
 

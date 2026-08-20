@@ -7,6 +7,7 @@ export default function RatingModal({ isOpen, sessionId, providerName, onComplet
   const [hoveredRating, setHoveredRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   if (!isOpen) return null;
 
@@ -14,15 +15,18 @@ export default function RatingModal({ isOpen, sessionId, providerName, onComplet
     if (rating === 0) return;
     
     setIsSubmitting(true);
+    setError(null);
     try {
       const res = await confirmCompletion(sessionId, rating, reviewText);
       onComplete(res);
     } catch (err) {
       console.error('Failed to submit rating:', err);
+      setError(err.message || 'Rating submit nahi ho saki. Dobara try karein.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const displayRating = hoveredRating || rating;
 
@@ -88,11 +92,16 @@ export default function RatingModal({ isOpen, sessionId, providerName, onComplet
           )}
         </div>
 
+        {error && (
+          <p className={styles.errorText}>{error}</p>
+        )}
+
         <button 
           className={styles.submitBtn} 
           onClick={handleSubmit}
           disabled={rating === 0 || isSubmitting}
         >
+
           {isSubmitting ? (
             <span className={styles.submittingInner}>
               <span className={styles.spinnerBtn} />
