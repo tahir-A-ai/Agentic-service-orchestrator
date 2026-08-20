@@ -315,6 +315,21 @@ async def run_find_providers(
         )
     else:
         status = "pending_confirmation"
+
+        # ── Safety net: if LLM claims providers exist but candidates is empty,
+        # it is hallucinating. Override with a truthful "no providers" message.
+        if not candidates and final_message and (
+            "nazdeeki providers available hain" in final_message
+            or "providers available hain" in final_message
+        ):
+            final_message = "Is waqt koi aur provider available nahi hai, thodi der baad try karein."
+            write_audit_log(
+                session_id,
+                "[DECISION]",
+                "SAFETY NET: LLM claimed providers existed but candidates dict is empty. "
+                "Overriding hallucinated message with honest 'no providers' response.",
+            )
+
         write_audit_log(
             session_id,
             "[DECISION]",
@@ -361,6 +376,7 @@ async def run_find_providers(
         "clarification_question": clarification_question,
         "react_iterations": iteration_count,
     }
+
 
 
 
