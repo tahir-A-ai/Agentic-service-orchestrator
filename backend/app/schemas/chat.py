@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessage(BaseModel):
@@ -17,23 +17,24 @@ class ChatMessage(BaseModel):
 class ConversationSyncRequest(BaseModel):
     """Payload sent by the frontend to persist the current message array."""
     title: str = Field(..., min_length=1, max_length=100)
-    messages: list[ChatMessage] = Field(..., description="Full current message array (max 100).")
+    messages: list[ChatMessage] = Field(..., max_length=100, description="Full current message array (max 100).")
     booking_session_id: str | None = None
 
 
 class ConversationListItem(BaseModel):
     """Lightweight entry for the sidebar list — no messages payload."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     title: str
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class ConversationDetail(BaseModel):
     """Full conversation including all messages — returned on lazy load."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     title: str
     messages: list[ChatMessage]
@@ -41,8 +42,6 @@ class ConversationDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class ConversationListResponse(BaseModel):
