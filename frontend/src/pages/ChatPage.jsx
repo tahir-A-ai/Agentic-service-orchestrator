@@ -15,7 +15,16 @@ export default function ChatPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { findProviders, confirm } = useBooking();
-  const { isThinking, excludedIds, addMessage, messages, loadConversation, getActiveChatId } = useChat();
+  const {
+    isThinking,
+    excludedIds,
+    addMessage,
+    messages,
+    loadConversation,
+    getActiveChatId,
+    lockCandidateMessages,
+    clearApproved,
+  } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const hasAutoFetched = useRef(false);
@@ -29,8 +38,8 @@ export default function ChatPage() {
     if (hasRehydrated.current) return;
     hasRehydrated.current = true;
 
-    // Don't rehydrate if we're about to auto-fetch a new session (autoFetch state)
-    if (location.state?.autoFetch || location.state?.customerCancelled) return;
+    // Don't rehydrate if we're starting a brand-new autoFetch session from home
+    if (location.state?.autoFetch && !location.state?.providerCancelled && !location.state?.jobCompleted) return;
 
     const savedId = getActiveChatId();
     if (savedId && messages.length === 0) {
@@ -38,25 +47,69 @@ export default function ChatPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-fetch from navigation state (e.g. service card click)
+  // ── Auto-fetch and navigation state handling
   useEffect(() => {
-    if (location.state?.autoFetch && !hasAutoFetched.current) {
+    if (hasAutoFetched.current) return;
+
+    if (location.state?.jobCompleted) {
+      hasAutoFetched.current = true;
+      lockCandidateMessages();
+      clearApproved();
+      addMessage({
+        id: newId(),
+        role: 'agent',
+        type: 'text',
+        content: 'Yeh job kamyabi se mukammal ho chuki hai aur aapka review darj ho gaya hai. Shukriya!',
+      });
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.providerCancelled) {
+      hasAutoFetched.current = true;
+      lockCandidateMessages();
+      clearApproved();
+      const providerName = location.state.providerName || 'Provider';
+      const prompt = location.state.autoFetch;
+      const providerId = location.state.providerId;
+      const updatedExcluded = providerId
+        ? Array.from(new Set([...excludedIds, providerId]))
+        : excludedIds;
+
+      // 1. Post friendly Roman Urdu notification from agent
+      addMessage({
+        id: newId(),
+        role: 'agent',
+        type: 'text',
+        content: `${providerName} ne request cancel kar di hai. Hum aapke liye doosra provider dhoond rahe hain...`,
+      });
+
+      // 2. Search for alternative providers without adding duplicate user message
+      if (prompt) {
+        setTimeout(() => {
+          findProviders(prompt, updatedExcluded, { skipUserMessage: true });
+        }, 600);
+      }
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.autoFetch) {
       hasAutoFetched.current = true;
       setTimeout(() => {
         findProviders(location.state.autoFetch, excludedIds);
       }, 100);
       window.history.replaceState({}, document.title);
-    } else if (location.state?.customerCancelled && !hasAutoFetched.current) {
+    } else if (location.state?.customerCancelled) {
       hasAutoFetched.current = true;
+      lockCandidateMessages();
+      clearApproved();
       addMessage({
         id: newId(),
         role: 'agent',
         type: 'text',
-        content: 'Aapne request cancel kar di. Kia ap kisi aur provider ki service book karna chahte hain?',
+        content: 'Aapne request cancel kar di. Kia aap kisi aur provider ki service book karna chahte hain?',
       });
       window.history.replaceState({}, document.title);
     }
-  }, [location, findProviders, excludedIds, addMessage]);
+  }, [location, findProviders, excludedIds, addMessage, lockCandidateMessages, clearApproved]);
+
+
+
 
   const handleConfirmClick = () => setIsModalOpen(true);
 
