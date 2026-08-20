@@ -39,10 +39,11 @@ def confirm_completion(db: Session, session_id: str, rating: int, review_text: s
     active_jobs = (
         db.query(BookingSession)
         .filter(BookingSession.confirmed_provider_id == provider.id)
-        .filter(BookingSession.status.in_(["In_Progress", "Pending_Completion"]))
+        .filter(BookingSession.status.in_(["Pending_Acceptance", "In_Progress", "Pending_Completion"]))
         .filter(BookingSession.id != session_id)
         .count()
     )
+
     if active_jobs == 0:
         provider.status = "Active"
 
