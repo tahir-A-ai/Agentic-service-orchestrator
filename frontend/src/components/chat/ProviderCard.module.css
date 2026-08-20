@@ -138,3 +138,30 @@
 .reviewsIcon {
   flex-shrink: 0;
 }
+
+/* ── Locked / Disabled state ──────────── */
+
+.locked {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-default);
+}
+
+.lockedBtn {
+  color: var(--text-muted) !important;
+  border-color: var(--border-default) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  cursor: not-allowed !important;
+  opacity: 0.75;
+}
+
+.lockedBtn:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-muted) !important;
+}
+

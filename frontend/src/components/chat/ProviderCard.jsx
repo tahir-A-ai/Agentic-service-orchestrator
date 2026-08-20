@@ -15,6 +15,7 @@ export default function ProviderCard({
   provider,
   serviceType,
   selected = false,
+  locked = false,
   onToggle,
 }) {
   const [showReviews, setShowReviews] = useState(false);
@@ -22,28 +23,38 @@ export default function ProviderCard({
     ? Number(provider.rating).toFixed(1)
     : '—';
 
+  const handleCardClick = () => {
+    if (locked) return;
+    onToggle?.(provider.id);
+  };
+
   return (
     <>
       <div
-        className={[styles.card, selected ? styles.selected : ''].filter(Boolean).join(' ')}
-        role="button"
-        tabIndex={0}
-        onClick={() => onToggle?.(provider.id)}
+        className={[
+          styles.card,
+          selected && !locked ? styles.selected : '',
+          locked ? styles.locked : '',
+        ].filter(Boolean).join(' ')}
+        role={locked ? 'region' : 'button'}
+        tabIndex={locked ? -1 : 0}
+        onClick={handleCardClick}
         onKeyDown={(e) => {
+          if (locked) return;
           if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
             e.preventDefault();
             onToggle?.(provider.id);
           }
         }}
-
-        aria-pressed={selected}
-        aria-label={`${provider.name}, ${serviceType}, rating ${formattedRating}`}
+        aria-pressed={locked ? undefined : selected}
+        aria-disabled={locked}
+        aria-label={`${provider.name}, ${serviceType}, rating ${formattedRating}${locked ? ' (Unavailable)' : ''}`}
       >
-        {selected && <span className={styles.check}>✓</span>}
+        {selected && !locked && <span className={styles.check}>✓</span>}
 
         <div className={styles.header}>
           <span className={styles.name}>{provider.name}</span>
-          <Badge variant="green">{serviceType}</Badge>
+          <Badge variant={locked ? 'muted' : 'green'}>{serviceType}</Badge>
         </div>
 
         <div className={styles.meta}>
@@ -60,13 +71,19 @@ export default function ProviderCard({
 
         <div className={styles.actions}>
           <button
-            className={[styles.approveBtn, selected ? styles.approvedBtn : ''].filter(Boolean).join(' ')}
+            className={[
+              styles.approveBtn,
+              selected && !locked ? styles.approvedBtn : '',
+              locked ? styles.lockedBtn : '',
+            ].filter(Boolean).join(' ')}
+            disabled={locked}
             onClick={(e) => {
               e.stopPropagation();
+              if (locked) return;
               onToggle?.(provider.id);
             }}
           >
-            {selected ? '✓ Approved' : 'Approve'}
+            {locked ? 'Unavailable' : (selected ? '✓ Approved' : 'Approve')}
           </button>
           <button
             className={styles.reviewsBtn}
@@ -94,3 +111,4 @@ export default function ProviderCard({
     </>
   );
 }
+
