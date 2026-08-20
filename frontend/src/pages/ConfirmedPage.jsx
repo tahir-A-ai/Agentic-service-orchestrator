@@ -9,15 +9,36 @@ import { cancelBooking } from '../api/booking';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
-  const { confirmed, reset, lastUserPrompt, addExcludedId } = useChat();
+  const { confirmed, setConfirmed, reset, lastUserPrompt, addExcludedId } = useChat();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState('Pending_Acceptance');
-  const [liveProvider, setLiveProvider] = useState(null);
+  const [liveProvider, setLiveProvider] = useState(
+    confirmed?.booked?.[0] || null
+  );
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const isNavigatingRef = useRef(false);
+  const hasCancelledRef = useRef(false);          // ← guard: prevents duplicate cancel handling
+  const showRatingModalRef = useRef(showRatingModal);
+  const liveProviderRef = useRef(liveProvider);   // ← always up-to-date without being a dep
+  const timeoutsRef = useRef([]);
+
+  useEffect(() => {
+    showRatingModalRef.current = showRatingModal;
+  }, [showRatingModal]);
+
+  // Keep liveProviderRef in sync with state (does NOT re-run the WS effect)
+  useEffect(() => {
+    liveProviderRef.current = liveProvider;
+  }, [liveProvider]);
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(t => clearTimeout(t));
+    };
+  }, []);
 
   // Initialize and redirect check
   useEffect(() => {
@@ -28,7 +49,8 @@ export default function ConfirmedPage() {
     }
   }, [confirmed, navigate]);
 
-  // WebSocket Connection
+  // WebSocket Connection — only depends on session_id (stable value)
+  // liveProvider is accessed via liveProviderRef to avoid reconnect loop
   useEffect(() => {
     if (!confirmed?.session_id) return;
 
@@ -52,31 +74,45 @@ export default function ConfirmedPage() {
           if (data.status === 'Pending_Completion') {
             setShowRatingModal(true);
           } else if (data.status === 'Completed') {
-            if (!showRatingModal && !isNavigatingRef.current) {
+            if (!showRatingModalRef.current && !isNavigatingRef.current) {
               isNavigatingRef.current = true;
               showToast('Yeh booking complete ho chuki hai.', 'info');
-              reset();
-              navigate('/chat', { replace: true });
+              setConfirmed(null);
+              navigate('/chat', { state: { jobCompleted: true }, replace: true });
             }
           } else if (data.status === 'Cancelled') {
+
+            // Guard: only handle cancellation once, no matter how many WS messages arrive
+            if (hasCancelledRef.current || isNavigatingRef.current) return;
+            hasCancelledRef.current = true;
+            isNavigatingRef.current = true;
+
             if (data.cancelled_by !== 'customer') {
-              showToast('Provider declined or cancelled the request. Searching again...', 'error');
-              setTimeout(() => {
-                isNavigatingRef.current = true;
-                const providerId = data.provider_id || confirmed?.booked?.[0]?.id;
+              showToast('Provider ne request cancel kar di. Doosra provider dhoond rahe hain...', 'info');
+              const t = setTimeout(() => {
+                // Read provider info from ref (avoids stale closure)
+                const currentProvider = liveProviderRef.current;
+                const providerId = data.provider_id || currentProvider?.id || confirmed?.booked?.[0]?.id;
+                const providerName = data.provider_name || currentProvider?.name || 'Provider';
                 if (providerId) {
                   addExcludedId(providerId);
                 }
-                reset();
-                navigate('/chat', { state: { autoFetch: lastUserPrompt }, replace: true });
-              }, 3000);
+                setConfirmed(null);
+                navigate('/chat', {
+                  state: {
+                    providerCancelled: true,
+                    providerName,
+                    providerId,
+                    autoFetch: lastUserPrompt,
+                  },
+                  replace: true,
+                });
+              }, 2000);
+              timeoutsRef.current.push(t);
             } else {
-              if (!isNavigatingRef.current) {
-                isNavigatingRef.current = true;
-                showToast('Yeh booking cancel ho chuki hai.', 'info');
-                reset();
-                navigate('/chat', { state: { customerCancelled: true }, replace: true });
-              }
+              showToast('Yeh booking cancel ho chuki hai.', 'info');
+              setConfirmed(null);
+              navigate('/chat', { state: { customerCancelled: true }, replace: true });
             }
           }
         }
@@ -88,7 +124,10 @@ export default function ConfirmedPage() {
     return () => {
       ws.close();
     };
-  }, [confirmed?.session_id, showRatingModal, lastUserPrompt, addExcludedId, reset, navigate, showToast]);
+  // ← liveProvider intentionally EXCLUDED to prevent reconnect loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmed?.session_id]);
+
 
   if (!confirmed || !liveProvider) return null;
 
@@ -106,16 +145,18 @@ export default function ConfirmedPage() {
     try {
       await cancelBooking(confirmed.session_id);
       showToast('Request cancel ho gayi. Chat par redirect ho rahe hain...', 'info');
-      setTimeout(() => {
-        reset();
+      const t = setTimeout(() => {
+        setConfirmed(null);
         navigate('/chat', { state: { customerCancelled: true }, replace: true });
       }, 1000);
+      timeoutsRef.current.push(t);
     } catch (err) {
-      showToast('Failed to cancel: ' + err.message, 'error');
+      showToast('Failed to cancel: ' + (err.message || 'Error occurred'), 'error');
       setIsCancelling(false);
       isNavigatingRef.current = false;
     }
   };
+
 
   const shortId = confirmed.session_id ? confirmed.session_id.substring(0, 8) : 'bkg-123';
 
@@ -195,11 +236,12 @@ export default function ConfirmedPage() {
             setStatus('Completed');
             showToast('Shukriya! Aapki rating submit ho gayi.', 'success');
             setTimeout(() => {
-              reset();
-              navigate('/chat', { replace: true });
+              setConfirmed(null);
+              navigate('/chat', { state: { jobCompleted: true }, replace: true });
             }, 1800);
           }}
         />
+
       </div>
     </div>
   );
