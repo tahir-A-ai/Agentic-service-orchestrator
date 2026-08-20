@@ -5,6 +5,11 @@ import { toggleAvailability } from '../../../api/provider';
 import { useToast } from '../../../context/ToastContext';
 import styles from './StatusToggle.module.css';
 
+/**
+ * Display and toggle the provider's availability status.
+ * @param {boolean} [collapsed=false] - Whether to hide the status label.
+ * @returns {JSX.Element} The availability status toggle button.
+ */
 export default function StatusToggle({ collapsed = false }) {
   const { providerProfile } = useAuth();
   const { stats, updateAvailabilityLocal } = useProviderStats();

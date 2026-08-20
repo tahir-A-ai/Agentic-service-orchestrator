@@ -2,8 +2,10 @@ import { useEffect, useRef } from 'react';
 import styles from './CancellationModal.module.css';
 
 /**
- * Modal shown to the provider when the customer cancels a job in real-time.
- * Triggered by a job_cancelled WebSocket event on the provider's persistent stream.
+ * Display a dialog notifying the provider that a customer's job was canceled.
+ * @param {string} [sessionId] - The canceled job's session identifier.
+ * @param {Function} onAcknowledge - Callback invoked when the provider acknowledges the cancellation.
+ * @returns {JSX.Element} The cancellation dialog.
  */
 export default function CancellationModal({ sessionId, onAcknowledge }) {
   const ackBtnRef = useRef(null);

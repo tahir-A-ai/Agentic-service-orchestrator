@@ -36,8 +36,16 @@ const playPing = () => {
 };
 
 /**
- * Custom hook to fetch dynamic provider jobs.
- * Accepts an optional externalRefetchKey: when it changes, triggers a refetch.
+ * Fetches and categorizes jobs for the authenticated provider.
+ * @param {number} externalRefetchKey - Value whose changes trigger a job refresh.
+ * @returns {{
+ *   allJobs: Array,
+ *   recentJobs: Array,
+ *   activeJobs: Array,
+ *   completedJobs: Array,
+ *   loading: boolean,
+ *   refetch: Function
+ * }} The provider's job lists, loading state, and refresh function.
  */
 function useProviderJobs(externalRefetchKey = 0) {
   const { providerProfile } = useAuth();
@@ -140,6 +148,9 @@ export function OverviewTab() {
   );
 }
 
+/**
+ * Display active provider jobs that require attention.
+ */
 export function ActiveJobsTab() {
   const isAuth = useRequireAuth();
   const { jobsRefetchKey } = useProviderStats();
@@ -170,6 +181,9 @@ export function ActiveJobsTab() {
   );
 }
 
+/**
+ * Display the provider's completed job history.
+ */
 export function CompletedJobsTab() {
   const isAuth = useRequireAuth();
   const { jobsRefetchKey } = useProviderStats();
@@ -199,6 +213,10 @@ export function CompletedJobsTab() {
   );
 }
 
+/**
+ * Display the provider's declined and cancelled jobs.
+ * @returns {JSX.Element|null} The declined jobs view, or `null` when the provider is unauthenticated.
+ */
 export function DeclinedJobsTab() {
   const isAuth = useRequireAuth();
   const { jobsRefetchKey } = useProviderStats();
@@ -231,6 +249,10 @@ export function DeclinedJobsTab() {
   );
 }
 
+/**
+ * Display and manage the authenticated provider's profile settings.
+ * @returns {JSX.Element|null} The profile settings interface, or `null` when authentication is unavailable.
+ */
 export function ProfileTab() {
   const { providerProfile, updateUser } = useAuth();
   const { stats, updateAvailabilityLocal } = useProviderStats();

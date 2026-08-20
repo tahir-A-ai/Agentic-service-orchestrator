@@ -3,6 +3,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { fetchProviderReviews } from '../../../api/provider';
 import styles from './ReviewsTab.module.css';
 
+/**
+ * Displays a five-star rating.
+ * @param {number} rating - The number of filled stars to display.
+ * @returns {JSX.Element} The rendered star display.
+ */
 function StarDisplay({ rating }) {
   return (
     <span className={styles.stars} aria-label={`${rating} out of 5 stars`}>
@@ -16,6 +21,11 @@ function StarDisplay({ rating }) {
   );
 }
 
+/**
+ * Displays a customer's rating, review details, and formatted creation date.
+ * Long review text can be expanded or collapsed.
+ * @param {Object} review - The review data to display.
+ */
 function ReviewCard({ review }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = review.review_text && review.review_text.length > 200;
@@ -67,6 +77,9 @@ function ReviewCard({ review }) {
   );
 }
 
+/**
+ * Displays paginated customer reviews for the authenticated provider.
+ */
 export default function ReviewsTab() {
   const { providerProfile } = useAuth();
   const [reviews, setReviews] = useState([]);

@@ -4,10 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import styles from './CustomerRoleNoticeModal.module.css';
 
 /**
- * Modal shown when a user logged in as a customer attempts to access provider registration.
+ * Displays a notice for customer accounts attempting to access provider registration.
  *
- * @param {boolean} isOpen
- * @param {function} onClose / onAcknowledge
+ * @param {boolean} isOpen - Whether the notice modal is visible.
+ * @param {Function} onClose - Closes the modal.
  */
 export default function CustomerRoleNoticeModal({ isOpen, onClose }) {
   const { logout } = useAuth();

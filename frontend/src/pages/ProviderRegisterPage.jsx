@@ -6,6 +6,9 @@ import RegistrationWizard from '../components/provider/Registration/Registration
 import CustomerRoleNoticeModal from '../components/auth/CustomerRoleNoticeModal';
 import styles from './ProviderRegisterPage.module.css';
 
+/**
+ * Renders the provider registration page and handles role-based navigation for authenticated users.
+ */
 export default function ProviderRegisterPage() {
   const { user } = useAuth();
   const navigate = useNavigate();

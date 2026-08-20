@@ -30,11 +30,14 @@ def get_public_stats(db: Session) -> dict:
 
 def get_provider_stats(db: Session, provider_id: int) -> dict:
     """
-    Returns dashboard metrics for a specific provider:
-      - active_jobs:    pending or in-progress booking sessions
-      - completed_jobs: completed booking sessions
-      - declined_jobs:  sessions where this provider previously declined
-      - rating:         current provider rating
+    Provide dashboard metrics for a provider.
+    
+    Parameters:
+    	provider_id (int): The provider identifier.
+    
+    Returns:
+    	dict: Provider job counts, rounded rating, service type, availability, and status.
+    	      Returns zeroed job counts and a rating of 0.0 when the provider is not found.
     """
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
     if not provider:

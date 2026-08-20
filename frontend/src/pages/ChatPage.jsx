@@ -9,6 +9,9 @@ import useChatSync from '../hooks/useChatSync';
 import { useChat, newId } from '../context/ChatContext';
 import styles from './ChatPage.module.css';
 
+/**
+ * Renders the chat interface and manages provider searches, booking confirmation, conversation restoration, and navigation state.
+ */
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [isModalOpen, setIsModalOpen] = useState(false);

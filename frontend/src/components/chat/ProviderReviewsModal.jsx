@@ -3,13 +3,13 @@ import { fetchProviderReviews } from '../../api/provider';
 import styles from './ProviderReviewsModal.module.css';
 
 /**
- * Modal showing paginated reviews for a provider.
- * Triggered from ProviderCard "Recent Reviews" button.
+ * Display a paginated list of reviews for a provider in a modal dialog.
  *
- * @param {number} providerId
- * @param {string} providerName
- * @param {number} providerRating - Average rating for header display
- * @param {function} onClose
+ * @param {number} providerId - Identifier of the provider whose reviews are displayed.
+ * @param {string} providerName - Provider name shown in the modal header.
+ * @param {number} providerRating - Average provider rating shown in the modal header.
+ * @param {Function} onClose - Callback invoked when the modal is closed.
+ * @returns {JSX.Element} The provider reviews modal.
  */
 export default function ProviderReviewsModal({ providerId, providerName, providerRating, onClose }) {
   const [reviews, setReviews] = useState([]);

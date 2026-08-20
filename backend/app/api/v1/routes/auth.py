@@ -28,7 +28,13 @@ async def signup(request: Request, payload: SignupRequest):
 @limiter.limit("10/minute")
 async def login(request: Request, payload: LoginRequest, response: Response) -> AuthResponse:
     """
-    Login using email/password.
+    Authenticate a user with email and password and establish an access-token cookie.
+    
+    Parameters:
+        payload (LoginRequest): The user's login credentials.
+    
+    Returns:
+        AuthResponse: The authentication response containing the access token.
     """
     with get_db_session() as db:
         res = login_user(db, payload.model_dump())
@@ -49,7 +55,14 @@ async def login(request: Request, payload: LoginRequest, response: Response) -> 
     summary="Get current logged in user details",
 )
 async def get_me(current_user: dict = Depends(get_current_user_from_credentials)) -> UserMeResponse:
-    """Validate token and fetch current user profile."""
+    """Retrieve the authenticated user's profile.
+    
+    Parameters:
+    	current_user (dict): Authenticated user information derived from the request credentials.
+    
+    Returns:
+    	UserMeResponse: The authenticated user's profile.
+    """
     with get_db_session() as db:
         res = get_current_user_profile(db, current_user)
         return UserMeResponse(**res)
@@ -57,7 +70,10 @@ async def get_me(current_user: dict = Depends(get_current_user_from_credentials)
 @router.post("/logout", summary="Logout user")
 async def logout(response: Response):
     """
-    Clears the HttpOnly access token cookie.
+    End the current session by removing the access token cookie.
+    
+    Returns:
+        dict: A confirmation message indicating successful logout.
     """
     response.delete_cookie("access_token", samesite="lax")
     return {"message": "Logged out successfully"}

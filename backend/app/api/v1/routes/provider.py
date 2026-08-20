@@ -43,6 +43,17 @@ async def change_job_status(
     request: UpdateJobStatusRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    """
+    Update a provider job's status and notify the associated clients and provider dashboard.
+    
+    Parameters:
+        provider_id (int): Identifier of the provider authorized to update the job.
+        session_id (str): Identifier of the job session.
+        request (UpdateJobStatusRequest): Requested job status.
+    
+    Returns:
+        dict: A response containing the resulting status update message.
+    """
     _verify_provider_access(current_user, provider_id)
     with get_db_session() as db:
         res = update_job_status(db, provider_id, session_id, request.status)
@@ -82,6 +93,14 @@ async def toggle_availability(
     request: UpdateAvailabilityRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ) -> ProviderAvailabilityResponse:
+    """Update a provider's availability and broadcast the refreshed provider statistics.
+    
+    Parameters:
+    	provider_id (int): The provider whose availability is being updated.
+    	request (UpdateAvailabilityRequest): Contains the desired availability state.
+    
+    Returns:
+    	ProviderAvailabilityResponse: The updated provider availability."""
     _verify_provider_access(current_user, provider_id)
     with get_db_session() as db:
         res = update_provider_availability(db, provider_id, request.is_available)
@@ -119,6 +138,15 @@ async def upload_photo(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    """Upload a provider photo and update the provider profile with its URL.
+    
+    Parameters:
+        provider_id (int): Identifier of the provider whose photo is being uploaded.
+        file (UploadFile): Image file to upload.
+    
+    Returns:
+        dict: The uploaded photo URL and a success message.
+    """
     _verify_provider_access(current_user, provider_id)
     
     # Generate unique filename
@@ -147,7 +175,17 @@ async def get_provider_reviews(
     page: int = 1,
     limit: int = 10,
 ):
-    """Returns paginated customer reviews for a provider. No auth required — customers can read before booking."""
+    """
+    Retrieve completed customer reviews for a provider with pagination.
+    
+    Parameters:
+        provider_id (int): The provider whose reviews are requested.
+        page (int): The 1-based page number.
+        limit (int): The maximum number of reviews per page, capped at 20.
+    
+    Returns:
+        ProviderReviewsResponse: Paginated reviews, the total review count, and whether more reviews are available.
+    """
     from app.models import BookingSession, User
     from sqlalchemy import func
 

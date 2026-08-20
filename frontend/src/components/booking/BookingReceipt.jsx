@@ -2,9 +2,9 @@ import Badge from '../ui/Badge';
 import styles from './BookingReceipt.module.css';
 
 /**
- * Receipt card for a confirmed provider booking.
+ * Render a receipt card for a confirmed provider booking.
  *
- * @param {Object} provider
+ * @param {Object} provider - The provider whose booking details are displayed.
  */
 export default function BookingReceipt({ provider }) {
   // Mock ETA for demo

@@ -4,14 +4,7 @@ import { syncConversation, beaconSync } from '../api/chat';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * useChatSync — transparent background sync hook.
- *
- * Mount this once inside ChatPage. It watches isThinking and fires a DB
- * sync whenever the agent finishes responding (isThinking: true → false).
- * Also registers a beforeunload listener that uses sendBeacon so partial
- * state is preserved even if the user closes the tab mid-conversation.
- *
- * This hook produces ZERO UI — it's purely a side-effect.
+ * Synchronizes the current conversation after the agent finishes responding and when the page unloads.
  */
 export default function useChatSync() {
   const { messages, sessionId, isThinking } = useChat();
@@ -43,6 +36,9 @@ export default function useChatSync() {
 
   // ── Trigger: beforeunload (tab close / navigation away)
   useEffect(() => {
+    /**
+     * Synchronizes the current conversation when the page is unloading.
+     */
     function handleUnload() {
       const sid = sessionIdRef.current;
       const msgs = messagesRef.current;
@@ -56,8 +52,9 @@ export default function useChatSync() {
 }
 
 /**
- * Derive a conversation title from the message array.
- * Uses the first user message longer than 5 characters.
+ * Derives a conversation title from user messages.
+ * @param {Array<Object>} messages - The conversation messages.
+ * @return {string} The first qualifying user message truncated to 100 characters, the first user message as a fallback, or "New Chat" when no user messages exist.
  */
 export function deriveTitle(messages) {
   for (const msg of messages) {

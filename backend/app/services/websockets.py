@@ -20,6 +20,12 @@ class ConnectionManager:
                 del self.active_connections[job_id]
 
     async def broadcast_to_job(self, job_id: str, message: dict):
+        """Send a JSON message to all WebSocket connections associated with a job.
+        
+        Parameters:
+            job_id (str): Identifier of the job whose connections receive the message.
+            message (dict): JSON-serializable message payload.
+        """
         if job_id in self.active_connections:
             for connection in list(self.active_connections[job_id]):
                 try:
@@ -37,12 +43,24 @@ class ProviderConnectionManager:
         self.active_connections: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, provider_id: int):
+        """Accept and register a WebSocket connection for a provider.
+        
+        Parameters:
+            websocket (WebSocket): The connection to register.
+            provider_id (int): The provider whose connections include this WebSocket.
+        """
         await websocket.accept()
         if provider_id not in self.active_connections:
             self.active_connections[provider_id] = []
         self.active_connections[provider_id].append(websocket)
 
     def disconnect(self, websocket: WebSocket, provider_id: int):
+        """Remove a provider's WebSocket connection from the active connection registry.
+        
+        Parameters:
+        	websocket (WebSocket): The connection to remove.
+        	provider_id (int): The provider whose connection registry is updated.
+        """
         if provider_id in self.active_connections:
             if websocket in self.active_connections[provider_id]:
                 self.active_connections[provider_id].remove(websocket)

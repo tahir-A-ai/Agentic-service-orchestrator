@@ -7,9 +7,12 @@ import ConfirmButton from '../booking/ConfirmButton';
 import styles from './ChatWindow.module.css';
 
 /**
- * Main chat window.
+ * Render the main chat interface.
  *
- * @param {function} onConfirm — Phase 2 trigger
+ * @param {function} onConfirm - Handles confirmation of approved candidates.
+ * @param {function} onToggleSidebar - Toggles the sidebar visibility.
+ * @param {function} onSend - Sends a selected example prompt.
+ * @returns {JSX.Element} The chat window interface.
  */
 export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
   const { messages, isThinking, approvedIds, toggleApproved } = useChat();

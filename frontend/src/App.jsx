@@ -12,6 +12,9 @@ import { OverviewTab, ActiveJobsTab, CompletedJobsTab, DeclinedJobsTab, ProfileT
 import ReviewsTab from './components/provider/Dashboard/ReviewsTab';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+/**
+ * Configures application routing and provides toast, authentication, and chat contexts.
+ */
 function App() {
   return (
     <BrowserRouter>

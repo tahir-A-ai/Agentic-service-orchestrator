@@ -1,6 +1,10 @@
 import { useProviderStats } from '../../../context/ProviderStatsContext';
 import styles from './StatsRow.module.css';
 
+/**
+ * Display provider job statistics and rating in a four-card grid.
+ * @returns {JSX.Element} The statistics grid.
+ */
 export default function StatsRow() {
   const { stats, loading } = useProviderStats();
 

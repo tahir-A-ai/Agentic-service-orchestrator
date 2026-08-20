@@ -25,8 +25,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def init_db() -> None:
     """
-    Create all tables if they do not exist and backfill defaults.
-    Called once during the FastAPI lifespan startup event.
+    Create missing database tables and mark providers with undefined availability as available.
     """
     Base.metadata.create_all(bind=engine)
     with get_db_session() as session:
@@ -78,13 +77,19 @@ def query_active_providers(
     excluded_ids: list[int] | None = None,
 ) -> tuple[list[dict], int]:
     """
-    Find Active providers matching the given service_type that are within
-    the user's coordinates, sorted by distance (nearest first), then
-    by rating (highest first).
-
-    If radius_km is None, the default from config (settings.PROVIDER_SEARCH_RADIUS_KM)
-    is used.  Each returned dict includes a 'distance_km' field.
-    Returns (results, excluded_count).
+    Find active and available providers for a service within a search radius.
+    
+    Parameters:
+        service_type (str): Service type used to match providers.
+        user_lat (float): User's latitude.
+        user_lon (float): User's longitude.
+        radius_km (float | None): Search radius in kilometers. Uses the configured
+            default when omitted.
+        excluded_ids (list[int] | None): Provider IDs to exclude from the results.
+    
+    Returns:
+        tuple[list[dict], int]: Provider records sorted by distance and rating, and
+        the number of matching providers excluded.
     """
     if radius_km is None:
         radius_km = settings.PROVIDER_SEARCH_RADIUS_KM
@@ -135,15 +140,15 @@ def query_all_active_providers(
     excluded_ids: list[int] | None = None,
 ) -> tuple[list[dict], int]:
     """
-    Return ALL active providers matching service_type across the entire city.
-    No radius filtering — every active provider is included.
-
-    If user_lat/user_lon are provided, each result includes a 'distance_km'
-    field and results are sorted by distance first, then rating.
-    Otherwise results are sorted by rating only.
-
-    Used as a fallback when no providers are found in the user's requested sector.
-    Returns (results, excluded_count).
+    Retrieve all available providers for a service type without applying a radius filter.
+    
+    Parameters:
+        user_lat (float | None): Latitude used as the distance calculation origin.
+        user_lon (float | None): Longitude used as the distance calculation origin.
+        excluded_ids (list[int] | None): Provider IDs to omit from the results.
+    
+    Returns:
+        tuple[list[dict], int]: The sorted provider records and the number of excluded providers.
     """
     with get_db_session() as session:
         providers = (
@@ -227,15 +232,10 @@ def query_busy_providers(
 
 def commit_booking(provider_id: int) -> bool:
     """
-    Atomically mark a provider as 'Busy' ONLY if they are still 'Active' and 'is_available'.
-
-    Uses a single conditional UPDATE instead of a read-then-write pattern.
-    This is the only safe approach under SQLite's concurrency model — two
-    simultaneous requests cannot both succeed for the same provider_id.
-
+    Claims an active, available provider for a booking.
+    
     Returns:
-        True  — booking claimed successfully (rowcount == 1).
-        False — provider was already taken by a concurrent request or went offline (rowcount == 0).
+        bool: `True` if the provider was claimed, `False` if the provider is unavailable or not active.
     """
     with get_db_session() as session:
         rows_affected = (

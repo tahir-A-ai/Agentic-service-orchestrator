@@ -17,7 +17,10 @@ export function useChat() {
   return ctx;
 }
 
-/** Generate a short random ID for messages. */
+/**
+ * Generates a short identifier for a message.
+ * @returns {string} A randomly generated base-36 identifier.
+ */
 export function newId() {
   return Math.random().toString(36).slice(2, 11);
 }
@@ -28,9 +31,17 @@ export function newId() {
 
 const ACTIVE_CHAT_KEY = 'karigar_active_chat_id';
 
+/**
+ * Retrieves the identifier of the active chat session.
+ * @returns {string|null} The active chat ID, or `null` when none is stored or storage access fails.
+ */
 function getActiveChatId() {
   try { return localStorage.getItem(ACTIVE_CHAT_KEY); } catch { return null; }
 }
+/**
+ * Persists or clears the active chat identifier.
+ * @param {string} id - The chat identifier to store, or an empty value to clear it.
+ */
 function setActiveChatId(id) {
   try {
     if (id) localStorage.setItem(ACTIVE_CHAT_KEY, id);
@@ -38,7 +49,10 @@ function setActiveChatId(id) {
   } catch { /* quota — skip */ }
 }
 
-// ── Provider
+/**
+ * Provides chat state and actions to descendant components through React context.
+ * @returns {JSX.Element} The chat context provider.
+ */
 export function ChatProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionIdState] = useState(null);

@@ -61,6 +61,16 @@ async def book_service(request: ServiceRequest, current_user: dict = Depends(get
     ),
 )
 async def confirm_booking_route(request: ConfirmBookingRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> ConfirmBookingResponse:
+    """
+    Confirm approved providers for a booking session and notify newly assigned providers.
+    
+    Parameters:
+    	request (ConfirmBookingRequest): Booking session details, approved provider IDs, address, and customer notes.
+    	current_user (dict): Authenticated customer credentials.
+    
+    Returns:
+    	ConfirmBookingResponse: Booking confirmation details, including successfully booked and failed providers.
+    """
     result = await confirm_booking(
         request.session_id,
         request.approved_provider_ids,
@@ -96,6 +106,15 @@ async def confirm_completion_route(
     request: CustomerConfirmRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    """
+    Confirm a completed booking and notify connected customer and provider clients.
+    
+    Parameters:
+    	request (CustomerConfirmRequest): Completion details, including the session ID, rating, and review text
+    
+    Returns:
+    	CustomerConfirmResponse: Confirmation result for the completed booking
+    """
     confirmed_provider_id = None
     with get_db_session() as db:
         result = confirm_completion(db, request.session_id, request.rating, request.review_text)
@@ -133,6 +152,20 @@ async def cancel_booking_route(
     request: CancelBookingRequest,
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
+    """
+    Cancel a customer's booking and notify connected clients of the cancellation.
+    
+    Parameters:
+        request (CancelBookingRequest): Contains the booking session identifier.
+        current_user (dict): Authenticated customer credentials.
+    
+    Returns:
+        dict: A success message confirming that the booking was cancelled.
+    
+    Raises:
+        HTTPException: If the booking is missing, cannot be cancelled in its current
+            state, or does not belong to the authenticated customer.
+    """
     confirmed_provider_id = None
     with get_db_session() as db:
         from app.models import BookingSession, Provider
@@ -211,6 +244,13 @@ async def cancel_booking_route(
 
 @router.websocket("/stream/booking/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
+    """
+    Maintain an authenticated WebSocket connection for live booking status updates.
+    
+    Parameters:
+    	websocket (WebSocket): The client's WebSocket connection.
+    	job_id (str): Identifier of the booking whose status should be streamed.
+    """
     token = websocket.cookies.get("access_token")
     if not token:
         await websocket.close(code=1008)

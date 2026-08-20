@@ -3,6 +3,11 @@ import { useAuth } from './AuthContext';
 
 const ProviderStatsCtx = createContext(null);
 
+/**
+ * Accesses provider statistics and related actions from the surrounding provider.
+ * @return {*} The provider statistics context value.
+ * @throws {Error} If called outside a `ProviderStatsProvider`.
+ */
 export function useProviderStats() {
   const ctx = useContext(ProviderStatsCtx);
   if (!ctx) throw new Error('useProviderStats must be used inside ProviderStatsProvider');
@@ -10,11 +15,8 @@ export function useProviderStats() {
 }
 
 /**
- * Owns a single persistent WebSocket connection to /api/v1/stream/provider/{id}.
- * The backend pushes:
- *   - stats_update  — on connect and on booking events (badge counter)
- *   - job_cancelled — when a customer cancels a confirmed job (triggers modal)
- * Provides: { stats, loading, cancellationEvent, clearCancellationEvent, jobsRefetchKey }
+ * Provides live provider statistics and job event state to descendant components.
+ * @param {React.ReactNode} children - The components that consume provider statistics.
  */
 export function ProviderStatsProvider({ children }) {
   const { providerProfile } = useAuth();

@@ -10,6 +10,11 @@ export function useAuth() {
   return ctx;
 }
 
+/**
+ * Provides authentication state, user actions, provider information, and authentication modal controls to descendant components.
+ * @param {Object} props - Provider properties.
+ * @param {React.ReactNode} props.children - Components that consume the authentication context.
+ */
 export function AuthProvider({ children }) {
   const { showToast } = useToast();
   const [user, setUser] = useState(() => {

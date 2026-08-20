@@ -8,6 +8,9 @@ import { useToast } from '../context/ToastContext';
 import { cancelBooking } from '../api/booking';
 import styles from './ConfirmedPage.module.css';
 
+/**
+ * Displays the current status and provider details for a confirmed booking.
+ */
 export default function ConfirmedPage() {
   const { confirmed, reset, lastUserPrompt, addExcludedId } = useChat();
   const { showToast } = useToast();

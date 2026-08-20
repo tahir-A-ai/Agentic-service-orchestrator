@@ -118,8 +118,17 @@ def signup_user(db: Session, payload: dict) -> User:
 
 def login_user(db: Session, payload: dict) -> dict:
     """
-    Authenticate user by email and password.
-    Returns dict with user fields and JWT access token.
+    Authenticate a user and provide an access token with profile details.
+    
+    Parameters:
+    	db (Session): Database session used to retrieve the user and provider profile.
+    	payload (dict): Credentials containing the user's email and password.
+    
+    Returns:
+    	dict: Access token, expiration duration, user details, and optional provider profile information.
+    
+    Raises:
+    	HTTPException: If the email or password is invalid.
     """
     user = db.query(User).filter(
         User.email == payload["email"]
@@ -161,7 +170,19 @@ def login_user(db: Session, payload: dict) -> dict:
 
 
 def get_current_user_profile(db: Session, user_payload: dict) -> dict:
-    """Fetch current user and provider profile from DB using validated token payload."""
+    """
+    Retrieve the authenticated user's profile and associated provider details.
+    
+    Parameters:
+        db (Session): Database session used to retrieve the user and provider records.
+        user_payload (dict): Validated token payload containing the user's identifier.
+    
+    Returns:
+        dict: Combined user profile and provider information.
+    
+    Raises:
+        HTTPException: If the user associated with the token cannot be found.
+    """
     user_id = user_payload.get("user_id")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

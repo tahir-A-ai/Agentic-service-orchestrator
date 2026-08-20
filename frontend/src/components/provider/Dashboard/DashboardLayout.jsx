@@ -8,6 +8,10 @@ import Badge from '../../ui/Badge';
 import CancellationModal from './CancellationModal';
 import styles from './DashboardLayout.module.css';
 
+/**
+ * Provides provider statistics context to the dashboard layout.
+ * @return {JSX.Element} The dashboard layout with provider statistics context.
+ */
 export default function DashboardLayout() {
   return (
     <ProviderStatsProvider>
@@ -16,6 +20,9 @@ export default function DashboardLayout() {
   );
 }
 
+/**
+ * Render the provider dashboard layout with navigation, profile controls, and routed content.
+ */
 function DashboardLayoutInner() {
   const { providerProfile, logout } = useAuth();
   const navigate = useNavigate();

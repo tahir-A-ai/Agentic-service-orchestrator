@@ -5,6 +5,10 @@ import AuthModal from '../auth/AuthModal';
 import CustomerRoleNoticeModal from '../auth/CustomerRoleNoticeModal';
 import styles from './Navbar.module.css';
 
+/**
+ * Render a user profile icon.
+ * @return {JSX.Element} The user profile SVG icon.
+ */
 function UserIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -27,6 +31,9 @@ function DashboardIcon() {
   );
 }
 
+/**
+ * Renders the site navigation bar with responsive navigation, authentication actions, and role-based provider access.
+ */
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

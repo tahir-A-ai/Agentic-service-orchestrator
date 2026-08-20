@@ -1,6 +1,12 @@
 import React from 'react';
 import styles from './LiveProviderCard.module.css';
 
+/**
+ * Displays a service provider card with status, ETA, contact details, and provider information.
+ * @param {Object} provider - Provider details displayed in the card.
+ * @param {string} status - Current service request status.
+ * @returns {JSX.Element} The rendered provider card.
+ */
 export default function LiveProviderCard({ provider, status }) {
   const isWaiting = status === 'Pending_Acceptance';
   const isInProgress = status === 'In_Progress';

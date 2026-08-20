@@ -76,10 +76,15 @@ async def fetch_service_types() -> ServiceTypesResponse:
 @router.websocket("/stream/provider/{provider_id}")
 async def provider_stream(websocket: WebSocket, provider_id: int):
     """
-    Persistent per-provider WebSocket for real-time dashboard stat pushes.
-
-    The frontend connects once on login and receives a 'stats_update' message
-    whenever a booking event changes the provider's metrics. No polling needed.
+    Maintain an authenticated WebSocket connection for a provider's real-time statistics.
+    
+    The connection is accepted only when the access token identifies the requested provider.
+    Unauthorized connections are closed with code 1008. The current statistics are sent
+    initially, and subsequent updates may be pushed through the provider connection manager.
+    
+    Parameters:
+    	websocket (WebSocket): The provider's WebSocket connection.
+    	provider_id (int): The provider whose statistics are streamed.
     """
     token = websocket.cookies.get("access_token")
     if not token:

@@ -6,6 +6,16 @@ from sqlalchemy.orm import Session
 from app.models import Provider, BookingSession, SessionDecline
 
 def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
+    """
+    Retrieve a provider's booking sessions across active, completed, and cancelled workflow states.
+    
+    Parameters:
+        provider_id (int): Identifier of the provider whose sessions are retrieved.
+    
+    Returns:
+        list[dict]: Newest-first job records containing session status, creation time,
+            service type, address, customer notes, and cancellation information.
+    """
     sessions = (
         db.query(BookingSession)
         .filter(BookingSession.confirmed_provider_id == provider_id)
@@ -32,6 +42,20 @@ def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
 
 
 def update_job_status(db: Session, provider_id: int, session_id: str, status: str) -> dict:
+    """
+    Update a provider's booking status and related provider state.
+    
+    Parameters:
+        provider_id (int): Identifier of the provider assigned to the booking.
+        session_id (str): Identifier of the booking session.
+        status (str): Requested status for the booking.
+    
+    Raises:
+        HTTPException: If the booking does not belong to the provider or cannot be found.
+    
+    Returns:
+        dict: Updated status, provider name, and service type.
+    """
     session = (
         db.query(BookingSession)
         .filter(BookingSession.id == session_id, BookingSession.confirmed_provider_id == provider_id)

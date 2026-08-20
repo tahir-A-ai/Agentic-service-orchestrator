@@ -2,7 +2,15 @@
 
 
 def build_system_prompt(service_entries: list[dict]) -> str:
-    """Build the ReAct agent system prompt dynamically from active service types."""
+    """
+    Build the ReAct agent system prompt using the active service entries.
+    
+    Parameters:
+    	service_entries (list[dict]): Active service definitions containing labels and optional comma-separated aliases.
+    
+    Returns:
+    	str: A formatted system prompt with service labels, alias mappings, and booking-assistant instructions.
+    """
     service_list = "\n".join(f'  - "{e["label"]}"' for e in service_entries)
     active_services_str = ", ".join(e["label"] for e in service_entries)
 

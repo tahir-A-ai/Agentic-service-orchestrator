@@ -33,16 +33,27 @@ class ChatConversation(Base):
 
 
     def get_messages(self) -> list:
+        """Return the conversation's stored messages as a list.
+        
+        Returns:
+        	list: The decoded messages, or an empty list when the stored value is invalid or not a string.
+        """
         try:
             return json.loads(self.messages)
         except (json.JSONDecodeError, TypeError):
             return []
 
     def set_messages(self, msgs: list) -> None:
-        """Store messages, silently capping at MAX_MESSAGES (keeps newest)."""
+        """
+        Store the newest messages as a JSON-encoded string.
+        
+        Parameters:
+            msgs (list): Messages to store; only the newest 100 are retained.
+        """
         if len(msgs) > MAX_MESSAGES:
             msgs = msgs[-MAX_MESSAGES:]
         self.messages = json.dumps(msgs, ensure_ascii=False)
 
     def __repr__(self) -> str:
+        """Return a concise representation containing the conversation and customer IDs."""
         return f"<ChatConversation(id='{self.id}', customer_id={self.customer_id})>"

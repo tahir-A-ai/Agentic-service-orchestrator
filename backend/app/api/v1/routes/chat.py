@@ -24,7 +24,15 @@ RETENTION_DAYS = 90
 
 
 def _derive_title(messages: list[dict]) -> str:
-    """Extract the first user message > 5 chars as the conversation title."""
+    """
+    Derive a conversation title from its user messages.
+    
+    Parameters:
+        messages (list[dict]): Conversation messages to search for user-authored content.
+    
+    Returns:
+        str: The first trimmed user message longer than five characters, limited to 100 characters; otherwise, the first user message or "New Chat".
+    """
     for msg in messages:
         if msg.get("role") == "user":
             content = (msg.get("content") or "").strip()
@@ -43,7 +51,16 @@ async def list_conversations(
     limit: int = Query(30, ge=1, le=100),
     current_user: dict = Depends(get_current_user_from_credentials),
 ):
-    """Return paginated sidebar entries — lightweight (no messages payload)."""
+    """
+    List recently updated conversations for the authenticated customer.
+    
+    Parameters:
+        page (int): One-based page number.
+        limit (int): Maximum number of conversations to include.
+    
+    Returns:
+        ConversationListResponse: Lightweight conversation entries with pagination metadata.
+    """
     customer_id = current_user.get("user_id")
     cutoff = datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)
 
@@ -80,7 +97,14 @@ async def get_conversation(
     conversation_id: str,
     current_user: dict = Depends(get_current_user_from_credentials),
 ):
-    """Return the full message array for a single conversation (lazy loaded)."""
+    """Retrieve the complete message history and metadata for an authenticated user's conversation.
+    
+    Parameters:
+        conversation_id (str): Identifier of the conversation to retrieve.
+    
+    Returns:
+        ConversationDetail: The conversation's title, messages, booking session identifier, and timestamps.
+    """
     customer_id = current_user.get("user_id")
 
     with get_db_session() as db:
@@ -114,12 +138,15 @@ async def sync_conversation(
     payload: ConversationSyncRequest,
     current_user: dict = Depends(get_current_user_from_credentials),
 ):
-    """Upsert the full message array for a conversation.
-
-    Called by the frontend after the agent finishes responding (isThinking → false),
-    on page/tab close (sendBeacon), and before a hard reset.
-    Creates the row if it doesn't exist; updates it if it does.
-    Messages are capped at 100 (oldest silently truncated by the model helper).
+    """
+    Create or update a conversation with its messages and optional metadata.
+    
+    Parameters:
+    	conversation_id (str): Identifier of the conversation to synchronize.
+    	payload (ConversationSyncRequest): Conversation messages, title, and optional booking session identifier.
+    
+    Returns:
+    	dict: A dictionary containing `{"ok": True}` after the conversation is synchronized.
     """
     customer_id = current_user.get("user_id")
     now = datetime.now(timezone.utc)
@@ -168,7 +195,18 @@ async def delete_conversation(
     conversation_id: str,
     current_user: dict = Depends(get_current_user_from_credentials),
 ):
-    """Permanently delete a conversation (user-initiated)."""
+    """
+    Permanently deletes an authenticated user's conversation and its associated AI session context.
+    
+    Parameters:
+        conversation_id (str): Identifier of the conversation to delete.
+    
+    Raises:
+        HTTPException: If the conversation does not exist or is not owned by the user.
+    
+    Returns:
+        dict: Acknowledgment with ``ok`` set to ``True``.
+    """
     customer_id = current_user.get("user_id")
 
     with get_db_session() as db:

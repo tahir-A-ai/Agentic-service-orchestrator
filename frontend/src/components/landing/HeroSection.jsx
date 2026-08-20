@@ -7,6 +7,10 @@ import { getIconComponent } from '../../constants/serviceIcons';
 import CustomerRoleNoticeModal from '../auth/CustomerRoleNoticeModal';
 import styles from './HeroSection.module.css';
 
+/**
+ * Render the landing-page hero section with service options, platform statistics, and role-based actions.
+ * @returns {JSX.Element} The hero section markup.
+ */
 export default function HeroSection() {
   const { user } = useAuth();
   const { showToast } = useToast();

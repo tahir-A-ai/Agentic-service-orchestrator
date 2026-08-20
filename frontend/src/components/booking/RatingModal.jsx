@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { confirmCompletion } from '../../api/booking';
 import styles from './RatingModal.module.css';
 
+/**
+ * Provides a modal for rating a completed session and optionally writing a review.
+ * @param {boolean} isOpen - Whether the modal is displayed.
+ * @param {string} sessionId - Identifier of the completed session.
+ * @param {string} providerName - Name of the provider shown in the completion message.
+ * @param {Function} onComplete - Callback invoked with the completion response after submission.
+ * @return {JSX.Element|null} The rating modal, or `null` when it is closed.
+ */
 export default function RatingModal({ isOpen, sessionId, providerName, onComplete }) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);

@@ -9,7 +9,20 @@ from app.models import BookingSession, Provider
 
 
 def confirm_completion(db: Session, session_id: str, rating: int, review_text: str | None = None) -> dict:
-    """Customer confirms the job is done and submits a star rating."""
+    """
+    Finalize a booking session and submit the customer's rating and optional review.
+    
+    Parameters:
+    	session_id (str): Identifier of the booking session to complete.
+    	rating (int): Customer's rating for the completed job.
+    	review_text (str | None): Optional written review of the completed job.
+    
+    Returns:
+    	dict: A success message and the provider's updated average rating.
+    
+    Raises:
+    	HTTPException: If the booking session or provider cannot be found, or if the session is not pending completion.
+    """
     session = db.query(BookingSession).filter(BookingSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Booking session not found.")

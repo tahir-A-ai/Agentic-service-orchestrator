@@ -5,6 +5,10 @@ import { useChat } from '../../context/ChatContext';
 import { listConversations, deleteConversation } from '../../api/chat';
 import styles from './Sidebar.module.css';
 
+/**
+ * Renders a trash-can icon.
+ * @return {JSX.Element} The trash-can SVG element.
+ */
 function TrashIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -16,6 +20,11 @@ function TrashIcon() {
   );
 }
 
+/**
+ * Formats a timestamp as a localized relative time label.
+ * @param {string} dateStr - The timestamp to format, interpreted as UTC when no timezone suffix is provided.
+ * @returns {string} A relative time label in Urdu or a formatted Pakistan date.
+ */
 function relativeTime(dateStr) {
   // Backend stores UTC datetimes without a 'Z' suffix.
   // Without it, new Date() treats the string as local time — append 'Z' to force UTC parsing.
@@ -34,7 +43,10 @@ function relativeTime(dateStr) {
 
 
 /**
- * Chat sidebar — Recent Chats list + New Chat button.
+ * Render a responsive sidebar for creating, browsing, selecting, and deleting chats.
+ * @param {boolean} isOpen - Whether the sidebar is open on mobile screens.
+ * @param {Function} [onClose] - Callback invoked when the mobile sidebar should close.
+ * @returns {JSX.Element} The chat sidebar interface.
  */
 export default function Sidebar({ isOpen, onClose }) {
   const { messages, sessionId, hardReset, reset, loadConversation } = useChat();

@@ -4,12 +4,12 @@ import ProviderReviewsModal from './ProviderReviewsModal';
 import styles from './ProviderCard.module.css';
 
 /**
- * Provider candidate card shown in chat after Phase 1.
+ * Display a selectable service-provider candidate with rating details and access to recent reviews.
  *
- * @param {{ id, name, rating, distance_km, location, status }} provider
- * @param {string} serviceType
- * @param {boolean} selected
- * @param {function} onToggle
+ * @param {{ id, name, rating, distance_km, location, status }} provider - The provider's identity and displayed service details.
+ * @param {string} serviceType - The type of service provided.
+ * @param {boolean} selected - Whether the provider is currently selected.
+ * @param {function} onToggle - Callback invoked with the provider ID when selection is toggled.
  */
 export default function ProviderCard({
   provider,

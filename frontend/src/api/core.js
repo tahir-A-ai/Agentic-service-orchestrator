@@ -18,6 +18,14 @@ async function withTimeout(promise, ms) {
   ]);
 }
 
+/**
+ * Sends an API request and returns its parsed response.
+ * @param {string} method - The HTTP method.
+ * @param {string} path - The API endpoint path.
+ * @param {Object|FormData} [body] - The request payload.
+ * @return {Promise<* >} The parsed response body.
+ * @throws {ApiError} If the response has a non-successful HTTP status.
+ */
 export async function request(method, path, body) {
   const headers = {};
   const opts = { method, headers, credentials: 'include' };

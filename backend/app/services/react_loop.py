@@ -177,12 +177,9 @@ async def _update_intent_state(agent, config, messages):
 
 async def clear_session_checkpoint(session_id: str) -> None:
     """
-    Delete the LangGraph thread checkpoint for a cancelled session.
-
-    When a customer cancels a booking, their old session's LangGraph state
-    must be wiped from the SQLite checkpointer. Otherwise, the next fresh
-    request (which sends session_id=None and gets a new UUID) may cause
-    a SQLite lock conflict because the old checkpointer state is still open.
+    Delete the LangGraph checkpoint associated with a cancelled session.
+    
+    Failures are recorded in the audit log without being raised.
     """
     try:
         async with AsyncSqliteSaver.from_conn_string(str(settings.DB_PATH)) as checkpointer:
@@ -208,18 +205,17 @@ async def run_find_providers(
     customer_id: int | None = None,
 ) -> dict:
     """
-    Phase 1: Run the ReAct agent to discover provider candidates.
-
-    The agent reasons through the user's Roman Urdu request, geocodes the
-    location, and queries the database for available providers. It never
-    commits a booking — that happens in Phase 2.
-
-    Returns a dict with:
-        session_id: str
-        status: "pending_confirmation" | "needs_clarification"
-        message: str (agent's Roman Urdu response)
-        candidates: dict[str, list[dict]] (service_type -> ranked providers)
-        clarification_question: str | None
+    Discover service-provider candidates from the user's request without creating a booking.
+    
+    Parameters:
+        user_prompt (str): User's service and location request.
+        session_id (str | None): Existing session identifier to resume, or None to create one.
+        excluded_provider_ids (list[int] | None): Provider IDs to exclude from the search.
+        customer_id (int | None): Customer ID associated with the booking session.
+    
+    Returns:
+        dict: Session ID, status, agent message, provider candidates grouped by service type,
+            clarification question, and ReAct tool-call count.
     """
     if session_id is None:
         session_id = str(uuid.uuid4())
@@ -372,10 +368,16 @@ async def run_confirm_booking(
     customer_notes: str | None
 ) -> dict:
     """
-    Phase 2: Commit bookings for the user's approved providers.
-
-    Loads the BookingSession created in Phase 1, validates TTL, then
-    assigns the booking to the first approved provider in Pending_Acceptance state.
+    Confirm a selected provider for a pending booking session.
+    
+    Parameters:
+        session_id (str): Identifier of the pending booking session.
+        approved_provider_ids (list[int]): Provider IDs approved by the customer; only the first is considered.
+        exact_address (str): Address where the service will be provided.
+        customer_notes (str | None): Optional instructions or details for the provider.
+    
+    Returns:
+        dict: Booking result containing the session ID, user-facing message, booked providers, and failed providers.
     """
     set_session_context(session_id)
 

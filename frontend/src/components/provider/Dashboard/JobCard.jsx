@@ -6,12 +6,12 @@ import { useToast } from '../../../context/ToastContext';
 import styles from './JobCard.module.css';
 
 /**
- * Card displaying a job in the provider dashboard.
+ * Display a provider-dashboard job in compact or expandable form.
  *
- * @param {Object} job
- * @param {string} variant - 'compact' (read-only list) or 'full' (expandable with actions)
- * @param {boolean} readOnly - true for completed jobs in full variant
- * @param {function} onActionComplete - callback to refresh jobs
+ * @param {Object} job - Job data, including its status, service type, address, and session details.
+ * @param {string} [variant='full'] - Display mode: `'compact'` for a read-only summary or `'full'` for expandable details and actions.
+ * @param {boolean} [readOnly=false] - Whether to hide status action controls in the full display.
+ * @param {function} onActionComplete - Callback invoked after a successful status update.
  */
 export default function JobCard({ job, variant = 'full', readOnly = false, onActionComplete }) {
   const [expanded, setExpanded] = useState(false);

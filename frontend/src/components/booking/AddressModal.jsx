@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import styles from './AddressModal.module.css';
 
+/**
+ * Collects the exact booking address and optional provider notes.
+ * @param {boolean} isOpen - Whether the address modal is displayed.
+ * @param {Function} onClose - Called when the user cancels the form.
+ * @param {Function} onSubmit - Called with `{ exactAddress, customerNotes }` after valid submission.
+ * @param {boolean} isSubmitting - Whether submission is in progress.
+ * @return {JSX.Element|null} The address modal when open, or `null` when closed.
+ */
 export default function AddressModal({ isOpen, onClose, onSubmit, isSubmitting }) {
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');

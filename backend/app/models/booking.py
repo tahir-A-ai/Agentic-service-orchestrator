@@ -23,6 +23,7 @@ class BookingSession(Base):
     cancelled_by = Column(SAEnum('customer', 'provider', name='cancelled_by_enum'), nullable=True)
 
     def __repr__(self) -> str:
+        """Return a concise representation containing the booking session ID and status."""
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"
 
 
