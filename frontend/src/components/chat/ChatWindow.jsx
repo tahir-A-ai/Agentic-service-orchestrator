@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext';
 import MessageBubble from './MessageBubble';
 import ThinkingDots from './ThinkingDots';
@@ -12,7 +13,8 @@ import styles from './ChatWindow.module.css';
  * @param {function} onConfirm — Phase 2 trigger
  */
 export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
-  const { messages, isThinking, approvedIds, toggleApproved } = useChat();
+  const { messages, isThinking, approvedIds, toggleApproved, excludedIds } = useChat();
+  const navigate = useNavigate();
   const scrollRef = useRef(null);
 
   // Auto-scroll to bottom on new messages
@@ -25,18 +27,34 @@ export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
     }
   }, [messages, isThinking]);
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className={styles.window}>
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <button className={styles.menuBtn} onClick={onToggleSidebar} aria-label="Toggle Sidebar">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button
+            className={styles.backBtn}
+            onClick={handleBack}
+            aria-label="Back to Home"
+            title="Wapas Home par jayein"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <button className={styles.menuBtn} onClick={onToggleSidebar} aria-label="Toggle Sidebar" title="Recent Chats">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
+
           <div className={styles.headerTitle}>
             <div className={styles.agentAvatar}>
               <span className={styles.agentStatus} />
@@ -77,28 +95,42 @@ export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className={styles.messageGroup}>
-              {/* Text content */}
-              {msg.content && (
-                <MessageBubble role={msg.role}>
-                  {msg.content}
-                </MessageBubble>
-              )}
+          messages.map((msg, index) => {
+            const hasSubsequentEvent = messages.slice(index + 1).some(
+              (m) =>
+                m.type === 'candidates' ||
+                (typeof m.content === 'string' &&
+                  (m.content.includes('mukammal') || m.content.includes('cancel')))
+            );
+            const isLocked = Boolean(msg.locked || hasSubsequentEvent);
 
-              {/* Candidates Grid (if any) */}
-              {msg.type === 'candidates' && msg.candidates && (
-                <div className={styles.candidatesWrapper}>
-                  <CandidateGrid
-                    candidates={msg.candidates}
-                    approvedIds={approvedIds}
-                    onToggle={toggleApproved}
-                  />
-                </div>
-              )}
-            </div>
-          ))
+            return (
+              <div key={msg.id} className={styles.messageGroup}>
+                {/* Text content */}
+                {msg.content && (
+                  <MessageBubble role={msg.role}>
+                    {msg.content}
+                  </MessageBubble>
+                )}
+
+                {/* Candidates Grid (if any) */}
+                {msg.type === 'candidates' && msg.candidates && (
+                  <div className={styles.candidatesWrapper}>
+                    <CandidateGrid
+                      candidates={msg.candidates}
+                      approvedIds={approvedIds}
+                      excludedIds={excludedIds}
+                      locked={isLocked}
+                      onToggle={toggleApproved}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+
         )}
+
 
         {isThinking && (
           <MessageBubble role="agent">
