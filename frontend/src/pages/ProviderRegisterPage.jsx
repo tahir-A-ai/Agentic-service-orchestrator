@@ -37,9 +37,10 @@ export default function ProviderRegisterPage() {
         isOpen={showNotice}
         onClose={() => {
           setShowNotice(false);
-          navigate('/');
+          navigate('/', { replace: true });
         }}
       />
+
     </div>
   );
 }
