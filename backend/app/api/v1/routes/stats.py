@@ -96,13 +96,13 @@ async def provider_stream(websocket: WebSocket, provider_id: int):
 
     await provider_manager.connect(websocket, provider_id)
 
-    # 1. Read state and release DB session before network I/O
-    initial_stats = None
-    with get_db_session() as db:
-        initial_stats = get_provider_stats(db, provider_id)
-
-    # 2. Send initial state and maintain connection inside protected lifecycle
     try:
+        # 1. Read state and release DB session before network I/O
+        initial_stats = None
+        with get_db_session() as db:
+            initial_stats = get_provider_stats(db, provider_id)
+
+        # 2. Send initial state and maintain connection inside protected lifecycle
         if initial_stats:
             await websocket.send_json({"type": "stats_update", **initial_stats})
         while True:
@@ -112,3 +112,4 @@ async def provider_stream(websocket: WebSocket, provider_id: int):
         pass
     finally:
         provider_manager.disconnect(websocket, provider_id)
+
