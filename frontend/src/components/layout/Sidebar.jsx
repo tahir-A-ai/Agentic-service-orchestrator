@@ -17,10 +17,13 @@ function TrashIcon() {
 }
 
 function relativeTime(dateStr) {
-  // Backend stores UTC datetimes without a 'Z' suffix.
-  // Without it, new Date() treats the string as local time — append 'Z' to force UTC parsing.
-  const normalized = dateStr && !dateStr.endsWith('Z') && !dateStr.includes('+') ? dateStr + 'Z' : dateStr;
-  const diff = Date.now() - new Date(normalized).getTime();
+  if (!dateStr) return '';
+  const normalized = !dateStr.endsWith('Z') && !dateStr.includes('+') ? dateStr + 'Z' : dateStr;
+  const date = new Date(normalized);
+  if (isNaN(date.getTime())) return '';
+
+  const diff = Date.now() - date.getTime();
+  if (diff < 0) return 'Abhi';
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Abhi';
   if (mins < 60) return `${mins}m pehle`;
@@ -29,9 +32,8 @@ function relativeTime(dateStr) {
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Kal';
   if (days < 7) return `${days} din pehle`;
-  return new Date(normalized).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
 }
-
 
 /**
  * Chat sidebar — Recent Chats list + New Chat button.
@@ -73,15 +75,15 @@ export default function Sidebar({ isOpen, onClose }) {
     fetchConversations(1);
   }, [fetchConversations]);
 
-  const handleNewChat = () => {
-    hardReset(sessionId, messages);
+  const handleNewChat = async () => {
+    await hardReset(sessionId, messages);
     navigate('/chat');
     if (window.innerWidth <= 768) {
       onClose?.();
     }
-    // Refresh list after a tick so new empty session shows
-    setTimeout(() => fetchConversations(1), 300);
+    fetchConversations(1);
   };
+
 
   const handleSelectConversation = async (id) => {
     await loadConversation(id);
