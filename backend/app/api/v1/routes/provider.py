@@ -55,11 +55,19 @@ async def change_job_status(
         "provider_id": provider_id,
         "provider_name": res.get("provider_name", "Unknown"),
         "service_type": res.get("service_type", "Unknown"),
+        "provider_phone": res.get("provider_phone"),
+        "provider_lat": res.get("provider_lat"),
+        "provider_lon": res.get("provider_lon"),
+        "provider_location": res.get("provider_location"),
+        "customer_name": res.get("customer_name"),
+        "customer_phone": res.get("customer_phone"),
+        "exact_address": res.get("exact_address"),
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
     
     if actual == "Cancelled":
         payload["cancelled_by"] = "provider"
+
         
     await manager.broadcast_to_job(session_id, payload)
 

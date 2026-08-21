@@ -16,9 +16,19 @@ def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
     
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
     service_type = provider.get_service_type_label if provider else "Unknown"
+    provider_lat = provider.latitude if provider else None
+    provider_lon = provider.longitude if provider else None
+    provider_location = provider.location if provider else None
+    provider_phone = provider.user.phone if provider and provider.user else None
 
     jobs = []
     for s in sessions:
+        cust_name = "Customer"
+        cust_phone = None
+        if s.customer:
+            cust_name = s.customer.full_name or s.customer.email or "Customer"
+            cust_phone = s.customer.phone
+
         jobs.append({
             "session_id": s.id,
             "status": s.status,
@@ -27,6 +37,12 @@ def get_provider_jobs(db: Session, provider_id: int) -> list[dict]:
             "exact_address": s.exact_address,
             "customer_notes": s.customer_notes,
             "cancelled_by": s.cancelled_by,
+            "customer_name": cust_name,
+            "customer_phone": cust_phone,
+            "provider_lat": provider_lat,
+            "provider_lon": provider_lon,
+            "provider_location": provider_location,
+            "provider_phone": provider_phone,
         })
     return jobs
 
@@ -63,12 +79,27 @@ def update_job_status(db: Session, provider_id: int, session_id: str, status: st
             provider.status = "Active"
         session.cancelled_by = "provider"
     db.commit()
+
+    cust_name = "Customer"
+    cust_phone = None
+    if session.customer:
+        cust_name = session.customer.full_name or session.customer.email or "Customer"
+        cust_phone = session.customer.phone
+
     return {
         "message": "Job status updated.",
         "actual_status": actual_status,
         "provider_name": provider.name if provider else "Unknown",
         "service_type": provider.get_service_type_label if provider else "Unknown",
+        "provider_phone": provider.user.phone if provider and provider.user else None,
+        "provider_lat": provider.latitude if provider else None,
+        "provider_lon": provider.longitude if provider else None,
+        "provider_location": provider.location if provider else None,
+        "customer_name": cust_name,
+        "customer_phone": cust_phone,
+        "exact_address": session.exact_address,
     }
+
 
 def update_provider_availability(db: Session, provider_id: int, is_available: bool) -> dict:
     provider = db.query(Provider).filter(Provider.id == provider_id).first()

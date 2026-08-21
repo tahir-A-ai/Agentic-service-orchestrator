@@ -4,6 +4,7 @@ import { useChat } from '../context/ChatContext';
 import TrackingHeader from '../components/booking/TrackingHeader';
 import LiveProviderCard from '../components/booking/LiveProviderCard';
 import RatingModal from '../components/booking/RatingModal';
+import TrackingMapModal from '../components/booking/TrackingMapModal';
 import { useToast } from '../context/ToastContext';
 import { cancelBooking } from '../api/booking';
 import styles from './ConfirmedPage.module.css';
@@ -18,6 +19,7 @@ export default function ConfirmedPage() {
     confirmed?.booked?.[0] || null
   );
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const isNavigatingRef = useRef(false);
   const hasCancelledRef = useRef(false);          // ← guard: prevents duplicate cancel handling
@@ -45,9 +47,10 @@ export default function ConfirmedPage() {
     if (!confirmed && !isNavigatingRef.current) {
       navigate('/chat', { replace: true });
     } else if (confirmed?.booked && confirmed.booked.length > 0) {
-      setLiveProvider(confirmed.booked[0]);
+      setLiveProvider(prev => ({ ...confirmed.booked[0], ...prev }));
     }
   }, [confirmed, navigate]);
+
 
   // WebSocket Connection — only depends on session_id (stable value)
   // liveProvider is accessed via liveProviderRef to avoid reconnect loop
@@ -68,7 +71,11 @@ export default function ConfirmedPage() {
           setLiveProvider(prev => ({
             ...prev,
             ...(data.provider_name && { name: data.provider_name }),
-            ...(data.service_type && { service_type: data.service_type })
+            ...(data.service_type && { service_type: data.service_type }),
+            ...(data.provider_phone && { phone: data.provider_phone }),
+            ...(data.provider_lat && { latitude: data.provider_lat }),
+            ...(data.provider_lon && { longitude: data.provider_lon }),
+            ...(data.provider_location && { location: data.provider_location }),
           }));
 
           if (data.status === 'Pending_Completion') {
@@ -133,20 +140,21 @@ export default function ConfirmedPage() {
 
   const handleNewBooking = () => {
     isNavigatingRef.current = true;
-    reset();
+    setConfirmed(null);
     navigate('/chat', { replace: true });
   };
 
   const handleCancelRequest = async () => {
-    if (!window.confirm("Are you sure you want to cancel this request?")) return;
-    
-    setIsCancelling(true);
-    isNavigatingRef.current = true;
+    if (!confirmed?.session_id) return;
+    if (isCancelling || isNavigatingRef.current) return;
+
     try {
-      await cancelBooking(confirmed.session_id);
-      showToast('Request cancel ho gayi. Chat par redirect ho rahe hain...', 'info');
+      setIsCancelling(true);
+      isNavigatingRef.current = true;
+      await cancelBooking(confirmed.session_id, 'customer');
+      showToast('Booking request cancel kar di gayi.', 'info');
+      setConfirmed(null);
       const t = setTimeout(() => {
-        setConfirmed(null);
         navigate('/chat', { state: { customerCancelled: true }, replace: true });
       }, 1000);
       timeoutsRef.current.push(t);
@@ -158,7 +166,7 @@ export default function ConfirmedPage() {
   };
 
 
-  const shortId = confirmed.session_id ? confirmed.session_id.substring(0, 8) : 'bkg-123';
+  const shortId = confirmed?.session_id ? confirmed.session_id.substring(0, 8) : 'bkg-123';
 
   if (isCancelling) {
     return (
@@ -179,10 +187,14 @@ export default function ConfirmedPage() {
         <div className={styles.mainCard}>
           <TrackingHeader status={status} />
 
-          <LiveProviderCard provider={liveProvider} status={status} />
+          <LiveProviderCard
+            provider={liveProvider}
+            status={status}
+            onOpenMap={() => setIsMapOpen(true)}
+          />
 
           {/* Failed Providers Warning */}
-          {confirmed.failed && confirmed.failed.length > 0 && (
+          {confirmed?.failed && confirmed.failed.length > 0 && (
             <div className={styles.warningBox}>
               <span className={styles.warningIcon}>⚠</span>
               <div className={styles.warningText}>
@@ -198,9 +210,9 @@ export default function ConfirmedPage() {
               <span className={styles.footerValue}>{shortId}</span>
             </div>
             <div className={`${styles.footerCol} ${styles.footerColRight}`}>
-              <span className={styles.footerLabel}>{status === 'Pending_Acceptance' ? 'Last Checked' : 'ETA'}</span>
+              <span className={styles.footerLabel}>{status === 'Pending_Acceptance' ? 'Status' : 'ETA'}</span>
               <span className={status === 'Pending_Acceptance' ? styles.footerValue : styles.footerValueGreen}>
-                {status === 'Pending_Acceptance' ? 'Just now' : '30-45 min'}
+                {status === 'Pending_Acceptance' ? 'Waiting for confirmation' : 'En route (Tracking available)'}
               </span>
             </div>
           </div>
@@ -228,8 +240,8 @@ export default function ConfirmedPage() {
 
         <RatingModal
           isOpen={showRatingModal}
-          sessionId={confirmed.session_id}
-          providerName={liveProvider.name}
+          sessionId={confirmed?.session_id}
+          providerName={liveProvider?.name}
           onComplete={() => {
             isNavigatingRef.current = true;
             setShowRatingModal(false);
@@ -238,8 +250,21 @@ export default function ConfirmedPage() {
             setTimeout(() => {
               setConfirmed(null);
               navigate('/chat', { state: { jobCompleted: true }, replace: true });
-            }, 1800);
+            }, 1000);
           }}
+        />
+
+        {/* Live Tracking Map Modal */}
+        <TrackingMapModal
+          isOpen={isMapOpen}
+          onClose={() => setIsMapOpen(false)}
+          provider={liveProvider}
+          customer={{
+            address: confirmed?.exact_address || liveProvider?.exact_address || 'Customer Location',
+            latitude: confirmed?.customer_lat || 33.6425,
+            longitude: confirmed?.customer_lon || 72.9841,
+          }}
+          status={status}
         />
 
       </div>

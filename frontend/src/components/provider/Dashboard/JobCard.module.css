@@ -178,11 +178,38 @@
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 200ms ease;
+  text-decoration: none;
 }
 
 .callBtn:hover {
-  background: var(--border-subtle);
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--accent-green);
+  color: #fff;
 }
+
+.mapBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-decoration: none;
+}
+
+.mapBtn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
 
 .acceptBtn {
   flex: 1;

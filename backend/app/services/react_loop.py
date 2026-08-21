@@ -464,6 +464,14 @@ async def run_confirm_booking(
                 booking_session.customer_notes = customer_notes
                 session.commit()
                 
+                if provider.user and provider.user.phone:
+                    provider_info["phone"] = provider.user.phone
+                provider_info["latitude"] = provider.latitude
+                provider_info["longitude"] = provider.longitude
+                provider_info["location"] = provider.location
+                provider_info["exact_address"] = exact_address
+                provider_info["customer_notes"] = customer_notes
+
                 booked.append(provider_info)
             else:
                 failed.append({
@@ -472,6 +480,7 @@ async def run_confirm_booking(
                     "service_type": provider_info["service_type"],
                     "reason": "Provider is currently busy or offline.",
                 })
+
     else:
         if provider_id:
             failed.append({
