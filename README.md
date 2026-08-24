@@ -222,12 +222,13 @@ service-orchestrator/
 
 - [x] **Direct Phone Call Link**: Instant one-click phone dialer button (`tel:`) connecting customer with assigned provider and vice versa.
 - [x] **Interactive Live Map & Dynamic ETA**: Real-time Leaflet + OpenStreetMap + OSRM routing map showing technician's location, turn-by-turn road curves, exact driving distance in KM, and arrival ETA.
-  > **Note on Tracking**: In the current web browser application, the technician's movement along the route is powered by a high-fidelity client-side motion simulation engine so the end-to-end user experience can be tested seamlessly. The architecture is fully reactive and ready to bind directly to real-time physical device GPS streams (`navigator.geolocation.watchPosition` / Background Geolocation) when building the native/hybrid mobile application.
 - [ ] **Native Mobile App (React Native / Flutter)**: Direct integration with mobile device hardware GPS sensors and background location tracking for on-the-road technicians.
 - [ ] **Multi-City Expansion**: Expanding geocoding and provider networks to Rawalpindi, Lahore, and Karachi.
+
 
 ---
 
 ## 📄 License
-This project is proprietary and confidential. Developed for Karigar.pk.
+This project is open-source and available under the [MIT License](LICENSE).
+
 
