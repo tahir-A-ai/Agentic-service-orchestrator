@@ -136,6 +136,7 @@ def query_active_providers(
                 "rating":       p.rating,
                 "status":       p.status,
                 "distance_km":  round(dist, 2),
+                "phone":        p.user.phone if p.user else None,
             })
 
         # Sort: nearest first, then highest rated
@@ -188,6 +189,7 @@ def query_all_active_providers(
                 "longitude":    p.longitude,
                 "rating":       p.rating,
                 "status":       p.status,
+                "phone":        p.user.phone if p.user else None,
             }
             if user_lat is not None and user_lon is not None:
                 dist = _haversine(user_lat, user_lon, float(p.latitude), float(p.longitude))
@@ -240,11 +242,13 @@ def query_busy_providers(
                 "rating":       p.rating,
                 "status":       p.status,
                 "distance_km":  round(dist, 2),
+                "phone":        p.user.phone if p.user else None,
             })
 
         results.sort(key=lambda x: (x["distance_km"], -x["rating"]))
 
     return results
+
 
 
 def commit_booking(provider_id: int) -> bool:

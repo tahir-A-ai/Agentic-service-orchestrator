@@ -14,6 +14,10 @@ class ProviderDetail(BaseModel):
         ...,
         description="Distance in kilometres between the user and the provider.",
     )
+    phone: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+
 
 
 class ProviderStatsResponse(BaseModel):
@@ -33,6 +37,13 @@ class ProviderJob(BaseModel):
     exact_address: str | None = None
     customer_notes: str | None = None
     cancelled_by: str | None = None
+    customer_name: str | None = None
+    customer_phone: str | None = None
+    provider_lat: float | None = None
+    provider_lon: float | None = None
+    provider_location: str | None = None
+    provider_phone: str | None = None
+
 
 
 class ProviderJobsResponse(BaseModel):

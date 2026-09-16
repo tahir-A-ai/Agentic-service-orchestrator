@@ -1,0 +1,404 @@
+/* LiveTrackingMap.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #0d1117;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.mapCanvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  background: #111418;
+  z-index: 1;
+}
+
+/* ── Top Bar Overlay ────────────────────────────────── */
+
+.topOverlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  z-index: 500;
+  pointer-events: none;
+}
+
+.statusCard {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(22, 27, 34, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 10px var(--accent-green);
+  animation: mapPulse 1.8s infinite;
+}
+
+.statusText {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.routeBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.routeOsrm {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.routeFallback {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.closeBtn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(18, 22, 28, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #E5E7EB;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.closeBtn:hover {
+  color: #FFFFFF;
+  border-color: #EF4444;
+  background: #DC2626;
+  box-shadow: 0 0 16px rgba(220, 38, 38, 0.6);
+  transform: scale(1.08);
+}
+
+.closeBtn:active {
+  transform: scale(0.96);
+}
+
+
+/* ── Sleek Bottom Tracking Panel ─────────────────────── */
+
+.bottomPanel {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  background: rgba(22, 27, 34, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 500;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  animation: slideUp 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.personInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+  flex-shrink: 0;
+}
+
+.personMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.personName {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.personRole {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.etaContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(13, 17, 23, 0.7);
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.etaBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.etaLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.etaValue {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent-green);
+  line-height: 1.2;
+}
+
+.distValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.callButton {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-green);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+.callButton:hover {
+  background: #16A34A;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.callButton:active {
+  transform: translateY(0);
+}
+
+.recenterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.recenterBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-green);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Custom Marker Styles ────────────────────────────── */
+
+:global(.custom-pin) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+
+:global(.provider-pin) {
+  width: 36px;
+  height: 36px;
+  background: #0D1117;
+  border: 2px solid #22C55E;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22C55E;
+  animation: pinPulse 2s infinite;
+}
+
+:global(.customer-pin) {
+  width: 36px;
+  height: 36px;
+  background: #0D1117;
+  border: 2px solid #3B82F6;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3B82F6;
+}
+
+/* ── Leaflet Dark Customizations ─────────────────────── */
+
+:global(.leaflet-container) {
+  font-family: inherit;
+  background: #0d1117 !important;
+}
+
+:global(.leaflet-top.leaflet-right) {
+  top: 56px !important;
+  right: 14px !important;
+}
+
+:global(.leaflet-control-zoom) {
+  border: 1px solid var(--border-default) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  margin: 0 !important;
+}
+
+:global(.leaflet-control-zoom a) {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  background-color: rgba(22, 27, 34, 0.94) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+:global(.leaflet-control-zoom a:hover) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--accent-green) !important;
+}
+
+
+:global(.leaflet-popup-content-wrapper) {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+:global(.leaflet-popup-tip) {
+  background: var(--bg-secondary) !important;
+}
+
+@keyframes mapPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+@keyframes pinPulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 24px rgba(34, 197, 94, 0.9); }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .panelRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .etaContainer {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  :global(.leaflet-control-zoom) {
+    margin-bottom: 140px !important;
+  }
+}

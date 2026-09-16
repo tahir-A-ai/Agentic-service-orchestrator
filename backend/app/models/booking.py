@@ -13,7 +13,7 @@ class BookingSession(Base):
     candidates = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False)
     status = Column(String(20), nullable=False, default="pending", index=True)
-    confirmed_provider_id = Column(Integer, nullable=True)
+    confirmed_provider_id = Column(Integer, ForeignKey("providers.id"), nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     exact_address = Column(String(255), nullable=True)
     customer_notes = Column(Text, nullable=True)
@@ -21,6 +21,9 @@ class BookingSession(Base):
     customer_review = Column(Text, nullable=True)
     customer_confirmed_at = Column(DateTime, nullable=True)
     cancelled_by = Column(SAEnum('customer', 'provider', name='cancelled_by_enum'), nullable=True)
+
+    customer = relationship("User", foreign_keys=[customer_id])
+    provider = relationship("Provider", foreign_keys=[confirmed_provider_id], primaryjoin="BookingSession.confirmed_provider_id == Provider.id")
 
     def __repr__(self) -> str:
         return f"<BookingSession(id='{self.id}', status='{self.status}')>"

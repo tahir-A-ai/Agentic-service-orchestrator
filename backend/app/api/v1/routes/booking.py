@@ -236,12 +236,20 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
         is_provider = False
         provider_name = None
         service_type = None
+        provider_phone = None
+        provider_lat = None
+        provider_lon = None
+        provider_location = None
 
         if session.confirmed_provider_id:
             provider = db.query(Provider).filter(Provider.id == session.confirmed_provider_id).first()
             if provider:
                 provider_name = provider.name
                 service_type = provider.get_service_type_label
+                provider_phone = provider.user.phone if provider.user else None
+                provider_lat = provider.latitude
+                provider_lon = provider.longitude
+                provider_location = provider.location
                 if provider.user_id == user_id:
                     is_provider = True
 
@@ -249,12 +257,27 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
             await websocket.close(code=1008)
             return
 
+        cust_name = "Customer"
+        cust_phone = None
+        if session.customer:
+            cust_name = session.customer.full_name or session.customer.email or "Customer"
+            cust_phone = session.customer.phone
+
         initial_payload = {
             "type": "status_update",
             "status": session.status,
             "provider_name": provider_name,
             "service_type": service_type,
+            "provider_phone": provider_phone,
+            "provider_lat": provider_lat,
+            "provider_lon": provider_lon,
+            "provider_location": provider_location,
+            "customer_name": cust_name,
+            "customer_phone": cust_phone,
+            "exact_address": session.exact_address,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+
 
     # 2. Connect only after successful authorization
     await manager.connect(websocket, job_id)

@@ -65,6 +65,13 @@ graph TD
 * **Public & Authenticated Reviews**: Verified ratings and text reviews.
 * **URL-Backed Pagination**: 10 records per page across Recent Bookings, Active Jobs, Job History, Declined Jobs, and Customer Reviews with state persistence across page reloads.
 
+### 5. 🗺 Interactive Live Map Tracking & Direct Calling
+* **Open-Source Navigation Stack**: Leaflet map with CartoDB Dark Matter / Voyager tiles, OpenStreetMap Nominatim geocoding, and OSRM turn-by-turn driving router.
+* **Real-Time Driving Route & ETA**: Computes actual road travel distance in KM, speed-limit duration in minutes, and arrival clock time with zero-crash urban calibrated Haversine fallback.
+* **Simulated Movement Engine (Web Demo)**: Because desktop web browsers lack physical moving vehicle GPS hardware, technician movement along the OSRM road waypoints and the real-time distance/ETA countdowns are driven by a **client-side simulation engine** for testing and demo purposes. The architecture is fully reactive and designed to connect directly to physical device GPS streams (`navigator.geolocation.watchPosition` / Background Geolocation) in mobile application builds.
+* **Instant Direct Calling**: Native one-click `tel:` integration allowing both customer and provider to dial each other directly.
+
+
 ---
 
 ## 🛠 Tech Stack
@@ -77,11 +84,13 @@ graph TD
 - **Security & Auth**: JWT Tokens, OAuth2 password bearer, Passlib (bcrypt)
 - **Real-Time Communication**: Native WebSockets with connection managers
 
-### Frontend
+### Frontend & Mapping
 - **Framework**: [React 18](https://reactjs.org/) + [Vite](https://vitejs.dev/)
 - **Routing**: [React Router v6](https://reactrouter.com/)
+- **Maps & Geolocation**: [Leaflet](https://leafletjs.com/), [OpenStreetMap](https://www.openstreetmap.org/), [OSRM](https://project-osrm.org/)
 - **Styling**: Vanilla CSS Design System with CSS Modules (Dark theme, glassmorphism, responsive)
 - **Audio Engine**: Web Audio API for custom synthesized notification pings
+
 
 ---
 
@@ -209,13 +218,17 @@ service-orchestrator/
 
 ---
 
-## 🗺 Upcoming Roadmap
+## 🗺 Feature Highlights & Roadmap
 
-- [ ] **Direct Phone Call Link**: Instant one-click phone dialer button connecting customer with assigned provider upon acceptance.
-- [ ] **Interactive Live Map**: Real-time routing map showing technician's location and live ETA to the customer's doorstep.
+- [x] **Direct Phone Call Link**: Instant one-click phone dialer button (`tel:`) connecting customer with assigned provider and vice versa.
+- [x] **Interactive Live Map & Dynamic ETA**: Real-time Leaflet + OpenStreetMap + OSRM routing map showing technician's location, turn-by-turn road curves, exact driving distance in KM, and arrival ETA.
+- [ ] **Native Mobile App (React Native / Flutter)**: Direct integration with mobile device hardware GPS sensors and background location tracking for on-the-road technicians.
 - [ ] **Multi-City Expansion**: Expanding geocoding and provider networks to Rawalpindi, Lahore, and Karachi.
+
 
 ---
 
 ## 📄 License
-This project is proprietary and confidential. Developed for Karigar.pk.
+This project is open-source and available under the [MIT License](LICENSE).
+
+
