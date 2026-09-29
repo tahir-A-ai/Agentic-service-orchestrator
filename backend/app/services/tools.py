@@ -29,7 +29,7 @@ def _load_valid_service_types() -> set[str]:
     except Exception:
         pass
     # ponytail: fallback so agent still works if DB is temporarily unavailable
-    return {"Electrician", "Plumber", "AC Technician"}
+    return {"Electrician", "Plumber"}
 
 
 # Loaded once at module import; refreshed when main.py seeds the DB
