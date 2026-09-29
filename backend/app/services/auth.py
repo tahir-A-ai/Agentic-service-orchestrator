@@ -10,32 +10,43 @@ from app.services.database import get_db_session
 from app.models import User, Provider, ServiceType
 
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
 
 
-def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-
+# ── Token helpers ─────────────────────────────────────────────────────────────
 
 def create_access_token(data: dict) -> str:
-    """Create a JWT token with the provided data and an expiration timestamp."""
+    """Create a short-lived access token (default 15 min, config-driven)."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        "token_type": "access",
+    })
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def create_refresh_token(data: dict) -> str:
+    """Create a long-lived refresh token (default 7 days, config-driven).
+
+    Only carries the minimum payload needed to re-issue an access token.
+    Marked token_type='refresh' so it is NEVER accepted by decode_access_token.
+    """
+    to_encode = {
+        "sub": data.get("sub"),
+        "user_id": data.get("user_id"),
+        "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        "token_type": "refresh",
+    }
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
-    """
-    Decode and validate a JWT access token.
-    Raises HTTPException 401 if invalid/expired.
+    """Decode and validate a JWT access token.
+
+    Raises HTTPException 401 if invalid, expired, or wrong token_type.
+    A refresh token passed here is explicitly rejected to prevent token confusion.
     """
     try:
-        return jwt.decode(token, settings.JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401,
@@ -46,11 +57,54 @@ def decode_access_token(token: str) -> dict:
             status_code=401,
             detail={"error_code": "INVALID_TOKEN", "message": "Ghair-mauzoon token."}
         )
+    if payload.get("token_type") != "access":
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "WRONG_TOKEN_TYPE", "message": "Ghair-mauzoon token."}
+        )
+    return payload
 
 
+def decode_refresh_token(token: str) -> dict:
+    """Decode and validate a refresh token.
+
+    Raises HTTPException 401 if invalid, expired, or wrong token_type.
+    """
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "REFRESH_TOKEN_EXPIRED", "message": "Session expire ho gaya. Dobara login karein."}
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "INVALID_TOKEN", "message": "Ghair-mauzoon token."}
+        )
+    if payload.get("token_type") != "refresh":
+        raise HTTPException(
+            status_code=401,
+            detail={"error_code": "WRONG_TOKEN_TYPE", "message": "Ghair-mauzoon token."}
+        )
+    return payload
+
+
+# ── Password helpers ───────────────────────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+
+# ── FastAPI dependency ─────────────────────────────────────────────────────
 
 def get_current_user_from_credentials(request: Request) -> dict:
-    """Dependency to validate the HttpOnly cookie and return the user payload."""
+    """Dependency to validate the HttpOnly access_token cookie and return the user payload."""
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(
@@ -119,7 +173,8 @@ def signup_user(db: Session, payload: dict) -> User:
 def login_user(db: Session, payload: dict) -> dict:
     """
     Authenticate user by email and password.
-    Returns dict with user fields and JWT access token.
+    Returns both a short-lived access token and a long-lived refresh token,
+    along with user profile data.
     """
     user = db.query(User).filter(
         User.email == payload["email"]
@@ -142,12 +197,14 @@ def login_user(db: Session, payload: dict) -> dict:
         "user_id": user.id,
         "provider_id": provider_id,
     }
-    token = create_access_token(token_data)
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
 
     return {
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         "role": user.role,
         "email": user.email,
         "full_name": user.full_name,

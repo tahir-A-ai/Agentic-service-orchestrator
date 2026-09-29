@@ -38,8 +38,11 @@ export default function ChatPage() {
     if (hasRehydrated.current) return;
     hasRehydrated.current = true;
 
-    // Don't rehydrate if we're starting a brand-new autoFetch session from home
-    if (location.state?.autoFetch && !location.state?.providerCancelled && !location.state?.jobCompleted) return;
+    // Skip DB rehydration for any navigation-state driven scenario —
+    // jobCompleted, providerCancelled, customerCancelled all inject their
+    // own messages and must NOT be overwritten by a stale DB load.
+    const ls = location.state || {};
+    if (ls.jobCompleted || ls.providerCancelled || ls.customerCancelled || ls.autoFetch) return;
 
     const savedId = getActiveChatId();
     if (savedId && messages.length === 0) {
@@ -53,14 +56,23 @@ export default function ChatPage() {
 
     if (location.state?.jobCompleted) {
       hasAutoFetched.current = true;
-      lockCandidateMessages();
-      clearApproved();
-      addMessage({
-        id: newId(),
-        role: 'agent',
-        type: 'text',
-        content: 'Yeh job kamyabi se mukammal ho chuki hai aur aapka review darj ho gaya hai. Shukriya!',
-      });
+      // Reload the conversation from DB first so the provider card is visible
+      // and can be locked — otherwise messages is empty after setConfirmed(null)
+      const savedId = getActiveChatId();
+      const afterLoad = async () => {
+        if (savedId) {
+          await loadConversation(savedId);
+        }
+        lockCandidateMessages();
+        clearApproved();
+        addMessage({
+          id: newId(),
+          role: 'agent',
+          type: 'text',
+          content: 'Yeh job kamyabi se mukammal ho chuki hai aur aapka review darj ho gaya hai. Shukriya!',
+        });
+      };
+      afterLoad();
       window.history.replaceState({}, document.title);
     } else if (location.state?.providerCancelled) {
       hasAutoFetched.current = true;
@@ -106,7 +118,7 @@ export default function ChatPage() {
       });
       window.history.replaceState({}, document.title);
     }
-  }, [location, findProviders, excludedIds, addMessage, lockCandidateMessages, clearApproved]);
+  }, [location, findProviders, excludedIds, addMessage, loadConversation, lockCandidateMessages, clearApproved]);
 
 
 

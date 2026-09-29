@@ -1,13 +1,21 @@
 """Provider-specific routes and WebSocket handling."""
-import os
+import asyncio
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from datetime import datetime, timezone
+from sqlalchemy import func
 from app.schemas import ProviderJobsResponse, UpdateJobStatusRequest, UpdateAvailabilityRequest, ProviderAvailabilityResponse, UpdateProviderProfileRequest, UpdateProviderProfileResponse, ProviderReview, ProviderReviewsResponse
 from app.services.database import get_db_session
 from app.services.provider import get_provider_jobs, update_job_status, update_provider_availability, update_provider_profile
 from app.services.auth import get_current_user_from_credentials
 from app.services.websockets import manager, provider_manager
+from app.services.stats import get_provider_stats
+from app.models import BookingSession, User
+from app.core.config import settings
+
+# ── Upload constraints ───────────────────────────────────────────────────────
+_ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 
 router = APIRouter(prefix="/providers", tags=["Provider"])
 
@@ -73,7 +81,6 @@ async def change_job_status(
 
     # Push fresh stats to the provider's dashboard (event-driven, no polling)
     with get_db_session() as db:
-        from app.services.stats import get_provider_stats
         stats = get_provider_stats(db, provider_id)
     await provider_manager.push_stats(provider_id, stats)
 
@@ -96,7 +103,6 @@ async def toggle_availability(
         
     # Push updated stats via WebSocket so all connected tabs/devices update immediately
     with get_db_session() as db:
-        from app.services.stats import get_provider_stats
         stats = get_provider_stats(db, provider_id)
     await provider_manager.push_stats(provider_id, stats)
 
@@ -128,20 +134,61 @@ async def upload_photo(
     current_user: dict = Depends(get_current_user_from_credentials)
 ):
     _verify_provider_access(current_user, provider_id)
-    
-    # Generate unique filename
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+
+    # ── MIME type validation ─────────────────────────────────────────────────
+    if file.content_type not in _ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Invalid file type '{file.content_type}'. Only JPEG, PNG, and WebP images are accepted.",
+        )
+
+    # ── File size validation (5 MB cap) ──────────────────────────────────────
+    data = await file.read(_MAX_UPLOAD_BYTES + 1)
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large. Maximum allowed size is 5 MB.")
+
+    # ── Unique filename (uuid4 = fresh S3 key on every upload) ───────────────
+    # Using uuid4 — NOT the provider_id — means each new upload gets a brand-new
+    # S3 object key, so CloudFront automatically serves the latest image without
+    # any cache invalidation required (no extra charges).
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "jpg"
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join("uploads", "avatars", "providers", filename)
-    
-    # Save file
-    with open(filepath, "wb") as buffer:
-        buffer.write(await file.read())
-        
-    photo_url = f"http://localhost:8000/uploads/avatars/providers/{filename}"
-    
+    s3_key = f"avatars/providers/{filename}"
+
+    if settings.S3_BUCKET_NAME and settings.CLOUDFRONT_URL:
+        # ── Production path: stream to S3, return CloudFront URL ─────────────
+        import boto3
+        from botocore.exceptions import BotoCoreError, ClientError
+
+        def _s3_upload() -> None:
+            s3 = boto3.client("s3", region_name=settings.AWS_REGION)
+            s3.put_object(
+                Bucket=settings.S3_BUCKET_NAME,
+                Key=s3_key,
+                Body=data,
+                ContentType=file.content_type,
+            )
+
+        loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(None, _s3_upload)
+        except (BotoCoreError, ClientError) as exc:
+            raise HTTPException(status_code=502, detail=f"Photo upload to S3 failed: {exc}")
+
+        cf_base = settings.CLOUDFRONT_URL.rstrip("/")
+        photo_url = f"{cf_base}/{s3_key}"
+
+    else:
+        # ── Local dev fallback: write to disk ─────────────────────────────────
+        import os
+        dest_dir = os.path.join("uploads", "avatars", "providers")
+        os.makedirs(dest_dir, exist_ok=True)
+        with open(os.path.join(dest_dir, filename), "wb") as fh:
+            fh.write(data)
+        photo_url = f"http://localhost:8000/uploads/avatars/providers/{filename}"
+
     with get_db_session() as db:
-        res = update_provider_profile(db, provider_id, {"photo_url": photo_url})
+        update_provider_profile(db, provider_id, {"photo_url": photo_url})
         return {"photo_url": photo_url, "message": "Photo uploaded successfully."}
 
 
@@ -156,9 +203,6 @@ async def get_provider_reviews(
     limit: int = 10,
 ):
     """Returns paginated customer reviews for a provider. No auth required — customers can read before booking."""
-    from app.models import BookingSession, User
-    from sqlalchemy import func
-
     page = max(1, min(page, 1000))
     limit = max(1, min(limit, 50))
     offset = (page - 1) * limit

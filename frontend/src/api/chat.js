@@ -1,4 +1,4 @@
-import { request } from './core';
+import { request, API_BASE } from './core';
 
 const BASE = '/api/v1/conversations';
 
@@ -34,7 +34,6 @@ export function deleteConversation(id) {
  * complete when the tab is closing. sendBeacon is fire-and-forget.
  */
 export function beaconSync(id, { title, messages, bookingSessionId = null }) {
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
   const url = `${API_BASE}${BASE}/${id}/sync`;
   const body = JSON.stringify({
     title,

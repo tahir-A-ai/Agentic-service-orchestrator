@@ -67,15 +67,21 @@ export default function useBooking() {
           });
         }
       } catch (err) {
-        const msg = getErrorMessage(err);
+        const isTimeout = err?.message === 'Request timed out';
+        const msg = isTimeout
+          ? 'Server se response nahi aya (timeout). Dobara try karein.'
+          : getErrorMessage(err);
 
-        // 4xx errors show inline in chat, 5xx/network show as toast
-        if (err.status && err.status < 500) {
+        // Timeout and 4xx: show inline in chat so the user can retry in context.
+        // 5xx / network errors: show as toast (likely transient infra issue).
+        if (isTimeout || (err.status && err.status < 500)) {
           addMessage({
             id: newId(),
             role: 'agent',
-            type: 'text',
+            type: isTimeout ? 'timeout' : 'text',
             content: msg,
+            // Attach retry metadata so ChatMessage can render a Retry button
+            retryPrompt: isTimeout ? prompt : undefined,
           });
         } else {
           showToast(msg, 'error');

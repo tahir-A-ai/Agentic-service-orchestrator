@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine, or_
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, joinedload
 from app.core.config import settings
 from app.models import Base, LocationCache, Provider, ServiceType
 
@@ -114,6 +114,7 @@ def query_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
@@ -171,6 +172,7 @@ def query_all_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
@@ -223,6 +225,7 @@ def query_busy_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Busy")

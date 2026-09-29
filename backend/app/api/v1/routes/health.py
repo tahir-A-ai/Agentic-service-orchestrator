@@ -8,12 +8,10 @@ router = APIRouter(tags=["Ops"])
 @router.get("/health", summary="Health check")
 async def health() -> dict:
     """
-    Lightweight liveness probe.
+    Lightweight liveness probe for load balancers and uptime monitors.
+    Intentionally returns minimal info — internal paths are not exposed.
     """
-    db_ok = settings.DB_PATH.exists()
     return {
-        "status":   "healthy" if db_ok else "degraded",
-        "database": str(settings.DB_PATH),
-        "db_found": db_ok,
-        "version":  settings.API_VERSION,
+        "status": "healthy",
+        "version": settings.API_VERSION,
     }

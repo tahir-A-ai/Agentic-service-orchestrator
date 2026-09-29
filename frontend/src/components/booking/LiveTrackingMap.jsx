@@ -123,10 +123,11 @@ export default function LiveTrackingMap({
       // Position zoom controls cleanly on the right below the close button
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // CartoDB Voyager tiles matching modern sleek theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // OpenStreetMap tiles — free, no API key required.
+      // A CSS filter is applied via the pane to maintain the sleek dark look.
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
       mapInstanceRef.current = map;
