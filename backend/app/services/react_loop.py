@@ -42,7 +42,7 @@ async def _get_checkpointer():
         import psycopg
         # Use a single async connection per request (pool is managed at app level)
         conn_str = db_url.replace("postgresql+psycopg2", "postgresql").replace("postgresql+psycopg", "postgresql")
-        async with await psycopg.AsyncConnection.connect(conn_str) as conn:
+        async with await psycopg.AsyncConnection.connect(conn_str, autocommit=True) as conn:
             checkpointer = AsyncPostgresSaver(conn)
             yield checkpointer
     else:
@@ -336,7 +336,7 @@ async def run_find_providers(
         service_entries = [
             {"label": r.label, "aliases": r.aliases}
             for r in (
-                _db.query(ServiceType.label, ServiceType.aliases)
+                _db.query(ServiceType.label, ServiceType.aliases, ServiceType.sort_order)
                 .join(Provider, Provider.service_type_id == ServiceType.id)
                 .filter(
                     ServiceType.is_active == True,
