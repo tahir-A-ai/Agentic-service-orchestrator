@@ -14,7 +14,19 @@ from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-_IS_PROD = settings.ENVIRONMENT == "production"
+def _is_cookie_secure(request: Request) -> bool:
+    """
+    Determine if cookies should be marked with the `Secure` flag.
+    Browsers strictly reject/drop cookies with `Secure` if accessed over plain HTTP (e.g. EC2 public IP).
+    Returns True only if:
+    1. settings.COOKIE_SECURE is explicitly True, OR
+    2. The request was received over HTTPS (via X-Forwarded-Proto header or scheme).
+    """
+    if settings.COOKIE_SECURE:
+        return True
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme).lower()
+    return proto == "https"
+
 _ACCESS_MAX_AGE  = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60        # seconds
 _REFRESH_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 86_400      # seconds
 
@@ -50,11 +62,12 @@ async def login(request: Request, payload: LoginRequest, response: Response) -> 
     with get_db_session() as db:
         res = login_user(db, payload.model_dump())
 
+    cookie_secure = _is_cookie_secure(request)
     response.set_cookie(
         key="access_token",
         value=res["access_token"],
         httponly=True,
-        secure=_IS_PROD,
+        secure=cookie_secure,
         samesite="lax",
         max_age=_ACCESS_MAX_AGE,
         path="/",
@@ -63,7 +76,7 @@ async def login(request: Request, payload: LoginRequest, response: Response) -> 
         key="refresh_token",
         value=res["refresh_token"],
         httponly=True,
-        secure=_IS_PROD,
+        secure=cookie_secure,
         samesite="lax",
         max_age=_REFRESH_MAX_AGE,
         path="/api/v1/auth/refresh",   # browser only sends this to the refresh endpoint
@@ -99,11 +112,12 @@ async def refresh_token_route(request: Request, response: Response):
         "provider_id": payload.get("provider_id"),
     })
 
+    cookie_secure = _is_cookie_secure(request)
     response.set_cookie(
         key="access_token",
         value=new_access,
         httponly=True,
-        secure=_IS_PROD,
+        secure=cookie_secure,
         samesite="lax",
         max_age=_ACCESS_MAX_AGE,
         path="/",

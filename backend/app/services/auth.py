@@ -104,8 +104,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ── FastAPI dependency ─────────────────────────────────────────────────────
 
 def get_current_user_from_credentials(request: Request) -> dict:
-    """Dependency to validate the HttpOnly access_token cookie and return the user payload."""
+    """Dependency to validate the HttpOnly access_token cookie (or Authorization header) and return the user payload."""
     token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+
     if not token:
         raise HTTPException(
             status_code=401,

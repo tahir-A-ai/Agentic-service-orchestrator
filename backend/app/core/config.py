@@ -56,6 +56,10 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = Field(default="development")
     LOG_LEVEL: str = Field(default="INFO")
+    COOKIE_SECURE: bool = Field(
+        default=False,
+        description="Whether auth cookies require HTTPS. Set to True in production only when an SSL/TLS cert is configured.",
+    )
 
 
     CORS_ALLOW_ORIGINS: str = Field(
