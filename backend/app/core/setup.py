@@ -21,7 +21,7 @@ async def _setup_postgres_checkpointer() -> None:
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
         import psycopg
         conn_str = db_url.replace("postgresql+psycopg2", "postgresql").replace("postgresql+psycopg", "postgresql")
-        async with await psycopg.AsyncConnection.connect(conn_str) as conn:
+        async with await psycopg.AsyncConnection.connect(conn_str, autocommit=True) as conn:
             checkpointer = AsyncPostgresSaver(conn)
             await checkpointer.setup()
     except Exception as exc:
