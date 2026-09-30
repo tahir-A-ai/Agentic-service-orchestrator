@@ -98,10 +98,10 @@ class Settings(BaseSettings):
         description="Lifetime of the long-lived refresh token in days (default: 7).",
     )
 
+    BASE_URL: str = Field(default="http://localhost:8000", description="Base URL of the API.")
 
     GROQ_API_KEY: str | None = Field(default=None)
     GROQ_MODEL: str = Field(default="openai/gpt-oss-120b")
-
 
     NOMINATIM_BASE_URL: str = "https://nominatim.openstreetmap.org/search"
     NOMINATIM_USER_AGENT: str = "service-orchestrator/1.0 (local-marketplace)"
@@ -112,6 +112,17 @@ class Settings(BaseSettings):
     BOOKING_SESSION_TTL_MINUTES: int = 10
     REACT_MAX_ITERATIONS: int = 10
     PROVIDER_SEARCH_RADIUS_KM: float = 25.0
+
+
+    # ── Redis (WebSockets Pub/Sub & Distributed Rate Limiting) ───────────────
+    REDIS_URL: str = Field(
+        default="",
+        description=(
+            "Redis connection URL (e.g. redis://localhost:6379/0 or AWS ElastiCache). "
+            "Used for WebSocket Pub/Sub and distributed rate limiting. "
+            "If empty, falls back to local in-memory mode."
+        ),
+    )
 
 
     # ── AWS / S3 / CloudFront ────────────────────────────────────────────────

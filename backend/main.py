@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.core.limiter import limiter
-from app.services.websockets import manager
+from app.services.websockets import manager, redis_bridge
 from app.core.config import settings
 from app.api import api_router
 from app.core.setup import run_startup_tasks
@@ -19,9 +19,11 @@ from app.core.setup import run_startup_tasks
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Run startup tasks before serving requests."""
+    """Run startup tasks and initialize background services before serving requests."""
     await run_startup_tasks()
+    await redis_bridge.start()
     yield
+    await redis_bridge.stop()
 
 
 app = FastAPI(

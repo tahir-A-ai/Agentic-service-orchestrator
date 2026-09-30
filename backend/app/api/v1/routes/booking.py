@@ -224,7 +224,6 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
     # 1. Authorize: verify the session exists and caller is customer or assigned provider
     initial_payload = None
     with get_db_session() as db:
-        from app.models import BookingSession, Provider
         session = db.query(BookingSession).filter(BookingSession.id == job_id).first()
         if not session:
             await websocket.close(code=1008)

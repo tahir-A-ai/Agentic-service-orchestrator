@@ -185,7 +185,7 @@ async def upload_photo(
         os.makedirs(dest_dir, exist_ok=True)
         with open(os.path.join(dest_dir, filename), "wb") as fh:
             fh.write(data)
-        photo_url = f"http://localhost:8000/uploads/avatars/providers/{filename}"
+        photo_url = f"{settings.BASE_URL}/uploads/avatars/providers/{filename}"
 
     with get_db_session() as db:
         update_provider_profile(db, provider_id, {"photo_url": photo_url})
