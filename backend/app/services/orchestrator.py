@@ -1,9 +1,10 @@
-"""Thin coordination layer between the FastAPI routes and the ReAct agent."""
-
+import logging
 from fastapi import HTTPException
 
 from app.core.config import settings
 from app.services.react_loop import run_confirm_booking, run_find_providers
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -31,8 +32,10 @@ async def find_providers(
         result = await run_find_providers(user_prompt, session_id, excluded_provider_ids, customer_id)
     except RuntimeError as e:
         # GROQ_API_KEY not configured
+        logger.error("Groq API key error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
+        logger.exception("Agent execution failed in find_providers: %s", e)
         raise HTTPException(
             status_code=500,
             detail={

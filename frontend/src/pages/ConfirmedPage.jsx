@@ -7,6 +7,7 @@ import RatingModal from '../components/booking/RatingModal';
 import TrackingMapModal from '../components/booking/TrackingMapModal';
 import { useToast } from '../context/ToastContext';
 import { cancelBooking } from '../api/booking';
+import { API_BASE } from '../api/core';
 import styles from './ConfirmedPage.module.css';
 
 export default function ConfirmedPage() {
@@ -57,8 +58,7 @@ export default function ConfirmedPage() {
   useEffect(() => {
     if (!confirmed?.session_id) return;
 
-    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
-    const wsBase = apiBase.replace(/^http/, 'ws');
+    const wsBase = API_BASE.replace(/^http/, 'ws');
     const wsUrl = `${wsBase}/api/v1/stream/booking/${confirmed.session_id}`;
     const ws = new WebSocket(wsUrl);
 

@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine, or_
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, joinedload
 from app.core.config import settings
 from app.models import Base, LocationCache, Provider, ServiceType
 
@@ -30,25 +30,27 @@ def init_db() -> None:
     """
     Base.metadata.create_all(bind=engine)
 
-    # Lightweight SQLite schema migration for existing databases
-    with engine.connect() as conn:
-        try:
-            from sqlalchemy import text
-            # Ensure booking_sessions has all expected columns
-            result = conn.execute(text("PRAGMA table_info(booking_sessions)")).fetchall()
-            existing_cols = {row[1] for row in result}
-            
-            if "customer_review" not in existing_cols and len(existing_cols) > 0:
-                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_review TEXT"))
-            if "customer_rating" not in existing_cols and len(existing_cols) > 0:
-                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_rating INTEGER"))
-            if "customer_confirmed_at" not in existing_cols and len(existing_cols) > 0:
-                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_confirmed_at DATETIME"))
-            if "cancelled_by" not in existing_cols and len(existing_cols) > 0:
-                conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN cancelled_by VARCHAR(20)"))
-            conn.commit()
-        except Exception:
-            pass
+    # Dialect-agnostic schema column check for existing databases
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        if inspector.has_table("booking_sessions"):
+            existing_cols = {col["name"] for col in inspector.get_columns("booking_sessions")}
+            if existing_cols:
+                with engine.connect() as conn:
+                    if "customer_review" not in existing_cols:
+                        conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_review TEXT"))
+                    if "customer_rating" not in existing_cols:
+                        conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN customer_rating INTEGER"))
+                    if "customer_confirmed_at" not in existing_cols:
+                        col_type = "TIMESTAMP" if engine.dialect.name != "sqlite" else "DATETIME"
+                        conn.execute(text(f"ALTER TABLE booking_sessions ADD COLUMN customer_confirmed_at {col_type}"))
+                    if "cancelled_by" not in existing_cols:
+                        conn.execute(text("ALTER TABLE booking_sessions ADD COLUMN cancelled_by VARCHAR(20)"))
+                    conn.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Schema verification check encountered: %s", exc)
 
     with get_db_session() as session:
         session.query(Provider).filter(Provider.is_available.is_(None)).update(
@@ -114,6 +116,7 @@ def query_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
@@ -171,6 +174,7 @@ def query_all_active_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Active")
@@ -223,6 +227,7 @@ def query_busy_providers(
     with get_db_session() as session:
         providers = (
             session.query(Provider)
+            .options(joinedload(Provider.user))   # single JOIN — eliminates N+1 on p.user.phone
             .join(ServiceType, Provider.service_type_id == ServiceType.id)
             .filter(ServiceType.label == service_type)
             .filter(Provider.status == "Busy")

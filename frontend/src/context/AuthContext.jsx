@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState, useEffect } from 'react';
-import { loginApi, signupApi, logoutApi, getMeApi } from '../api/auth';
+import { loginApi, signupApi, logoutApi, getMeApi, refreshApi } from '../api/auth';
 import { useToast } from './ToastContext';
 
 const AuthCtx = createContext(null);
@@ -64,33 +64,78 @@ export function AuthProvider({ children }) {
         });
     }
 
-    // 2. Set timer for remaining token lifetime
+    // 2. Set timer to silently refresh access token before it expires
     let timer = null;
     if (user?.expiresAt) {
       const msRemaining = user.expiresAt - Date.now();
       if (msRemaining <= 0) {
-        localStorage.removeItem('karigar_user');
-        setUser(null);
+        // Token already expired — attempt silent refresh immediately
+        refreshApi()
+          .then(({ expires_in }) => {
+            if (!isMounted) return;
+            setUser(prev => {
+              if (!prev) return null;
+              const updated = { ...prev, expiresAt: Date.now() + expires_in * 1000 };
+              localStorage.setItem('karigar_user', JSON.stringify(updated));
+              return updated;
+            });
+          })
+          .catch(() => {
+            if (!isMounted) return;
+            localStorage.removeItem('karigar_user');
+            setUser(null);
+            showToast('Session expire ho gaya. Dobara login karein.', 'info');
+          });
       } else {
-        timer = setTimeout(() => {
-          localStorage.removeItem('karigar_user');
-          setUser(null);
-          showToast('Session expire ho gaya. Dobara login karein.', 'info');
-        }, msRemaining);
+        // Refresh 30 seconds before expiry so there's no gap
+        const refreshIn = Math.max(0, msRemaining - 30_000);
+        timer = setTimeout(async () => {
+          try {
+            const { expires_in } = await refreshApi();
+            if (!isMounted) return;
+            setUser(prev => {
+              if (!prev) return null;
+              const updated = { ...prev, expiresAt: Date.now() + expires_in * 1000 };
+              localStorage.setItem('karigar_user', JSON.stringify(updated));
+              return updated;
+            });
+          } catch {
+            if (!isMounted) return;
+            localStorage.removeItem('karigar_user');
+            setUser(null);
+            showToast('Session expire ho gaya. Dobara login karein.', 'info');
+          }
+        }, refreshIn);
       }
     }
 
-    // 3. Listen for 401 unauthorized events from any API call
+    // 3. Listen for 401 unauthorized events (refresh itself failed — force logout)
     const handleUnauthorized = () => {
       localStorage.removeItem('karigar_user');
       setUser(null);
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
 
+    // 4. Listen for token_refreshed events dispatched by core.js interceptor
+    //    so the AuthContext expiresAt stays in sync with what the server issued
+    const handleTokenRefreshed = (e) => {
+      if (!isMounted) return;
+      const { expiresAt } = e.detail || {};
+      if (!expiresAt) return;
+      setUser(prev => {
+        if (!prev) return null;
+        const updated = { ...prev, expiresAt };
+        localStorage.setItem('karigar_user', JSON.stringify(updated));
+        return updated;
+      });
+    };
+    window.addEventListener('auth:token_refreshed', handleTokenRefreshed);
+
     return () => {
       isMounted = false;
       if (timer) clearTimeout(timer);
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:token_refreshed', handleTokenRefreshed);
     };
   }, [user?.expiresAt, showToast]);
 

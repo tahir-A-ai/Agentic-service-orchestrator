@@ -4,7 +4,8 @@ export async function bookService(userPrompt, sessionId = null, excludedIds = []
   const payload = { user_prompt: userPrompt };
   if (sessionId) payload.session_id = sessionId;
   if (excludedIds && excludedIds.length > 0) payload.excluded_provider_ids = excludedIds;
-  return request('POST', '/api/v1/book-service', payload);
+  // Agent endpoint: allow up to 60s for multi-hop ReAct reasoning + geocoding
+  return request('POST', '/api/v1/book-service', payload, 60_000);
 }
 
 export async function confirmBooking(sessionId, approvedProviderIds, exactAddress, customerNotes) {

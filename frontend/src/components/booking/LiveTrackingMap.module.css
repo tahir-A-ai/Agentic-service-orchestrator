@@ -323,6 +323,11 @@
   background: #0d1117 !important;
 }
 
+/* Dark-mode filter for OpenStreetMap tiles — no API key needed, looks premium */
+:global(.leaflet-tile-pane) {
+  filter: brightness(0.72) contrast(1.1) saturate(0.6) hue-rotate(190deg);
+}
+
 :global(.leaflet-top.leaflet-right) {
   top: 56px !important;
   right: 14px !important;

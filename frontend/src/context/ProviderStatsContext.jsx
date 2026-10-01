@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { API_BASE } from '../api/core';
 
 const ProviderStatsCtx = createContext(null);
 
@@ -48,8 +49,7 @@ export function ProviderStatsProvider({ children }) {
     // Derive the WebSocket base from the same env var used by core.js.
     // Replacing http→ws / https→wss ensures the correct scheme in every
     // environment and avoids browser mixed-content blocks in production.
-    const httpBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
-    const wsBase = httpBase.replace(/^http/, 'ws');
+    const wsBase = API_BASE.replace(/^http/, 'ws');
 
     // Do NOT read the token from document.cookie — the access_token cookie
     // may be HttpOnly (JS-inaccessible). The browser automatically includes

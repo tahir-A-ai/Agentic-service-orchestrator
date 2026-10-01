@@ -56,6 +56,10 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = Field(default="development")
     LOG_LEVEL: str = Field(default="INFO")
+    COOKIE_SECURE: bool = Field(
+        default=False,
+        description="Whether auth cookies require HTTPS. Set to True in production only when an SSL/TLS cert is configured.",
+    )
 
 
     CORS_ALLOW_ORIGINS: str = Field(
@@ -88,10 +92,20 @@ class Settings(BaseSettings):
             )
         return v
 
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=15,
+        description="Lifetime of the short-lived access token in minutes (default: 15).",
+    )
+
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=7,
+        description="Lifetime of the long-lived refresh token in days (default: 7).",
+    )
+
+    BASE_URL: str = Field(default="http://localhost:8000", description="Base URL of the API.")
 
     GROQ_API_KEY: str | None = Field(default=None)
     GROQ_MODEL: str = Field(default="openai/gpt-oss-120b")
-
 
     NOMINATIM_BASE_URL: str = "https://nominatim.openstreetmap.org/search"
     NOMINATIM_USER_AGENT: str = "service-orchestrator/1.0 (local-marketplace)"
@@ -101,7 +115,42 @@ class Settings(BaseSettings):
     LOCATION_UNKNOWN: str = "LOCATION_UNKNOWN"
     BOOKING_SESSION_TTL_MINUTES: int = 10
     REACT_MAX_ITERATIONS: int = 10
-    PROVIDER_SEARCH_RADIUS_KM: float = 10.0
+    PROVIDER_SEARCH_RADIUS_KM: float = 25.0
+
+
+    # ── Redis (WebSockets Pub/Sub & Distributed Rate Limiting) ───────────────
+    REDIS_URL: str = Field(
+        default="",
+        description=(
+            "Redis connection URL (e.g. redis://localhost:6379/0 or AWS ElastiCache). "
+            "Used for WebSocket Pub/Sub and distributed rate limiting. "
+            "If empty, falls back to local in-memory mode."
+        ),
+    )
+
+
+    # ── AWS / S3 / CloudFront ────────────────────────────────────────────────
+    # In production these are injected as environment variables on EC2.
+    # Leave blank locally — the upload endpoint falls back to local disk.
+
+    CLOUDFRONT_URL: str = Field(
+        default="",
+        description=(
+            "Base CloudFront distribution URL (no trailing slash), e.g. "
+            "https://d1x47wom09a3cd.cloudfront.net. "
+            "Required in production to build avatar photo URLs."
+        ),
+    )
+
+    S3_BUCKET_NAME: str = Field(
+        default="",
+        description="S3 bucket name that CloudFront uses as its origin (private, OAC-protected).",
+    )
+
+    AWS_REGION: str = Field(
+        default="ap-south-1",
+        description="AWS region where the S3 bucket lives.",
+    )
 
 
 # Singleton — import `settings` everywhere, never instantiate Settings directly

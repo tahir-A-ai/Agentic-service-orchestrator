@@ -1,5 +1,5 @@
 """Booking and session coordination routes."""
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from datetime import datetime, timezone
 from app.schemas import (
     ConfirmBookingRequest,
@@ -11,12 +11,15 @@ from app.schemas import (
     CustomerConfirmResponse,
     CancelBookingRequest,
 )
+from app.models import BookingSession, Provider
 from app.services.database import get_db_session
 from app.services.orchestrator import confirm_booking, find_providers
 from app.services.react_loop import clear_session_checkpoint
 from app.services.websockets import manager, provider_manager
 from app.services.auth import get_current_user_from_credentials, decode_access_token
 from app.services.confirmation import confirm_completion
+from app.services.stats import get_provider_stats
+from app.core.limiter import limiter
 
 router = APIRouter(tags=["Booking"])
 
@@ -30,9 +33,10 @@ router = APIRouter(tags=["Booking"])
         "for the user to review and approve. No booking is committed."
     ),
 )
-async def book_service(request: ServiceRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> FindProvidersResponse:
+@limiter.limit("10/minute")
+async def book_service(request: Request, payload: ServiceRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> FindProvidersResponse:
     customer_id = current_user.get("user_id") if isinstance(current_user, dict) else None
-    result = await find_providers(request.user_prompt, request.session_id, request.excluded_provider_ids, customer_id=customer_id)
+    result = await find_providers(payload.user_prompt, payload.session_id, payload.excluded_provider_ids, customer_id=customer_id)
 
     # Convert raw provider dicts to ProviderDetail models
     candidates: dict[str, list[ProviderDetail]] = {}
@@ -60,12 +64,13 @@ async def book_service(request: ServiceRequest, current_user: dict = Depends(get
         "booked by another user during the review period."
     ),
 )
-async def confirm_booking_route(request: ConfirmBookingRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> ConfirmBookingResponse:
+@limiter.limit("5/minute")
+async def confirm_booking_route(request: Request, payload: ConfirmBookingRequest, current_user: dict = Depends(get_current_user_from_credentials)) -> ConfirmBookingResponse:
     result = await confirm_booking(
-        request.session_id,
-        request.approved_provider_ids,
-        request.exact_address,
-        request.customer_notes
+        payload.session_id,
+        payload.approved_provider_ids,
+        payload.exact_address,
+        payload.customer_notes
     )
 
     response = ConfirmBookingResponse(
@@ -81,7 +86,6 @@ async def confirm_booking_route(request: ConfirmBookingRequest, current_user: di
         pid = p.get("id")
         if pid:
             with get_db_session() as db:
-                from app.services.stats import get_provider_stats
                 stats = get_provider_stats(db, pid)
             await provider_manager.push_stats(pid, stats)
 
@@ -99,7 +103,6 @@ async def confirm_completion_route(
     confirmed_provider_id = None
     with get_db_session() as db:
         result = confirm_completion(db, request.session_id, request.rating, request.review_text)
-        from app.models import BookingSession
         session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
         if session:
             confirmed_provider_id = session.confirmed_provider_id
@@ -113,7 +116,6 @@ async def confirm_completion_route(
     # Notify provider dashboard in real-time so completed stats increment and job moves to history
     if confirmed_provider_id:
         with get_db_session() as db:
-            from app.services.stats import get_provider_stats
             stats = get_provider_stats(db, confirmed_provider_id)
         await provider_manager.push_stats(confirmed_provider_id, stats)
         await provider_manager.push_event(confirmed_provider_id, {
@@ -135,9 +137,6 @@ async def cancel_booking_route(
 ):
     confirmed_provider_id = None
     with get_db_session() as db:
-        from app.models import BookingSession, Provider
-        from fastapi import HTTPException
-
         session = db.query(BookingSession).filter(BookingSession.id == request.session_id).first()
         if not session:
             raise HTTPException(status_code=404, detail="Booking not found")
@@ -204,7 +203,6 @@ async def cancel_booking_route(
         })
         # Also push updated stats so active badge decrements
         with get_db_session() as db:
-            from app.services.stats import get_provider_stats
             stats = get_provider_stats(db, confirmed_provider_id)
         await provider_manager.push_stats(confirmed_provider_id, stats)
 
@@ -226,7 +224,6 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
     # 1. Authorize: verify the session exists and caller is customer or assigned provider
     initial_payload = None
     with get_db_session() as db:
-        from app.models import BookingSession, Provider
         session = db.query(BookingSession).filter(BookingSession.id == job_id).first()
         if not session:
             await websocket.close(code=1008)

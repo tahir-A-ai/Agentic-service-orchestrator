@@ -81,7 +81,15 @@ async def provider_stream(websocket: WebSocket, provider_id: int):
     The frontend connects once on login and receives a 'stats_update' message
     whenever a booking event changes the provider's metrics. No polling needed.
     """
-    token = websocket.cookies.get("access_token")
+    token = (
+        websocket.cookies.get("access_token")
+        or websocket.query_params.get("token")
+        or (
+            websocket.headers.get("authorization", "").replace("Bearer ", "").strip()
+            if "Bearer " in websocket.headers.get("authorization", "")
+            else None
+        )
+    )
     if not token:
         await websocket.close(code=1008)
         return
