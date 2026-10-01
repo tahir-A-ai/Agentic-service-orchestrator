@@ -1,0 +1,123 @@
+name: Karigar.pk CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Stage 1: Continuous Integration (Lint, Build, Compile)
+  # ───────────────────────────────────────────────────────────────────────────
+  ci-frontend:
+    name: Validate Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint Frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Test Build Production Bundle
+        working-directory: frontend
+        env:
+          VITE_API_BASE: ""
+        run: npm run build
+
+  ci-backend:
+    name: Validate Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python (v3.12)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Python Bytecode Compilation
+        working-directory: backend
+        run: python -m compileall app/ main.py
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Stage 2: Continuous Deployment (AWS EC2 via SSH)
+  # Runs ONLY on push or merge to `main` after CI succeeds
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS EC2
+    needs: [ci-frontend, ci-backend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Deployment Commands via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            echo "🚀 Starting automated deployment on AWS EC2..."
+
+            cd /home/ubuntu/Agentic-service-orchestrator
+
+            echo "📥 Fetching and syncing latest code from main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "📦 Installing backend Python requirements..."
+            cd /home/ubuntu/Agentic-service-orchestrator/backend
+            source .venv/bin/activate
+            pip install --no-cache-dir -r requirements.txt
+
+            echo "🔨 Installing frontend dependencies & building bundle..."
+            cd /home/ubuntu/Agentic-service-orchestrator/frontend
+            npm ci || npm install
+            npm run build
+
+            echo "🌐 Deploying static assets to Nginx web root..."
+            sudo cp -r dist/* /var/www/karigar/dist/
+
+            echo "🔄 Restarting FastAPI backend service..."
+            if sudo systemctl is-active --quiet karigar; then
+              sudo systemctl restart karigar
+              echo "✅ Backend service (karigar) restarted."
+            else
+              sudo systemctl start karigar || echo "⚠️ Note: Start karigar.service manually if not yet enabled."
+            fi
+
+            echo "🔄 Reloading Nginx web server..."
+            sudo nginx -t && sudo systemctl reload nginx
+
+            echo "🎉 Karigar.pk is live and up to date!"
