@@ -15,16 +15,18 @@ import { deriveTitle } from '../utils/chat';
  * This hook produces ZERO UI — it's purely a side-effect.
  */
 export default function useChatSync() {
-  const { messages, sessionId, isThinking } = useChat();
+  const { messages, sessionId, conversationId, isThinking } = useChat();
   const { user } = useAuth();
 
   const prevThinkingRef = useRef(false);
   const messagesRef = useRef(messages);
   const sessionIdRef = useRef(sessionId);
+  const conversationIdRef = useRef(conversationId);
 
   // Keep refs current so unload closures always see latest data
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
 
   // ── Trigger: isThinking flips false OR message count changes
   const prevMsgCountRef = useRef(messages.length);
@@ -40,23 +42,25 @@ export default function useChatSync() {
     const msgAddedWhenIdle = messages.length > prevCount && !isThinking;
 
     if (!thinkingFinished && !msgAddedWhenIdle) return;
-    if (!sessionId || !user) return;
+    const chatId = conversationId || sessionId;
+    if (!chatId || !user) return;
     if (messages.length === 0) return;
 
     const title = deriveTitle(messages);
-    syncConversation(sessionId, { title, messages }).catch(() => {
+    syncConversation(chatId, { title, messages, bookingSessionId: sessionId }).catch(() => {
       // Sync failure is non-fatal — conversation is still intact in memory
     });
-  }, [isThinking, sessionId, messages, user]);
+  }, [isThinking, conversationId, sessionId, messages, user]);
 
 
   // ── Trigger: beforeunload / pagehide (tab close / navigation away)
   useEffect(() => {
     function handleUnload() {
+      const chatId = conversationIdRef.current || sessionIdRef.current;
       const sid = sessionIdRef.current;
       const msgs = messagesRef.current;
-      if (!sid || !user || msgs.length === 0) return;
-      beaconSync(sid, { title: deriveTitle(msgs), messages: msgs });
+      if (!chatId || !user || msgs.length === 0) return;
+      beaconSync(chatId, { title: deriveTitle(msgs), messages: msgs, bookingSessionId: sid });
     }
 
     window.addEventListener('beforeunload', handleUnload);

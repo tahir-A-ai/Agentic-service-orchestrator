@@ -40,8 +40,9 @@ export default function useBooking() {
       const minDelay = new Promise((r) => setTimeout(r, 800));
 
       try {
+        const activeSessionId = options.newSession ? null : sessionId;
         const [data] = await Promise.all([
-          bookService(prompt, sessionId, excludedIdsList),
+          bookService(prompt, activeSessionId, excludedIdsList),
           minDelay,
         ]);
 

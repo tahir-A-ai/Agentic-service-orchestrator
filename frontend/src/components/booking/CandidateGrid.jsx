@@ -28,7 +28,9 @@ export default function CandidateGrid({
           )}
           <div className={styles.grid}>
             {candidates[svcType].map((provider) => {
-              const isProviderExcluded = Array.isArray(excludedIds) && excludedIds.includes(provider.id);
+              const isProviderExcluded =
+                (Array.isArray(excludedIds) && excludedIds.includes(provider.id)) ||
+                Boolean(provider.unavailable);
               const isCardLocked = locked || isProviderExcluded;
               return (
                 <ProviderCard

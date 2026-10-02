@@ -73,6 +73,7 @@ function setStoredConfirmedBooking(data) {
 export function ChatProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionIdState] = useState(null);
+  const [conversationId, setConversationIdState] = useState(getActiveChatId);
   const [approvedIds, setApprovedIds] = useState([]);
   const [isThinking, setThinking] = useState(false);
   const [lastUserPrompt, setLastUserPrompt] = useState(null);
@@ -82,10 +83,17 @@ export function ChatProvider({ children }) {
   // confirmed booking — tiny payload, kept in localStorage (24 h TTL)
   const [confirmed, setConfirmedState] = useState(getStoredConfirmedBooking);
 
-  // ── setSessionId: also persist the active chat UUID 
+  // ── setSessionId: updates the active booking session ID
+  // If conversationId is not yet established (new chat), binds conversationId as well.
   const setSessionId = useCallback((id) => {
     setSessionIdState(id);
-    setActiveChatId(id);
+    setConversationIdState((prev) => {
+      if (!prev) {
+        setActiveChatId(id);
+        return id;
+      }
+      return prev;
+    });
   }, []);
 
   // ── loadConversation: rehydrate state from DB
@@ -97,18 +105,37 @@ export function ChatProvider({ children }) {
       const data = await getConversation(id);
       // Guard against race conditions if user switched to another chat while request was in-flight
       if (latestLoadIdRef.current !== id) return;
-      setMessages(data.messages || []);
-      setSessionIdState(data.id);
+      const msgs = data.messages || [];
+      setMessages(msgs);
+      setSessionIdState(data.booking_session_id || data.id);
+      setConversationIdState(data.id);
       setActiveChatId(data.id);
       // Reset ephemeral state
       setApprovedIds([]);
       setThinking(false);
-      setExcludedIds([]);
       setLastUserPrompt(null);
+
+      // Rehydrate excludedIds from persisted unavailable flags in candidate messages
+      const recoveredExcluded = new Set();
+      msgs.forEach((m) => {
+        if (m.type === 'candidates' && m.candidates) {
+          Object.values(m.candidates).forEach((providersList) => {
+            if (Array.isArray(providersList)) {
+              providersList.forEach((p) => {
+                if (p.unavailable) {
+                  recoveredExcluded.add(p.id);
+                }
+              });
+            }
+          });
+        }
+      });
+      setExcludedIds(Array.from(recoveredExcluded));
     } catch {
       if (latestLoadIdRef.current === id) {
         // Conversation not found or auth error — start fresh
         setActiveChatId(null);
+        setConversationIdState(null);
       }
     }
   }, []);
@@ -147,11 +174,43 @@ export function ChatProvider({ children }) {
     );
   }, []);
 
+  // ── Unlock candidate messages (allows unexcluded candidates to be selected after provider cancellation)
+  const unlockCandidateMessages = useCallback(() => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.type === 'candidates' ? { ...msg, locked: false } : msg
+      )
+    );
+  }, []);
+
+  // ── Mark a specific provider as unavailable in candidate messages and excludedIds
+  const markProviderUnavailable = useCallback((providerId) => {
+    if (!providerId) return;
+    setExcludedIds((prev) => (prev.includes(providerId) ? prev : [...prev, providerId]));
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.type !== 'candidates' || !msg.candidates) return msg;
+        const updatedCandidates = {};
+        for (const [svc, pList] of Object.entries(msg.candidates)) {
+          if (Array.isArray(pList)) {
+            updatedCandidates[svc] = pList.map((p) =>
+              p.id === providerId ? { ...p, unavailable: true } : p
+            );
+          } else {
+            updatedCandidates[svc] = pList;
+          }
+        }
+        return { ...msg, candidates: updatedCandidates };
+      })
+    );
+  }, []);
+
   // ── Reset
   const reset = useCallback(() => {
 
     setMessages([]);
     setSessionIdState(null);
+    setConversationIdState(null);
     setApprovedIds([]);
     setThinking(false);
     setConfirmedState(null);
@@ -164,20 +223,21 @@ export function ChatProvider({ children }) {
   // hardReset: flush current chat to DB first, then wipe everything.
   // Returns promise so callers can wait for sync completion.
   const hardReset = useCallback(
-    async (currentSessionId, currentMessages) => {
-      const sid = currentSessionId || sessionId;
+    async (currentChatId, currentMessages) => {
+      const cid = currentChatId || conversationId || sessionId;
       const msgs = currentMessages || messages;
-      if (sid && msgs && msgs.length > 0) {
+      if (cid && msgs && msgs.length > 0) {
         try {
-          await syncConversation(sid, {
+          await syncConversation(cid, {
             title: deriveTitle(msgs),
             messages: msgs,
+            bookingSessionId: sessionId,
           });
         } catch { }
       }
       reset();
     },
-    [reset, sessionId, messages],
+    [reset, conversationId, sessionId, messages],
   );
 
 
@@ -188,6 +248,8 @@ export function ChatProvider({ children }) {
         addMessage,
         sessionId,
         setSessionId,
+        conversationId,
+        setConversationId: setConversationIdState,
         approvedIds,
         toggleApproved,
         clearApproved,
@@ -199,7 +261,9 @@ export function ChatProvider({ children }) {
         setLastUserPrompt,
         excludedIds,
         addExcludedId,
+        markProviderUnavailable,
         lockCandidateMessages,
+        unlockCandidateMessages,
         reset,
         hardReset,
         loadConversation,

@@ -18,11 +18,14 @@ export default function ChatPage() {
   const {
     isThinking,
     excludedIds,
+    addExcludedId,
+    markProviderUnavailable,
     addMessage,
     messages,
     loadConversation,
     getActiveChatId,
     lockCandidateMessages,
+    unlockCandidateMessages,
     clearApproved,
   } = useChat();
   const navigate = useNavigate();
@@ -76,11 +79,14 @@ export default function ChatPage() {
       window.history.replaceState({}, document.title);
     } else if (location.state?.providerCancelled) {
       hasAutoFetched.current = true;
-      lockCandidateMessages();
+      unlockCandidateMessages();
       clearApproved();
       const providerName = location.state.providerName || 'Provider';
       const prompt = location.state.autoFetch;
       const providerId = location.state.providerId;
+      if (providerId) {
+        markProviderUnavailable(providerId);
+      }
       const updatedExcluded = providerId
         ? Array.from(new Set([...excludedIds, providerId]))
         : excludedIds;
@@ -93,10 +99,10 @@ export default function ChatPage() {
         content: `${providerName} ne request cancel kar di hai. Hum aapke liye doosra provider dhoond rahe hain...`,
       });
 
-      // 2. Search for alternative providers without adding duplicate user message
+      // 2. Search for alternative providers with clean session
       if (prompt) {
         setTimeout(() => {
-          findProviders(prompt, updatedExcluded, { skipUserMessage: true });
+          findProviders(prompt, updatedExcluded, { skipUserMessage: true, newSession: true });
         }, 600);
       }
       window.history.replaceState({}, document.title);
@@ -118,7 +124,7 @@ export default function ChatPage() {
       });
       window.history.replaceState({}, document.title);
     }
-  }, [location, findProviders, excludedIds, addMessage, loadConversation, lockCandidateMessages, clearApproved]);
+  }, [location, findProviders, excludedIds, addExcludedId, markProviderUnavailable, addMessage, loadConversation, lockCandidateMessages, unlockCandidateMessages, clearApproved]);
 
 
 

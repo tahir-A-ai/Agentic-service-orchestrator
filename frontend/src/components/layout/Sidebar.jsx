@@ -39,9 +39,11 @@ function relativeTime(dateStr) {
  * Chat sidebar — Recent Chats list + New Chat button.
  */
 export default function Sidebar({ isOpen, onClose }) {
-  const { messages, sessionId, hardReset, reset, loadConversation } = useChat();
+  const { messages, sessionId, conversationId, hardReset, reset, loadConversation } = useChat();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const currentChatId = conversationId || sessionId;
 
   const [conversations, setConversations] = useState([]);
   const [page, setPage] = useState(1);
@@ -76,7 +78,7 @@ export default function Sidebar({ isOpen, onClose }) {
   }, [fetchConversations]);
 
   const handleNewChat = async () => {
-    await hardReset(sessionId, messages);
+    await hardReset(currentChatId, messages);
     navigate('/chat');
     if (window.innerWidth <= 768) {
       onClose?.();
@@ -99,7 +101,7 @@ export default function Sidebar({ isOpen, onClose }) {
     try {
       await deleteConversation(id);
       setConversations((prev) => prev.filter((c) => c.id !== id));
-      if (sessionId === id) {
+      if (currentChatId === id) {
         reset();
       }
     } catch {
@@ -141,7 +143,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   key={conv.id}
                   className={[
                     styles.historyItem,
-                    conv.id === sessionId ? styles.historyItemActive : '',
+                    conv.id === currentChatId ? styles.historyItemActive : '',
                   ].filter(Boolean).join(' ')}
                 >
                   <button

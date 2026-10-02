@@ -98,9 +98,8 @@ export default function ChatWindow({ onConfirm, onToggleSidebar, onSend }) {
           messages.map((msg, index) => {
             const hasSubsequentEvent = messages.slice(index + 1).some(
               (m) =>
-                m.type === 'candidates' ||
-                (typeof m.content === 'string' &&
-                  (m.content.includes('mukammal') || m.content.includes('cancel')))
+                typeof m.content === 'string' &&
+                (m.content.includes('mukammal') || m.content.includes('Aapne request cancel'))
             );
             const isLocked = Boolean(msg.locked || hasSubsequentEvent);
 
