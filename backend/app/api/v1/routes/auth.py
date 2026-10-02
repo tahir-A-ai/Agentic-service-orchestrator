@@ -9,6 +9,7 @@ from app.services.auth import (
     get_current_user_from_credentials,
     get_current_user_profile,
 )
+from app.models import User, Provider
 from app.core.config import settings
 from app.core.limiter import limiter
 
@@ -105,11 +106,26 @@ async def refresh_token_route(request: Request, response: Response):
 
     payload = decode_refresh_token(token)
 
+    user_id = payload.get("user_id")
+    role = payload.get("role")
+    provider_id = payload.get("provider_id")
+
+    # Robust fallback: if role or provider_id is missing from token, populate from DB
+    if user_id and (not role or (role == "provider" and not provider_id)):
+        with get_db_session() as db:
+            u = db.query(User).filter(User.id == user_id).first()
+            if u:
+                role = u.role
+                if role == "provider":
+                    p = db.query(Provider).filter(Provider.user_id == u.id).first()
+                    if p:
+                        provider_id = p.id
+
     new_access = create_access_token({
         "sub":         payload["sub"],
-        "user_id":     payload["user_id"],
-        "role":        payload.get("role"),
-        "provider_id": payload.get("provider_id"),
+        "user_id":     user_id,
+        "role":        role,
+        "provider_id": provider_id,
     })
 
     cookie_secure = _is_cookie_secure(request)

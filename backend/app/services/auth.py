@@ -27,12 +27,14 @@ def create_access_token(data: dict) -> str:
 def create_refresh_token(data: dict) -> str:
     """Create a long-lived refresh token (default 7 days, config-driven).
 
-    Only carries the minimum payload needed to re-issue an access token.
+    Carries the user credentials needed to re-issue a fully-featured access token.
     Marked token_type='refresh' so it is NEVER accepted by decode_access_token.
     """
     to_encode = {
         "sub": data.get("sub"),
         "user_id": data.get("user_id"),
+        "role": data.get("role"),
+        "provider_id": data.get("provider_id"),
         "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         "token_type": "refresh",
     }

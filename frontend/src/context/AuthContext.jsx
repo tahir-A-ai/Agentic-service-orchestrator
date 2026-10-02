@@ -16,16 +16,7 @@ export function AuthProvider({ children }) {
     try {
       const saved = localStorage.getItem('karigar_user');
       if (!saved) return null;
-      const parsed = JSON.parse(saved);
-      // If token expiration timestamp has passed, immediately clear stale session
-      if (
-        typeof parsed.expiresAt !== 'number' ||
-        Date.now() >= parsed.expiresAt
-      ) {
-        localStorage.removeItem('karigar_user');
-        return null;
-      }
-      return parsed;
+      return JSON.parse(saved);
     } catch { return null; }
   });
 
