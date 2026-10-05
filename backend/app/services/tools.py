@@ -170,6 +170,10 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
             f"TOOL CALLED -> query_providers('{service_type}', ...). INVALID service_type. Must be one of {VALID_SERVICE_TYPES}.",
         )
         return {
+            "status": "INVALID_SERVICE",
+            "action": "STOP_AND_REPORT",
+            "message": f"Maaf kijiye, hum abhi sirf {', '.join(sorted(VALID_SERVICE_TYPES))} offer karte hain.",
+            "service_type": service_type,
             "providers": [],
             "count": 0,
             "busy_count": 0,
@@ -203,28 +207,54 @@ def query_providers(service_type: str, lat: float, lon: float) -> dict:
             .count()
         )
 
-    busy_providers = []
-    if len(providers) == 0 and busy_count > 0:
-        busy_providers = query_busy_providers(service_type, lat, lon)
+    # Deterministic Outcome Resolution in Python (replaces LLM integer guessing)
+    if len(providers) > 0:
+        status = "FOUND_LOCAL"
+        action = "PRESENT_CANDIDATES"
+        outcome_message = "Yeh providers available hain:"
+    elif busy_count > 0:
+        # Case A: Providers exist for this service, but all are Busy
+        status = "ALL_BUSY"
+        action = "STOP_AND_REPORT"
+        outcome_message = "Is waqt is service ke saary providers busy hain, thodi der baad try karein."
+    elif excluded_count > 0:
+        # Case B: All remaining providers were previously declined
+        status = "ALL_EXCLUDED"
+        action = "STOP_AND_REPORT"
+        outcome_message = "Is waqt koi aur provider available nahi hai, thodi der baad try karein."
+    else:
+        # Case C (Optimal): Automatically search nearby across Islamabad in Python
+        nearby_providers, _ = query_all_active_providers(service_type, lat, lon, excluded_ids=excluded_ids)
+        if nearby_providers:
+            status = "FOUND_NEARBY"
+            action = "PRESENT_CANDIDATES"
+            providers = nearby_providers
+            outcome_message = "Is sector mein provider available nahi hai, lekin yeh nazdeeki providers available hain:"
+        else:
+            status = "NONE_AVAILABLE"
+            action = "STOP_AND_REPORT"
+            outcome_message = "Karigar.pk par is waqt is service ke liye koi provider available nahi hai."
 
-    provider_names = [f"{p['name']} ({p['distance_km']}km)" for p in providers]
+    provider_names = [f"{p['name']} ({p.get('distance_km', '?')}km)" for p in providers]
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
         (
-            f"Database returned {len(providers)} active '{service_type}' provider(s). "
-            f"Total {total_count}, busy {busy_count}. Results: {provider_names}."
+            f"Database query resolved: status='{status}', action='{action}'. "
+            f"Providers: {len(providers)} ({provider_names}). Total {total_count}, busy {busy_count}, excluded {excluded_count}."
         ),
     )
 
     return {
+        "status": status,
+        "action": action,
+        "message": outcome_message,
         "service_type": service_type,
         "providers": providers,
         "count": len(providers),
         "excluded_count": excluded_count,
         "busy_count": busy_count,
         "total_count": total_count,
-        "busy_providers": busy_providers,
     }
 
 
@@ -314,15 +344,34 @@ def search_nearby_providers(service_type: str, lat: float, lon: float) -> dict:
             .count()
         )
 
+    if providers:
+        status = "FOUND_NEARBY"
+        action = "PRESENT_CANDIDATES"
+        outcome_message = "Is sector mein provider available nahi hai, lekin yeh nazdeeki providers available hain:"
+    elif busy_count > 0:
+        status = "ALL_BUSY"
+        action = "STOP_AND_REPORT"
+        outcome_message = "Is waqt is service ke saary providers busy hain, thodi der baad try karein."
+    elif excluded_count > 0:
+        status = "ALL_EXCLUDED"
+        action = "STOP_AND_REPORT"
+        outcome_message = "Is waqt koi aur provider available nahi hai, thodi der baad try karein."
+    else:
+        status = "NONE_AVAILABLE"
+        action = "STOP_AND_REPORT"
+        outcome_message = "Karigar.pk par is waqt is service ke liye koi provider available nahi hai."
+
     provider_names = [f"{p['name']} ({p['location']}, {p.get('distance_km', '?')}km)" for p in providers]
     write_audit_log(
         session_id,
         "[TOOL USAGE]",
-        f"City-wide search returned {len(providers)} active '{service_type}' provider(s). "
-        f"Total {total_count}, busy {busy_count}. Results: {provider_names}.",
+        f"City-wide search resolved: status='{status}', action='{action}'. Providers: {len(providers)} ({provider_names}).",
     )
 
     return {
+        "status": status,
+        "action": action,
+        "message": outcome_message,
         "service_type": service_type,
         "providers": providers,
         "count": len(providers),

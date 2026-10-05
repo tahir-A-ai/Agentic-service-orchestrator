@@ -62,11 +62,38 @@ def get_client_identifier(request: Request) -> str:
     return "127.0.0.1"
 
 
-# If REDIS_URL is provided, rate limits are stored centrally in Redis across
-# all Uvicorn worker processes and EC2 instances. If empty, uses in-memory storage.
-storage_uri = settings.REDIS_URL if settings.REDIS_URL else "memory://"
+def _resolve_storage_uri() -> str:
+    """Resolve rate-limiter storage URI.
+
+    Attempts to ping Redis if REDIS_URL is configured. If unreachable or unset,
+    gracefully falls back to 'memory://' so the application never crashes.
+    """
+    if not settings.REDIS_URL:
+        return "memory://"
+    try:
+        import redis
+        client = redis.from_url(
+            settings.REDIS_URL,
+            socket_connect_timeout=0.5,
+            socket_timeout=0.5,
+        )
+        client.ping()
+        return settings.REDIS_URL
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Redis at '%s' is unreachable (%s). SlowAPI rate limiter falling back to in-memory mode.",
+            settings.REDIS_URL,
+            exc,
+        )
+        return "memory://"
+
+
+storage_uri = _resolve_storage_uri()
 
 limiter = Limiter(
     key_func=get_client_identifier,
     storage_uri=storage_uri,
+    swallow_errors=True,
 )
+

@@ -2,10 +2,11 @@ export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 const TIMEOUT_MS = 30_000;
 
 export class ApiError extends Error {
-  constructor(status, body) {
+  constructor(status, body, requestId = null) {
     super(body?.message || body?.detail?.message || `HTTP ${status}`);
     this.status = status;
     this.body = body;
+    this.requestId = requestId;
   }
 }
 
@@ -65,6 +66,7 @@ export async function request(method, path, body, timeoutMs = TIMEOUT_MS) {
 
   const res = await withTimeout(fetch(`${API_BASE}${path}`, opts), timeoutMs);
   const json = await res.json().catch(() => null);
+  const requestId = res.headers.get('x-request-id');
 
   if (!res.ok) {
     const isExpired =
@@ -82,7 +84,7 @@ export async function request(method, path, body, timeoutMs = TIMEOUT_MS) {
         } catch (err) {
           _processQueue(err);
           window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: json }));
-          throw new ApiError(res.status, json);
+          throw new ApiError(res.status, json, requestId);
         } finally {
           _isRefreshing = false;
         }
@@ -95,11 +97,11 @@ export async function request(method, path, body, timeoutMs = TIMEOUT_MS) {
       // Replay the original request with the freshly set cookie, keeping the same timeout
       const retryRes = await withTimeout(fetch(`${API_BASE}${path}`, opts), timeoutMs);
       const retryJson = await retryRes.json().catch(() => null);
-      if (!retryRes.ok) throw new ApiError(retryRes.status, retryJson);
+      if (!retryRes.ok) throw new ApiError(retryRes.status, retryJson, retryRes.headers.get('x-request-id'));
       return retryJson;
     }
 
-    throw new ApiError(res.status, json);
+    throw new ApiError(res.status, json, requestId);
   }
 
   return json;

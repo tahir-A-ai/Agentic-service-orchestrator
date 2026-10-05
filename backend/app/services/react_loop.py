@@ -337,24 +337,18 @@ async def run_find_providers(
             {"label": r.label, "aliases": r.aliases}
             for r in (
                 _db.query(ServiceType.label, ServiceType.aliases, ServiceType.sort_order)
-                .join(Provider, Provider.service_type_id == ServiceType.id)
-                .filter(
-                    ServiceType.is_active == True,
-                    Provider.status == "Active",
-                    Provider.is_available == True,
-                )
-                .distinct()
+                .filter(ServiceType.is_active == True)
                 .order_by(ServiceType.sort_order)
                 .all()
             )
         ]
     # No hardcoded fallback — the database is the sole authority.
-    # If no providers exist yet, the agent truthfully says "no services available".
+    # If no active services exist in the DB, the agent truthfully says "no services available".
     if not service_entries:
         write_audit_log(
             session_id,
             "[WARNING]",
-            "No active services with available providers found. "
+            "No active services found in database. "
             "Agent will inform user of unavailability.",
         )
     system_prompt = build_system_prompt(service_entries)
